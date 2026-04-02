@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.admin.mapper.AdminMapper">
+    <!--  공지사항  -->
+	<resultMap id="noticeMap" type="egovframework.sejong.doctor.model.NoticeDTO">
+          <result property="title"       column="title" />
+          <result property="expln"       column="expln" />
+          <result property="post_str"    column="post_str" />
+          <result property="post_end"    column="post_end" />          
+          <result property="noti_seq"    column="noti_seq" />
+          <result property="user_id_nm"    column="user_id_nm" />
+          <result property="reg_dtm"     column="reg_dtm" />
+          <result property="mod_dtm"     column="mod_dtm" />
+          <result property="reg_id"      column="reg_id" />
+          <result property="mod_id"      column="mod_id" />
+          <result property="searchGb"    column="searchGb" />
+          <result property="searchText"  column="searchText" />
+	</resultMap>	
+	<!-- 사용자 -->
+ 	<resultMap id="patientMap" type="egovframework.sejong.admin.model.PatientDTO">
+          <result property="user_uuid"  column="user_uuid" />
+          <result property="user_id"    column="user_id" />
+          <result property="user_nm"    column="user_nm" />
+          <result property="user_pw"    column="user_pw" />        
+          <result property="user_gb"    column="user_gb" />  
+          <result property="user_check"    column="user_check" />
+          <result property="birth"      column="birth" />
+          <result property="gender"     column="gender" />
+          <result property="phone"      column="phone" />
+          <result property="join_ymd"      column="join_ymd" />
+          <result property="email"      column="email" />
+          <result property="dtl_code_nm"  column="dtl_code_nm" />
+          <result property="weight"      column="weight" />  
+          <result property="height"       column="height" />  
+          <result property="blod_gb"       column="blod_gb" />                  
+          <result property="pwd_chg_ymd"    column="pwd_chg_ymd" />
+          <result property="login_fail_cnt"  column="login_fail_cnt" />
+          <result property="reg_dtm"    column="reg_dtm" />
+          <result property="cgm_dtm"    column="cgm_dtm" />
+          <result property="cgm_gap"    column="cgm_gap" />          
+          <result property="eat_dtm"    column="eat_dtm" />
+          <result property="eat_gap"    column="eat_gap" />          
+	</resultMap> 
+	<!-- 의사관리자  -->
+	<resultMap id="auserMap" type="egovframework.sejong.admin.model.AuserDTO">
+          <result property="user_id"     column="user_id" />
+          <result property="user_id_nm"     column="user_id_nm" />
+          <result property="user_pw"     column="user_pw" />
+          <result property="user_gb"     column="user_gb" />
+          <result property="user_nm"     column="user_nm" />
+          <result property="dept_nm"     column="dept_nm" />   
+          <result property="start_date"  column="start_date" />
+          <result property="end_date"    column="end_date" />          
+          <result property="useyn"       column="useyn" />
+          <result property="lock_yn"     column="lock_yn" />
+          <result property="bigo"        column="bigo" />
+          <result property="reg_dtm"     column="reg_dtm" />
+          <result property="mod_dtm"     column="mod_dtm" />
+          <result property="reg_id"      column="reg_id" />
+          <result property="mod_id"      column="mod_id" />    
+          <result property="enc_auser_pwd"  column="enc_auser_pwd" />      
+	</resultMap>
+	 
+    <!--  FAQ -->
+	<resultMap id="faqMap" type="egovframework.sejong.admin.model.FaqDTO">
+          <result property="faq_gb"      column="faq_gb" />
+          <result property="qstn_conts"  column="qstn_conts" />
+          <result property="ansr_conts"  column="ansr_conts" />
+          <result property="use_yn"      column="use_yn" />          
+          <result property="reg_id"      column="reg_id" />
+          <result property="reg_dtm"     column="reg_dtm" />
+          <result property="mod_id"      column="mod_id" />
+          <result property="mod_dtm"     column="mod_dtm" />
+          <result property="faq_seq"     column="faq_seq" />
+          <result property="searchGb"    column="searchGb" />
+          <result property="searchText"  column="searchText" />          
+	</resultMap>
+		
+   <!-- 공지목록 조회-->
+   <select id="noticeList" parameterType="NoticeDTO"  resultMap="noticeMap"><![CDATA[
+         select  A.TITLE
+               , A.EXPLN
+               , DATE_FORMAT(A.POST_STR, '%Y-%m-%d')  POST_STR
+               , DATE_FORMAT(A.POST_END, '%Y-%m-%d')  POST_END     
+               , A.REG_ID 
+               , A.REG_DTM  
+               , A.MOD_ID 
+               , A.MOD_DTM 
+               , A.NOTI_SEQ    
+               , B.USER_ID_NM                 
+        from T_NOTICE_TRAN A , T_ADMIN_MST B
+       where 1=1
+         AND A.MOD_ID = B.USER_ID 
+         AND DATE_FORMAT(now(),'%Y%m%d') BETWEEN A.POST_STR AND A.POST_END
+         AND DATE_FORMAT(A.REG_DTM,'%Y-%m-%d') BETWEEN #{start_date} AND #{end_date} 
+       ]]>
+    <choose>
+        <when test="searchGb = 'T' and searchText != null and searchText != ''"><![CDATA[
+            AND (A.TITLE LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+        <when test="searchGb = 'E' and searchText != null and searchText != ''"><![CDATA[
+            AND (A.EXPLN LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+        <when test="searchText != null and searchText != ''"><![CDATA[
+            AND (A.TITLE LIKE CONCAT('%', #{searchText}, '%')
+            OR A.EXPLN LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+    </choose>
+         <![CDATA[
+      order by A.REG_DTM DESC 
+         ]]>
+   </select> 
+      
+	<!-- 선택된 공지 조회-->
+	<select id="noticeInfo" parameterType="NoticeDTO"  resultMap="noticeMap"><![CDATA[ 
+		 select  TITLE
+               , EXPLN
+               , DATE_FORMAT(POST_STR, '%Y-%m-%d')  POST_STR
+               , DATE_FORMAT(POST_END, '%Y-%m-%d')  POST_END     
+               , REG_ID 
+               , REG_DTM  
+               , MOD_ID 
+               , MOD_DTM 
+               , NOTI_SEQ                               
+		  from T_NOTICE_TRAN 
+		 where 1=1
+		   and NOTI_SEQ = #{noti_seq}
+		]]>
+	</select> 
+	
+	<insert id= "insertNotice"  parameterType="NoticeDTO"><![CDATA[
+	  INSERT INTO T_NOTICE_TRAN
+      (TITLE  ,
+       EXPLN  ,  
+       POST_STR , 
+       POST_END  , 
+       USE_YN   ,
+       REG_ID   ,
+       REG_DTM  ,
+       MOD_ID   ,
+       MOD_DTM
+      ) VALUES
+      (#{title},
+       #{expln},  
+       DATE_FORMAT(#{post_str}, '%Y%m%d'), 
+       DATE_FORMAT(#{post_end}, '%Y%m%d'), 
+       #{use_yn},
+       #{mod_id},
+        now(),
+       #{mod_id},
+        now()
+      ) 
+	]]>
+	</insert>	
+	
+    <update id = "updateNotice"  parameterType="NoticeDTO" ><![CDATA[ 
+       UPDATE T_NOTICE_TRAN
+          SET TITLE      = #{title}, 
+              EXPLN      = #{expln}, 
+              POST_STR   = DATE_FORMAT(#{post_str}, '%Y%m%d'), 
+              POST_END   = DATE_FORMAT(#{post_end}, '%Y%m%d'), 
+              USE_YN     = #{use_yn},
+              MOD_ID     = #{mod_id},
+              MOD_DTM    =  now() 
+		 where 1=1
+		   and NOTI_SEQ = #{noti_seq}
+    ]]>
+    </update>	
+    <update id = "deleteNotice"  parameterType="NoticeDTO" ><![CDATA[ 
+       UPDATE T_NOTICE_TRAN
+          SET USE_YN    = 'N',
+              MOD_ID    = #{mod_id},
+              MOD_DTM   = now()
+       where 1=1
+		   and NOTI_SEQ = #{noti_seq}
+    ]]>
+    </update> 	
+	<!-- 환자 조회-->
+	<select id="selectPatientList" parameterType="PatientDTO"  resultMap="patientMap"><![CDATA[
+		SELECT * FROM 
+		(
+			  	select  A.USER_UUID
+			  	       , A.USER_ID
+			  	 	   , A.USER_NM
+			  	 	   , A.USER_GB
+					   , RTRIM(A.PHONE) PHONE
+					   , A.GENDER
+					   , A.BIRTH   
+					   , A.BLOD_GB                     
+					   , A.JOIN_YMD 
+					   , A.HEIGHT
+					   , A.WEIGHT 			   
+					   , IFNULL(A.EMAIl,'') AS  EMAIl                     
+					   , IFNULL(B.DTL_CODE_NM,'') AS  DTL_CODE_NM         
+		               , IFNULL((SELECT MAX(CGM_DTM)  FROM T_BLDINF_TRAN   WHERE  USER_UUID =  A.USER_UUID),'') CGM_DTM 
+		               , IFNULL(DATEDIFF(NOW() , (SELECT MAX(CGM_DTM)  FROM T_BLDINF_TRAN   WHERE  USER_UUID =  A.USER_UUID)),'') CGM_GAP 
+				       , A.REG_DTM
+				  from T_USER_TRAN A
+				  LEFT OUTER JOIN T_COMM_MST_DTL B ON B.CODE = 'CD7' AND B.DTL_CODE = A.BLOD_GB   
+				 Where 1=1
+		 ) A WHERE 1= 1 
+		 ]]>
+		  <if test='user_check == "Y" '><![CDATA[
+	        AND (A.CGM_GAP >= 1 OR A.EAT_GAP >= 1 OR A.CGM_GAP = '' OR  A.EAT_GAP = '')
+	      ]]>
+	      </if>
+	 	  <if test='user_check == "N" '> <![CDATA[
+		    AND A.USER_UUID <> ''
+		  ]]>
+		  </if>   
+		  <if test='user_nm != null and user_nm !=""'><![CDATA[
+	         AND (A.USER_NM LIKE CONCAT('%',#{user_nm},'%')
+	         OR A.PHONE LIKE CONCAT('%',#{user_nm},'%'))
+	      ]]>
+	      </if>
+	      <![CDATA[
+		order by A.REG_DTM , A.USER_NM, A.PHONE
+	      ]]>
+	</select> 
+	<!-- 환자 정보 조회-->
+	<select id="patientInfo" parameterType="PatientDTO"  resultMap="patientMap"><![CDATA[ 
+		 select  A.USER_UUID
+		       , A.USER_ID
+	  	 	   , A.USER_NM
+			   , A.PHONE
+			   , A.GENDER
+			   , A.USER_GB
+			   , A.BIRTH    
+			   , A.HEIGHT
+			   , A.WEIGHT    
+			   , A.JOIN_YMD 
+			   , IFNULL(A.EMAIl,'') AS  EMAIl   
+			   , IFNULL(B.DTL_CODE_NM,'') AS  DTL_CODE_NM  
+			   , A.BLOD_GB   
+			   , A.REG_DTM                     
+		  from T_USER_TRAN A
+		  LEFT OUTER JOIN T_COMM_MST_DTL B ON B.CODE = 'CD7' AND B.DTL_CODE = A.BLOD_GB
+		 where 1=1
+		   and A.USER_UUID = #{user_uuid}
+		]]>
+	</select> 		
+	<!-- 환자 정보 입력 -->
+	<insert id="insertPatient" parameterType="PatientDTO"><![CDATA[ 
+		insert into T_USER_TRAN
+			(
+			  USER_NM
+			, USER_ID
+			, USER_GB
+			, PHONE
+			, BIRTH
+			, GENDER
+			, EMAIL
+			, MOD_DTM
+			, REG_DTM
+			, USER_GB
+			, LOCK_YN
+		    , HEIGHT
+		    , WEIGHT 
+		    , BLOD_GB			
+			)
+			values
+			(
+			  #{user_nm}
+			, #{user_id}
+			, #{user_gb}
+			, #{phone}
+			, #{birth}
+			, #{gender}
+			, #{email}
+			, NOW()
+			, NOW()
+			, 'P'
+			, 'N'
+			, #{height}
+			, #{weight}	
+			, #{blod_gb}			
+			)
+		]]>
+	</insert>
+	
+	<!-- 환자 코드 수정 -->
+	<update id="updatePatient" parameterType="PatientDTO"><![CDATA[
+		update T_USER_TRAN
+		   set USER_ID = #{user_id}
+		     , PHONE   = #{phone}
+		     , EMAIL   = #{email}
+		     , BIRTH   = #{birth}
+		     , GENDER  = #{gender}
+			 , USER_PW = #{user_pw}
+			 , USER_NM = #{user_nm}
+			 , HEIGHT  = #{height}selectPatientList
+			 , WEIGHT  = #{weight}	
+			 , BLOD_GB  = #{blod_gb}
+			 , USER_GB   = #{user_gb}		 
+		 where 1=1
+		   and USER_UUID = #{user_uuid}
+		]]>
+	</update>	
+	 
+	<!-- 관리자(의사)  -->
+	  	        <!--  USER_ID, --> 
+	  	         
+	<select id="selectAuserList" parameterType="AuserDTO"  resultMap="auserMap"><![CDATA[
+	  	 select 
+	  	 	    USER_ID ,
+	  	 	    USER_ID_NM ,
+	  		    USER_NM,
+	            USER_GB,
+	            USER_PW,
+	            DEPT_NM,
+	            DATE_FORMAT(START_DATE,'%Y-%m-%d') AS START_DATE,
+	            DATE_FORMAT(END_DATE,'%Y-%m-%d') AS END_DATE,  
+	            BIGO,
+	            USEYN,   
+	            REG_DTM,
+	    		LOCK_YN               
+		  from T_ADMIN_MST 
+		 where 1=1
+		 ]]>
+		  <if test="user_nm != null and user_nm !=''"><![CDATA[
+	         AND USER_NM LIKE CONCAT('%',#{user_nm},'%')
+	      ]]>
+	      </if>
+	      <![CDATA[
+		order by USER_NM , REG_DTM
+	      ]]>
+	</select> 
+	
+	<select id="auserLoginCheck" parameterType="AuserDTO"  resultMap="auserMap"><![CDATA[
+	  SELECT USER_ID , 
+	  		 USER_NM ,
+	  		 USER_ID_NM ,
+	         IFNULL(USER_GB,'D')  AS USER_GB,
+	         USER_PW,
+	         USEYN, 
+	         IFNULL(DEPT_NM,'') AS DEPT_NM
+	    FROM T_ADMIN_MST
+	   WHERE USER_ID = #{user_id}
+	     AND NOW() BETWEEN START_DATE AND END_DATE
+	]]>
+	</select>		
+
+	<select id="auserInfo" parameterType="AuserDTO"  resultMap="auserMap"><![CDATA[ 
+	  SELECT 
+	         USER_ID,  
+	  		 USER_NM,
+	  		 USER_ID_NM ,
+	         USER_GB,
+	         USER_PW,
+	         DEPT_NM,
+	         DATE_FORMAT(START_DATE,'%Y-%m-%d') AS START_DATE,
+	         DATE_FORMAT(END_DATE,'%Y-%m-%d') AS END_DATE,  
+	         BIGO,
+	         USEYN ,
+	         LOCK_YN
+	    FROM T_ADMIN_MST 
+	   WHERE USER_ID = #{user_id}
+	]]>
+	</select>	
+	<insert id="insertAuser" parameterType="AuserDTO"><![CDATA[ 
+		insert into T_ADMIN_MST
+			(
+			  USER_ID
+			, USER_NM
+			, USER_ID_NM 
+			, USER_PW
+			, USER_GB
+			, DEPT_NM 
+			, START_DATE
+			, END_DATE
+			, LOCK_YN
+			, USEYN
+			, BIGO
+			, REG_ID
+			, REG_DTM			
+			, MOD_ID
+			, MOD_DTM
+			)
+			values
+			(
+			  #{enc_user_id}
+			, #{user_nm}
+			, #{user_id_nm}
+			, #{enc_auser_pwd}
+			, #{user_gb}
+			, #{dept_nm}
+			, #{start_date}
+			, #{end_date}	
+			, #{lock_yn}
+			, #{useyn}	
+			, #{bigo}	
+			, 'admin'
+			, NOW()
+			, 'admin'
+			, NOW()
+			)
+		]]>
+	</insert>	
+
+	<!-- 사용자수정   -->
+		<!--	, USER_PW    = #{enc_user_pwd} -->
+	<update id="updateAuser" parameterType="AuserDTO" ><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+		 SET  USER_NM    = #{user_nm}
+			, USER_GB    = #{user_gb}
+			, DEPT_NM    = #{dept_nm}
+			, START_DATE = #{start_date}
+			, END_DATE   = #{end_date}
+			, LOCK_YN    = #{lock_yn}
+			, USEYN      = #{useyn}
+			, BIGO	     = #{bigo}
+			, MOD_ID     = 'admin'
+			, MOD_DTM    = NOW()
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>
+	
+	<!-- 사용자삭재   -->
+	<update id="deleteAuser" parameterType="AuserDTO" ><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+	     SET USEYN    = 'N'
+		   , MOD_ID   = 'admin'
+		   , MOD_DTM  = NOW()	     
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>	
+
+	<!-- 비밀번호 변경 처리 -->
+	<update id="auserPwdChange" parameterType="AuserDTO"><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+	     SET USER_PW  = #{enc_auser_pwd}
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>
+	
+	<!-- 비밀번호 초기화 처리 -->
+	<update id="auserPwdReset" parameterType="AuserDTO" ><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+	     SET USER_PW  = #{enc_auser_pwd}
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>
+
+   <!-- faq 목록조회 -->
+   <select id="selectfaqList" parameterType="FaqDTO"  resultMap="faqMap"><![CDATA[
+         select  FAQ_GB
+               , QSTN_CONTS
+               , ANSR_CONTS
+               , USE_YN
+               , REG_ID 
+               , REG_DTM  
+               , MOD_ID 
+               , MOD_DTM 
+               , FAQ_SEQ                    
+        from T_FAQ_TRAN 
+       where 1=1
+       ]]>
+      <choose>
+        <when test="searchGb != 'ALL' "><![CDATA[
+            AND FAQ_GB = #{searchGb}       
+        ]]></when>   
+        <when test="searchGb = 'ALL' and searchText != null and searchText != ''"><![CDATA[
+            AND (QSTN_CONTS LIKE CONCAT('%', #{searchText}, '%')
+            OR ANSR_CONTS LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+        <when test="searchGb != 'ALL' and searchText != null and searchText != ''"><![CDATA[
+            AND FAQ_GB = #{searchGb}
+            AND (QSTN_CONTS LIKE CONCAT('%', #{searchText}, '%')
+            OR  ANSR_CONTS LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+        <when test="searchGb = 'ALL' "><![CDATA[
+        ]]></when>
+   
+      </choose> 
+       <![CDATA[
+        order by MOD_DTM DESC 
+       ]]>
+   </select> 
+      
+	<!-- 선택된 faq 조회-->
+	<select id="faqInfo" parameterType="FaqDTO"  resultMap="faqMap"><![CDATA[ 
+		 select  FAQ_GB
+               , QSTN_CONTS
+               , ANSR_CONTS
+               , USE_YN     
+               , REG_ID 
+               , REG_DTM  
+               , MOD_ID 
+               , MOD_DTM 
+               , FAQ_SEQ                               
+		  from T_FAQ_TRAN 
+		 where 1=1
+		   and FAQ_SEQ = #{faq_seq}
+		]]>
+	</select> 
+	
+	<insert id= "insertfaq"  parameterType="FaqDTO"><![CDATA[
+	  INSERT INTO T_FAQ_TRAN
+      (FAQ_GB  ,
+       QSTN_CONTS  ,  
+       ANSR_CONTS , 
+       USE_YN  , 
+       REG_ID   ,
+       REG_DTM  ,
+       MOD_ID   ,
+       MOD_DTM
+      ) VALUES
+      (
+       #{faq_gb},
+       #{qstn_conts},  
+       #{ansr_conts}, 
+       #{use_yn},
+       'admin', 
+        now(),
+       'admin',
+        now()
+      ) 
+	]]>
+	</insert>	
+	
+    <update id = "updatefaq"  parameterType="FaqDTO" ><![CDATA[ 
+       UPDATE T_FAQ_TRAN
+          SET QSTN_CONTS  = #{qstn_conts}, 
+              ANSR_CONTS  = #{ansr_conts}, 
+              USE_YN      = #{use_yn}, 
+              MOD_ID      = 'admin' ,
+              MOD_DTM     =  now() 
+		 where 1=1
+		   and FAQ_SEQ = #{faq_seq}
+    ]]>
+    </update>	
+    <update id = "deletefaq"  parameterType="FaqDTO" ><![CDATA[ 
+       UPDATE T_FAQ_TRAN
+          SET USE_YN    = 'N',
+              MOD_ID    = 'admin',
+              MOD_DTM   = now()
+       where 1=1
+		  And FAQ_SEQ = #{faq_seq}
+    ]]>
+    </update> 	
+   <!-- faq 목록조회 -->
+   <select id="selectasqList" parameterType="AsqDTO"  resultType="AsqDTO"><![CDATA[
+        Select   A.ASQ_SEQ
+               , A.USER_UUID
+               , B.USER_NM
+      		   , B.GENDER
+			   , B.BIRTH 
+               , A.QSTN_TITL
+               , A.QSTN_CONTS
+               , A.QSTN_YMD 
+               , A.ANSR_CONTS  
+               , A.ANSR_YN 
+        From T_ASQ_TRAN A , T_USER_TRAN B
+       where 1=1
+         AND  A.USER_UUID = B.USER_UUID
+       ]]>
+      <choose>
+        <when test= "searchText != null and searchText != ''"><![CDATA[
+            AND (QSTN_TITL LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></when>
+    
+      </choose> 
+       <![CDATA[
+        order by QSTN_YMD DESC 
+       ]]>
+   </select> 
+      
+	<!-- 선택된 faq 조회-->
+	<select id="asqInfo" parameterType="AsqDTO"  resultType="AsqDTO"><![CDATA[ 
+		 Select  ASQ_SEQ
+               , USER_UUID
+               , QSTN_TITL
+               , QSTN_CONTS
+               , QSTN_YMD 
+               , ANSR_CONTS  
+               , ANSR_YN                           
+		 From T_ASQ_TRAN 
+		 where 1=1
+		   and ASQ_SEQ = #{asqSeq}
+		]]>
+	</select> 
+
+    <update id = "updateasq"  parameterType="AsqDTO" ><![CDATA[ 
+       UPDATE T_ASQ_TRAN
+          SET QSTN_TITL   = #{qstnTitl}, 
+              QSTN_CONTS  = #{qstnConts}, 
+              ANSR_CONTS  = #{ansrConts}, 
+              ANSR_YN     = #{ansrYn}, 
+              QSTN_YMD    = NOW()
+		 where 1=1
+		   and ASQ_SEQ = #{asqSeq}
+    ]]>
+    </update>	
+  		   
+</mapper>

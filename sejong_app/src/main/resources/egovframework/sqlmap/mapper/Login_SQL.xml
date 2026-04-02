@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.login.mapper.LoginMapper">
+	<!-- 연결 테스트 -->
+	<select id="connectionTest" resultType="int">
+		SELECT count(*) from test
+	</select>
+
+	<!--  유저 있는지 체크 -->
+	<select id="loginCheck" resultType="int">
+		SELECT COUNT(*) FROM T_USER_TRAN WHERE PHONE = #{phone}
+	</select>	
+	
+	<!--  신규 유저 등록 -->
+	<insert id="registerUser" parameterType="UserDTO" >
+	    INSERT INTO T_USER_TRAN (
+	        USER_UUID,
+	        USER_ID,
+	        USER_NM,
+	        USER_GB,
+	        MGMT_GB,
+	        BIRTH,
+	        GENDER,
+	        PHONE,
+	        EMAIL, 
+	        JOIN_YMD,
+	        LOGIN_FAIL_CNT,
+	        LOCK_YN,
+	        REG_DTM,
+	        BLOD_GB,
+	        HEIGHT,
+	        WEIGHT
+	    ) VALUES (
+	        #{userUuid},
+	        #{userNm},
+	        #{userNm},
+	        #{userGb},
+	        #{mgmtGb},
+	        #{birth},
+	        #{gender},
+	        #{phone},
+	        #{email},
+	        DATE_FORMAT(sysdate(),'%Y%m%d'),
+	        #{loginFailCnt},
+	        #{lockYn},
+	        sysdate(),
+	        #{blodGb},
+	        #{height},
+	        #{weight}
+	    )
+	</insert>
+	<!-- 회원정보수정   -->
+	<update id="updateUser" parameterType="UserDTO" >
+	    UPDATE  T_USER_TRAN
+        SET USER_ID  = #{userNm},
+	        USER_NM  = #{userNm},
+	        USER_GB  = #{userGb},
+	        MGMT_GB  = #{mgmtGb},
+	        BIRTH    = #{birth} ,
+	        GENDER   = #{gender},
+	        PHONE    = #{phone} ,
+	        EMAIL    = #{email} , 
+	        BLOD_GB  = #{blodGb},
+	        HEIGHT   = #{height},
+	        WEIGHT   = #{weight}
+	    WHERE PHONE  = #{phone}
+	</update>
+	 
+	<!-- get User  -->
+	<select id="getUser" resultType="UserDTO">
+		SELECT * FROM T_USER_TRAN WHERE PHONE = #{phone}
+	</select>
+	<select id="getUserEmail" resultType="UserDTO">
+		SELECT * FROM T_USER_TRAN WHERE EMAIL = #{email}
+	</select>
+<!--  회원 탈퇴시 삭제  -->
+	<delete id="delAllUser" parameterType="UserDTO">
+	        DELETE FROM T_USER_TRAN     WHERE USER_UUID = #{userUuid}
+	</delete>	
+	<delete id="delAllFood" parameterType="UserDTO">
+	        DELETE FROM T_FOOD_TRAN     WHERE USER_UUID = #{userUuid}
+	</delete>	
+	<delete id="delAllExer" parameterType="UserDTO">
+	        DELETE FROM T_EXER_TRAN     WHERE USER_UUID = #{userUuid}
+	</delete>	
+	<delete id="delAllBldcon" parameterType="UserDTO">
+	        DELETE FROM T_BLDCON_MST    WHERE USER_UUID = #{userUuid}
+	</delete>	
+	<delete id="delAllBldinf" parameterType="UserDTO">
+	        DELETE FROM T_BLDINF_TRAN    WHERE USER_UUID = #{userUuid}
+	</delete>		
+	<delete id="delAllPersign" parameterType="UserDTO">
+	        DELETE FROM T_PERSIGN_TRAN   WHERE USER_UUID = #{userUuid}
+	</delete>	
+</mapper>

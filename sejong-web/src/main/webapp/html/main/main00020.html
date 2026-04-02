@@ -1,0 +1,275 @@
+<link href="/html/main/main.css" rel="stylesheet">
+
+
+<!-- 본문 내용 -->
+<div class="tab-pane active">
+
+  <header class="header">
+    <h1>
+      병원 청구 자료 생성
+    </h1>
+  </header>
+  <div class="content-body">
+    <section class="top-pannel justify-content-lg-start">
+      <div class="search-box">
+        <label class="form-title">대상병원</label>
+        <select class="form-select" aria-label="Default select example">
+          <option selected>선택</option>
+          <option value="1">서울병원</option>
+          <option value="2">분당병원</option>
+          <option value="3">강남병원</option>
+        </select>
+      </div>
+      <div class="search-box">
+        <label class="form-title">조회일자</label>
+        <!-- 데이트피커 범위 -->
+        <!-- <input type="text" class="form-control" name="dates" value=" "> -->
+        <!-- 데이트피커 싱글 -->
+        <input type="date" class="form-control" name="dates" value=" ">
+        <span> ~ </span>
+        <input type="date" class="form-control" name="dates" value=" ">
+        <button class="buttcon"><span class="icon icon-search"></span></button>
+      </div>
+    </section>
+    <section class="main-pannel">
+      <div class="main-left w-100">
+        <header class="main-hd">
+          <h2>청구 대상 파일 목록</h2>
+          <div class="btn-box">
+            <button class="btn btn-primary btn-icon-l btn-create">청구자료 생성</button>
+          </div>
+        </header>
+        <div class="main-content">
+          <!-- 테이블 샘플 -->
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <colgroup>
+                <col style="width: 50px">
+                <col style="width: 80px">
+                <col style="width: 120px">
+                <col style="width: 20%">
+                <col style="width: auto">
+                <col style="width: 140px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>선택</th>
+                  <th>번호</th>
+                  <th>서버 적용</th>
+                  <th>폴더 위치</th>
+                  <th>파일명</th>
+                  <th>파일크기(Byte)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>0001</td>
+                  <td>aaaa</td>
+                  <td class="txt-left">C:/HMMCO/in/202308/</td>
+                  <td class="txt-left">2305(2305)입원산.소아과정상(정상)분_청구번호(202305D303)_처리일시(202306051348)_D020</td>
+                  <td>1220334</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- 페이지네이션 start -->
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination pagination-sm justify-content-center">
+            <!-- 비활성화 .disabled / 활성화 .active -->
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item"><a class="page-link" href="#">1</a></li>
+            <li class="page-item active"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item"><a class="page-link" href="#">4</a></li>
+            <li class="page-item"><a class="page-link" href="#">5</a></li>
+            <li class="page-item"><a class="page-link" href="#">6</a></li>
+            <li class="page-item"><a class="page-link" href="#">7</a></li>
+            <li class="page-item"><a class="page-link" href="#">8</a></li>
+            <li class="page-item"><a class="page-link" href="#">9</a></li>
+            <li class="page-item"><a class="page-link" href="#">10</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <!-- 페이지네이션 js -->
+        <script src="/asset/js/pagination.js"></script>
+        <!-- 페이지네이션 end -->
+      </div>
+    </section>
+  </div>
+  <footer class="bottom-pannel">
+    <div>
+      <span class="date">2024-02-05</span>
+      <span class="message">저장 완료</span>
+    </div>
+  </footer>
+</div>

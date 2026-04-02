@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="/bootstrap/css/bootstrap.css" rel="stylesheet">
+
+  <!-- 제이쿼리 CDN -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <link href="/asset/css/common.css" rel="stylesheet">
+  <link href="login.css" rel="stylesheet">
+
+  <title>비밀번호 변경</title>
+</head>
+
+<body>
+  <!-- 부트스트랩 js -->
+  <script src="/bootstrap/js/bootstrap.bundle.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <div id="login" class="container">
+
+    <div class="set-pass-box">
+      <div class="set-pass-wrap">
+        <h3>비밀번호 변경</h3>
+        <div class="pass-box w-100">
+          <input class="form-control" type="text" id="inputUserID" placeholder="사용자ID" aria-label="사용자ID">
+          <input type="password" class="form-control mt-2" id="inputPassword" placeholder="현재 비밀번호">
+          <input type="password" class="form-control mt-2" id="newPass" placeholder="변경 비밀번호">
+          <input type="password" class="form-control mt-2" id="newPassRe" placeholder="변경 비밀번호 확인">
+        </div>
+
+        <div class="set-btn-box w-100">
+          <button type="button" class="btn btn-outline-dark">취소</button>
+          <button type="button" class="btn btn-primary">변경</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    $(document).ready(function () {
+      // 변경비밀번호 입력값과 현재비밀번호 값이 다른지 확인
+      $("#newPass").on("keyup", function () {
+        if ($("#inputPassword").val() == $("#newPass").val()) {
+          $("#newPass").addClass("is-invalid");
+        } else {
+          $("#newPass").removeClass("is-invalid");
+        }
+      });
+      // 변경비밀번호 입력값과 변경비밀번호확인 입력값이 같은지 확인
+      $("#newPassRe").on("keyup", function () {
+        if ($("#newPass").val() != $("#newPassRe").val()) {
+          $("#newPassRe").addClass("is-invalid");
+        } else {
+          $("#newPassRe").removeClass("is-invalid");
+        }
+      });
+    });
+  </script>
+
+</body>
+
+</html>

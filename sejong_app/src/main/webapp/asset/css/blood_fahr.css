@@ -1,0 +1,286 @@
+/* 기본 리셋 및 폰트 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 메인 컨테이너 */
+.blood-container {
+    width: 360px;
+    min-height: 40vh;
+    margin: 0 auto;
+    background-color: #ffffff;
+    position: relative;
+    border: 2px solid #4591e7;
+    border-radius: 8px;
+}
+
+/* 섹션 공통 스타일 */
+.section-content {
+    padding: 12px 20px;
+}
+
+/* 현재 혈당 변화 섹션 */
+.blood-change-section {
+    background-color: #ffffff;
+    padding: 10px 0;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.blood-change-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.change-text {
+    font-size: 16px;
+    color: #666666;
+    font-weight: 400;
+}
+
+.change-status-box {
+    background-color: #ffffff;
+    border: 1px solid #999999;
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.change-status {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+}
+
+
+/* 상세 혈당 증가 정보 */
+.blood-detail-section {
+    background-color: #ffffff;
+    padding: 8px 0;
+    min-height: 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+
+.detail-box {
+    background-color: #f5f5f5;
+    padding: 12px 18px;
+    border-radius: 8px;
+    max-width: 320px;
+    width: 100%;
+    height: auto;
+    min-height: 45px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.detail-box_small {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.detail-text {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+    line-height: 1.4;
+    text-align: left;
+    display: block;
+    margin: 0;
+}
+
+/* GMI 수치 섹션 */
+.gmi-section {
+    background-color: #ffffff;
+    padding: 8px 0;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.gmi-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.gmi-text {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+}
+
+.gmi-value-box {
+    background-color: #ffffff;
+    border: 1px solid #d9d9d9;
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.gmi-value {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+}
+
+.status-box {
+    background-color: #ffffff;
+    border: 1px solid #d9d9d9;
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.status-text {
+    font-size: 16px;
+    color: #359131;
+    font-weight: 400;
+}
+
+/* 저혈당 주의 구간 */
+.hypoglycemia-section {
+    background-color: #ffffff;
+    padding: 2px 0;   /* 거의 최소한의 여백 */
+    margin-bottom: 0; /* 혹시나 바깥쪽 여백도 제거 */
+    min-height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.hypo-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.hypo-text {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+}
+
+.hypo-time-box {
+    background-color: #ffffff;
+    border: 1px solid #d9d9d9;
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.hypo-time {
+    font-size: 16px;
+    color: #000000;
+    font-weight: 400;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 400px) {
+    .blood-container {
+        width: 100%;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .section-content {
+        padding: 10px 15px;
+    }
+    
+    .blood-change-info,
+    .gmi-info,
+    .hypo-info {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .change-status-box,
+    .gmi-value-box,
+    .status-box,
+    .hypo-time-box {
+        padding: 8px 16px;
+    }
+    
+    .detail-box {
+        padding: 12px 16px;
+    }
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.blood-change-section,
+.blood-detail-section,
+.gmi-section,
+.hypoglycemia-section {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* 호버 효과 */
+.change-status-box:hover,
+.gmi-value-box:hover,
+.status-box:hover,
+.hypo-time-box:hover,
+.detail-box:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: box-shadow 0.3s ease;
+}
+
+/* 스크롤바 스타일링 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+} 

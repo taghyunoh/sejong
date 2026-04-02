@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.user.mapper.UserMapper">
+	<resultMap id="userMap" type="egovframework.sejong.user.model.UserDTO">
+          <result property="user_id"  column="user_id" />
+          <result property="user_id_nm"  column="user_id_nm" />
+          <result property="user_pw"  column="user_pw" />
+          <result property="user_gb"  column="user_gb" />
+          <result property="user_nm"  column="user_nm" />
+          <result property="useyn"  column="useyn" />
+          <result property="dept_nm"  column="dept_nm" />
+	</resultMap>
+	
+	<select id="userLoginCheck" parameterType="UserDTO"  resultMap="userMap"><![CDATA[
+	  SELECT USER_ID , 
+	         USER_ID_NM ,
+	  		 USER_NM ,
+	         IFNULL(USER_GB,'D')  AS USER_GB,
+	         USER_PW,
+	         USEYN, 
+	         IFNULL(DEPT_NM,'') AS DEPT_NM
+	    FROM T_ADMIN_MST
+	   WHERE USER_ID = #{user_id}
+	     AND NOW() BETWEEN START_DATE AND END_DATE
+	]]>
+	</select>		
+	
+		<!-- 사용자 정보 조회 -->
+	<select id="userInfo" parameterType="UserDTO"  resultMap="userMap"><![CDATA[ 
+	  SELECT USER_ID, 
+	  		 USER_NM,
+	  		 USER_ID_NM ,
+	         USER_GB,
+	         USER_PW,
+	         DEPT_NM,
+	         DATE_FORMAT(START_DATE,'%y-%m-%d') AS START_DATE,
+	         DATE_FORMAT(END_DATE,'%y-%m-%d') AS END_DATE,  
+	         BIGO,
+	         USEYN
+	    FROM T_ADMIN_MST 
+	   WHERE USER_ID = #{user_id}
+	]]>
+	</select>	
+	
+	<!-- 비밀번호 변경 처리 -->
+	<update id="userPwdChange" parameterType="UserDTO"><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+	     SET USER_PW  = #{enc_user_pwd}
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>
+	
+	<!-- 비밀번호 초기화 처리 -->
+	<update id="userPwdReset" parameterType="UserDTO" ><![CDATA[ 
+	  UPDATE T_ADMIN_MST
+	     SET USER_PW  = #{enc_user_pwd}
+	   WHERE USER_ID  = #{user_id}
+	]]>
+	</update>
+	
+	
+	
+</mapper>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<decorators defaultdir="/WEB-INF/tiles/main"> 
+      
+	<decorator name="header"    page="header.jsp"/>
+	<decorator name="open"      page="nolayout.jsp"><pattern>/</pattern></decorator>   
+	<decorator name="index"     page="nolayout.jsp"><pattern>/main.do</pattern></decorator>   
+	<decorator name="login"     page="nolayout.jsp"><pattern>/login.do</pattern></decorator>   
+	<decorator name="pwdchg"    page="nolayout.jsp"><pattern>/popup/pwdchg.do</pattern></decorator>   
+	<decorator name="pwdclear"  page="nolayout.jsp"><pattern>/popup/pwdclear.do</pattern></decorator>  
+	<decorator name="loginOut"  page="nolayout.jsp"><pattern>/user/loginOutAct.do</pattern></decorator>   
+	<decorator name="layout"    page="layout.jsp"><pattern>/com/main.do</pattern></decorator>  
+	
+<!--
+  	<decorator name="excelpopup1"    page="popup.jsp"><pattern>/popup/ExcelPopup.do</pattern></decorator>
+	<decorator name="excelpopup2"    page="popup.jsp"><pattern>/popup/doctExcelPopup.do</pattern></decorator> 
+	<decorator name="excelpopup3"    page="popup.jsp"><pattern>/popup/HsptKdrgExcelPopup.do</pattern></decorator> 
+	<decorator name="excelpopup4"    page="popup.jsp"><pattern>/popup/DrgExcelPopup.do</pattern></decorator> 
+	<decorator name="excelpopup5"    page="popup.jsp"><pattern>/popup/NbbcExcelPopup.do</pattern></decorator>   --> 
+	
+<!--    <decorator name="page"     page="nolayout.jsp"><pattern>/*.do</pattern></decorator>      -->
+	<decorator name="nolayout1"   page="tab.jsp"><pattern>/.do</pattern></decorator>
+<!-- 	<decorator name="nolayout1"   page="tab.jsp"><pattern>/stat/.do</pattern></decorator> -->
+</decorators> 

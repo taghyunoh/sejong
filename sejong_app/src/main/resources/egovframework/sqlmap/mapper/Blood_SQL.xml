@@ -1,0 +1,1384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.blood.mapper.BloodMapper">
+	
+	<insert id="insertToken">
+		INSERT INTO T_BLDCON_MST (
+			 USER_UUID
+			,ACC_TOKEN
+			,REF_TOKEN
+			,ISENS_ID
+			,EXPRE_TIME
+			,TOKEN_YN
+			,LINK_STRT_DTM
+			,LINK_END_DTM
+			,REG_DTM
+			,MOD_DTM
+		)VALUES (
+			#{userUuid}
+        	,#{accessToken}	    -- 입력받은 accessToken
+        	,#{refresh_token}   -- 입력받은 refresh_token
+			,#{user_id}         -- 입력받은 user_id
+        	,#{expires_in}      -- 입력받은 expires_in
+        	,'Y'
+        	,NOW() 
+        	,NOW() 
+        	,NOW() 
+        	,NOW()  
+		)ON DUPLICATE KEY UPDATE 
+			ACC_TOKEN = VALUES(ACC_TOKEN),
+			REF_TOKEN = VALUES(REF_TOKEN),
+			EXPRE_TIME = VALUES(EXPRE_TIME),
+			MOD_DTM = NOW()
+	</insert>
+	
+	<!-- insertBloodData -->
+	<insert id="insertBloodData" parameterType="java.util.List">
+    	INSERT INTO T_BLDINF_TRAN (
+    		SERIAL,
+       		CGM_SEQ,
+     	 	CGM_DTM,
+        	INIT_VALUE,
+        	UPT_VALUE,
+        	TREND_RATE,
+        	TREND,
+        	ERROR_CODE,
+        	USER_UUID
+    	) VALUES
+    	<foreach collection="list" item="item" separator=",">
+           (#{item.serialNumber}, 
+        	#{item.seqNumber}, 
+        	 DATE_FORMAT(
+			    STR_TO_DATE(SUBSTRING_INDEX(#{item.eventAt}, '+', 1), '%Y-%m-%dT%H:%i:%s'),
+			    '%Y-%m-%d %H:%i:%s'
+			),
+        	#{item.initialValue}, 
+        	#{item.value}, 
+        	#{item.trendRate}, 
+        	#{item.trend}, 
+        	#{item.errorCode}, 
+        	#{item.userId})
+    	</foreach>
+    	ON DUPLICATE KEY UPDATE 
+        	INIT_VALUE = VALUES(INIT_VALUE),
+        	UPT_VALUE = VALUES(UPT_VALUE)
+	</insert>
+
+      	
+	<select id="getBloodUserData" parameterType="String" resultType="map">
+		-- 유저 정보
+		SELECT ACC_TOKEN
+		      ,USER_UUID
+		  FROM T_BLDCON_MST
+		 WHERE USER_UUID  = #{id}
+	</select>
+	
+	<!-- showBloodData -->	
+	<select id="showBloodAvgData" parameterType="String" resultType="map">
+	<![CDATA[
+		SELECT FLOOR(AVG(UPT_VALUE)) AS AVG_UPT ,
+               ROUND(SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS TAR_UPT,
+               ROUND(SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS TBR_UPT,
+               ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 2) AS CV_UPT		
+		FROM T_BLDINF_TRAN
+		WHERE USER_UUID = #{userId}
+		  AND UPT_VALUE > 0
+		  AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		  AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY);	
+	]]>	   	
+	</select>
+	<!-- showBloodData -->	
+	
+	<select id="showBloodHighLow" parameterType="String" resultType="map">
+	<![CDATA[
+		WITH RECURSIVE hours AS (         
+		  SELECT 0 AS h
+		  UNION ALL
+		  SELECT h + 1 FROM hours WHERE h < 23
+		),
+		win AS (
+		  SELECT
+		    CONCAT(LPAD(h,2,'0'), ':00~', LPAD(h+1,2,'0'), ':00') AS win,  -- 예: 08:00~09:00
+		    h AS sort,
+		    SUM(CASE WHEN t.UPT_VALUE > 0 AND t.UPT_VALUE < 70  AND HOUR(t.CGM_DTM) = h THEN 1 ELSE 0 END) AS hypo_cnt,
+		    SUM(CASE WHEN                     t.UPT_VALUE > 180 AND HOUR(t.CGM_DTM) = h THEN 1 ELSE 0 END) AS hyper_cnt
+		  FROM hours
+		  LEFT JOIN T_BLDINF_TRAN t
+		        ON  t.USER_UUID = #{userId}
+		        AND t.CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		        AND t.CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)	
+		        AND t.UPT_VALUE > 0
+		        AND HOUR(t.CGM_DTM) = h
+		  GROUP BY h
+		)	
+		SELECT
+		  IFNULL((
+		    SELECT GROUP_CONCAT(win ORDER BY sort ASC SEPARATOR ' , ')
+		    FROM (
+		      SELECT win, sort, hypo_cnt
+		      FROM win
+		      WHERE hypo_cnt >= 1
+		      ORDER BY hypo_cnt DESC, sort ASC
+		      LIMIT 3
+		    ) s1
+		  ), '-') AS Low_Value,
+		  IFNULL((
+		    SELECT GROUP_CONCAT(win ORDER BY sort ASC SEPARATOR ' , ')
+		    FROM (
+		      SELECT win, sort, hyper_cnt
+		      FROM win
+		      WHERE hyper_cnt >= 1
+		      ORDER BY hyper_cnt DESC, sort ASC
+		      LIMIT 3
+		    ) s2
+		  ), '-') AS High_Value;
+
+	]]>	   	
+	</select>
+	<!-- showBloodData 이전혈당 다음혈당 비교 -->	
+	<select id="showBloodData" parameterType="String" resultType="map">
+		WITH COMM AS ( SELECT  CGM_DTM
+           			  		  ,UPT_VALUE
+      					 FROM T_BLDINF_TRAN 
+     					WHERE USER_UUID = #{userId}
+       					  AND CAST(CGM_DTM AS DATETIME) BETWEEN CAST(#{start} AS DATETIME) AND CAST(#{end} AS DATETIME)
+		) SELECT CGM_DTM AS DTM
+       			,UPT_VALUE AS UPT
+       			,(SELECT AVG(UPT_VALUE) FROM COMM) AS AVG_UPT
+  			FROM COMM
+ 		   ORDER BY CGM_DTM DESC
+ 		 	LIMIT 2
+	</select>
+	<!-- 공복식후혈당 평균 구하기 -->
+	<select id="getAvgFastingBlood" parameterType="String" resultType="map">
+		-- 공복식후 혈당 평균 
+		  <![CDATA[
+			WITH
+			-- 1) 기간 내 모든 끼니 시각 목록(한 끼니 = 한 행)
+			meals AS (
+			  SELECT DISTINCT
+			         STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') AS meal_ts
+			  FROM T_FOOD_TRAN b
+			  WHERE b.USER_UUID = #{userId}
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') >= #{date} - INTERVAL 24 HOUR
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') <  #{date}
+			),
+			
+			-- 기간 평균(백업용)
+			avg24h AS (
+			  SELECT AVG(a.UPT_VALUE) AS avg_val
+			  FROM T_BLDINF_TRAN a
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.UPT_VALUE > 0
+			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= #{date} - INTERVAL 24 HOUR
+			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  #{date}
+			),
+			
+			/* ---- 공복(03:00~06:00) 평균 ---- */
+			fasting_window_avg AS (
+			  SELECT AVG(a.UPT_VALUE) AS val
+			  FROM T_BLDINF_TRAN a
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.UPT_VALUE > 0
+			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= #{date} - INTERVAL 24 HOUR
+			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  #{date}
+			    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) >= '03:00:00'
+			    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '06:00:00'   -- 06:00 미포함
+			),
+			
+			/* ---- 식후 2시간 이후 '가장 빠른 것' 선택 ---- */
+			after2h_candidates AS (
+			  SELECT
+			    m.meal_ts,
+			    a.UPT_VALUE,
+			    STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') AS cgm_ts,
+			    ROW_NUMBER() OVER (
+			      PARTITION BY m.meal_ts
+			      ORDER BY STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') ASC
+			    ) AS rn
+			  FROM meals m
+			  JOIN T_BLDINF_TRAN a
+			    ON a.USER_UUID = #{userId}
+			   AND a.UPT_VALUE > 0
+			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= m.meal_ts + INTERVAL 2 HOUR
+			   -- 기간(최근 24시간) 안에서만 계산
+			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= #{date} - INTERVAL 24 HOUR
+			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  #{date}
+			),
+			after2h_vals AS (
+			  SELECT meal_ts, UPT_VALUE
+			  FROM after2h_candidates
+			  WHERE rn = 1   -- 끼니별 '가장 이른(가장 빠른)' 1건
+			),
+			after2h_avg AS (
+			  SELECT AVG(UPT_VALUE) AS val
+			  FROM after2h_vals
+			),
+			
+			-- 끼니 유무 판단
+			meal_cnt AS (
+			  SELECT COUNT(*) AS cnt FROM meals
+			)
+			
+			SELECT
+			  -- 공복값: 03:00~06:00 평균, 없으면 기간 평균
+			  COALESCE((SELECT val FROM fasting_window_avg), (SELECT avg_val FROM avg24h)) AS fastingValue,
+			  -- 식후값: 끼니 없으면 기간 평균, 있으면 끼니별 '가장 빠른' 값들의 평균(없으면 기간 평균)
+			  CASE
+			    WHEN (SELECT cnt FROM meal_cnt) = 0
+			      THEN (SELECT avg_val FROM avg24h)
+			    ELSE COALESCE((SELECT val FROM after2h_avg), (SELECT avg_val FROM avg24h))
+			  END AS after2hValue;
+
+		  ]]>
+	</select>
+	
+	<!-- 공복식후혈당 평균 구하기 -->
+	<select id="getAvgFastingBlood_back" parameterType="String" resultType="map">
+		-- 공복식후 혈당 평균 
+		  <![CDATA[
+			WITH meal AS (
+			  SELECT MAX(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) AS meal_ts
+			  FROM T_FOOD_TRAN b
+			  WHERE b.USER_UUID = #{userId}
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') >= #{date} - INTERVAL 24 HOUR
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') <  #{date}
+			),
+			avg24h AS (
+			  SELECT AVG(a.UPT_VALUE) AS avg_val
+			  FROM T_BLDINF_TRAN a
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.CGM_DTM >= #{date} - INTERVAL 24 HOUR
+			    AND a.CGM_DTM <  #{date}
+			),
+			fasting AS (
+			  -- 공복혈당: 식사 기록이 있을 때만 직전 1건
+			  SELECT a.UPT_VALUE
+			  FROM T_BLDINF_TRAN a
+			  CROSS JOIN meal m
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.CGM_DTM >= #{date} - INTERVAL 24 HOUR
+			    AND a.CGM_DTM <  #{date}
+			    AND m.meal_ts IS NOT NULL
+			    AND a.CGM_DTM < m.meal_ts
+			  ORDER BY a.CGM_DTM DESC
+			  LIMIT 1
+			),
+			after2h AS (
+			  -- 식사 2시간 이후: 식사 기록이 있을 때만 해당 구간에서 최신 1건
+			  SELECT a.UPT_VALUE
+			  FROM T_BLDINF_TRAN a
+			  CROSS JOIN meal m
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.CGM_DTM >= #{date} - INTERVAL 24 HOUR
+			    AND a.CGM_DTM <  #{date}
+			    AND m.meal_ts IS NOT NULL
+			    AND a.CGM_DTM >= m.meal_ts + INTERVAL 2 HOUR
+			  ORDER BY a.CGM_DTM DESC
+			  LIMIT 1
+			)
+			SELECT
+			  CASE
+			    WHEN (SELECT meal_ts FROM meal) IS NULL
+			      THEN (SELECT avg_val FROM avg24h)                                 -- T_FOOD_TRAN 없으면 평균혈당
+			    ELSE COALESCE((SELECT UPT_VALUE FROM fasting), (SELECT avg_val FROM avg24h))
+			  END AS fastingValue,
+			  CASE
+			    WHEN (SELECT meal_ts FROM meal) IS NULL
+			      THEN (SELECT avg_val FROM avg24h)                                 -- T_FOOD_TRAN 없으면 평균혈당
+			    ELSE COALESCE((SELECT UPT_VALUE FROM after2h), (SELECT avg_val FROM avg24h))
+			  END AS after2hValue;
+
+		  ]]>
+	</select>
+	<!-- 공복식후혈당 평균 구하기 -->
+	<select id="getAvgFasting" parameterType="String" resultType="map">
+		-- 공복식후 혈당 평균 
+		  <![CDATA[
+		WITH
+		-- 1) 기간 내 모든 끼니 시각 목록(한 끼니 = 한 행)
+		meals AS (
+		  SELECT DISTINCT
+		         STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') AS meal_ts
+		  FROM T_FOOD_TRAN b
+		  WHERE b.USER_UUID = #{userId}
+		    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')
+		          >= CONCAT(#{start}, ' 00:00:00')
+		    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')
+		          <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+		),
+		
+		-- 기간 평균(백업용)
+		avg24h AS (
+		  SELECT AVG(a.UPT_VALUE) AS avg_val
+		  FROM T_BLDINF_TRAN a
+		  WHERE a.USER_UUID = #{userId}
+		    AND a.UPT_VALUE > 0
+		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= CONCAT(#{start}, ' 00:00:00')
+		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+		),
+		
+		/* ---- 공복(03:00~06:00) 평균 ---- */
+		fasting_window_avg AS (
+		  SELECT AVG(a.UPT_VALUE) AS val
+		  FROM T_BLDINF_TRAN a
+		  WHERE a.USER_UUID = #{userId}
+		    AND a.UPT_VALUE > 0
+		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= CONCAT(#{start}, ' 00:00:00')
+		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+		    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) >= '03:00:00'
+		    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '06:00:00'  -- 06:00 미포함
+		),
+		
+		/* ---- 식후 2시간 이후(가장 이른 시각 = 1위) ---- */
+		after2h_candidates AS (
+		  SELECT
+		    m.meal_ts,
+		    a.UPT_VALUE,
+		    STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') AS cgm_ts,
+		    ROW_NUMBER() OVER (
+		      PARTITION BY m.meal_ts
+		      ORDER BY STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') ASC
+		    ) AS rn
+		  FROM meals m
+		  JOIN T_BLDINF_TRAN a
+		    ON a.USER_UUID = #{userId}
+		   AND a.UPT_VALUE > 0
+		   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= m.meal_ts + INTERVAL 2 HOUR
+		),
+		after2h_vals AS (
+		  SELECT meal_ts, UPT_VALUE
+		  FROM after2h_candidates
+		  WHERE rn = 1
+		),
+		after2h_avg AS (
+		  SELECT AVG(UPT_VALUE) AS val
+		  FROM after2h_vals
+		),
+		
+		-- 끼니 유무 판단
+		meal_cnt AS (
+		  SELECT COUNT(*) AS cnt FROM meals
+		)
+		
+		SELECT
+		  -- 공복값: 03:00~06:00 평균, 없으면 기간 평균
+		  COALESCE((SELECT val FROM fasting_window_avg), (SELECT avg_val FROM avg24h)) AS fastingValue,
+		  -- 식후값: 끼니 없으면 기간 평균, 있으면 식후 평균(없으면 기간 평균)
+		  CASE
+		    WHEN (SELECT cnt FROM meal_cnt) = 0
+		      THEN (SELECT avg_val FROM avg24h)
+		    ELSE COALESCE((SELECT val FROM after2h_avg), (SELECT avg_val FROM avg24h))
+		  END AS after2hValue;
+
+
+		  ]]>
+	</select>
+	<!-- 공복식후혈당 평균 구하기 -->
+	<select id="getAvgFasting_back" parameterType="String" resultType="map">
+		-- 공복식후 혈당 평균 
+		  <![CDATA[
+			WITH meal AS (
+			  SELECT MAX(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) AS meal_ts
+			  FROM T_FOOD_TRAN b
+			  WHERE b.USER_UUID = #{userId}
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') >=  CONCAT(#{start}, ' 00:00:00')
+			    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+			),
+			avg24h AS (
+			  SELECT AVG(a.UPT_VALUE) AS avg_val
+			  FROM T_BLDINF_TRAN a
+			  WHERE a.USER_UUID = #{userId}
+			     AND a.UPT_VALUE > 0    
+			     AND a.CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		         AND a.CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+			),
+			fasting AS (
+			  SELECT a.UPT_VALUE
+			  FROM T_BLDINF_TRAN a
+			  CROSS JOIN meal m
+			  WHERE a.USER_UUID = #{userId}
+			     AND a.UPT_VALUE > 0  
+			     AND a.CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		         AND a.CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+			     AND m.meal_ts IS NOT NULL
+			     AND a.CGM_DTM < m.meal_ts
+			  ORDER BY a.CGM_DTM DESC
+			  LIMIT 1
+			),
+			after2h AS (
+			  SELECT a.UPT_VALUE
+			  FROM T_BLDINF_TRAN a
+			  CROSS JOIN meal m
+			  WHERE a.USER_UUID = #{userId}
+			    AND a.CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		        AND a.CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+			    AND m.meal_ts IS NOT NULL
+			    AND a.CGM_DTM >= m.meal_ts + INTERVAL 2 HOUR
+			  ORDER BY a.CGM_DTM DESC
+			  LIMIT 1
+			)
+			SELECT
+			  CASE
+			    WHEN (SELECT meal_ts FROM meal) IS NULL
+			      THEN (SELECT avg_val FROM avg24h)                                 -- T_FOOD_TRAN 없으면 평균혈당
+			    ELSE COALESCE((SELECT UPT_VALUE FROM fasting), (SELECT avg_val FROM avg24h))
+			  END AS fastingValue,
+			  CASE
+			    WHEN (SELECT meal_ts FROM meal) IS NULL
+			      THEN (SELECT avg_val FROM avg24h)                                 -- T_FOOD_TRAN 없으면 평균혈당
+			    ELSE COALESCE((SELECT UPT_VALUE FROM after2h), (SELECT avg_val FROM avg24h))
+			  END AS after2hValue;
+
+		  ]]>
+	</select>	
+	<select id="getBloodChartData" parameterType="String" resultType="map">
+		SELECT UPT_VALUE as UPT
+		     , CGM_DTM as DTM
+  		  FROM T_BLDINF_TRAN
+		 WHERE USER_UUID = #{userId}
+		   AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s') 
+		 ORDER BY CGM_DTM ASC
+	</select>
+	
+	
+	
+	<select id="drawBloodBarChart" parameterType="String" resultType="map">
+		<![CDATA[
+		WITH COMM AS ( SELECT *
+    					 FROM T_BLDINF_TRAN
+   		 				WHERE USER_UUID = #{userId}
+      					  AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s') 
+		)SELECT  COALESCE(SUM(CASE WHEN UPT_VALUE >= 150 THEN 1 ELSE 0 END) ,0) AS HIGHT
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 70 AND UPT_VALUE < 150 THEN 1 ELSE 0 END),0) AS NORMAL
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE > 54 AND UPT_VALUE < 70 THEN 1 ELSE 0 END),0) AS LOW
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE <= 54 THEN 1 ELSE 0 END),0) AS LOWEST
+		   FROM COMM
+		]]>
+	</select>
+	
+	<select id="BloodLowHigh" parameterType="String" resultType="map">
+		<![CDATA[
+			SELECT
+			  CONCAT(
+			    FLOOR(
+			      100 * SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END)
+			        / NULLIF(COUNT(*), 0)
+			    ), '%'
+			  ) AS TIR
+			FROM T_BLDINF_TRAN
+			WHERE USER_UUID = #{userId}
+			  AND UPT_VALUE > 0
+              AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		      AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+		]]>
+	</select>
+	
+	<select id="calcBlood" parameterType="String" resultType="map">
+	<![CDATA[
+		-- 특정 기간 동안의 GMI 계산
+		SELECT COALESCE(AVG(UPT_VALUE),0) AS AvgBlood  									
+    		  ,COALESCE(ROUND(STDDEV_SAMP(UPT_VALUE), 1),0) AS stdBlood  					
+    		  ,COALESCE(ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1),0) AS CV  
+    		  ,COALESCE(ROUND((0.023 * AVG(UPT_VALUE)) + 3.312, 1),0) AS GMI  		 
+    		  ,(SELECT COALESCE(AVG(a.UPT_VALUE),0) 
+		  		FROM T_BLDINF_TRAN a
+		 		WHERE a.USER_UUID = #{userId}
+    	   		AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')  AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+    	   		AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' 
+    	   		AND COALESCE(
+    				 	( SELECT MIN(TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') ))
+         					FROM T_FOOD_TRAN b
+         			       WHERE b.USER_UUID = a.USER_UUID
+           				 	 AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+           				 	 AND TIME(DATE_FORMAT(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), '%Y-%m-%d %H:%i:%s')) 
+           				 	 BETWEEN '03:00:00' AND '06:00:00')
+        				, '06:00:00')
+    			) AS FASTING
+		  FROM T_BLDINF_TRAN
+		 WHERE USER_UUID = #{userId}
+           AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		   AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
+	]]>	   		
+	</select>
+	<select id="analysisBlood" parameterType="map" resultType="map">
+	  <![CDATA[
+			WITH FILTERED AS (
+			    SELECT USER_UUID, CGM_DTM, UPT_VALUE
+			    FROM T_BLDINF_TRAN
+			    WHERE USER_UUID = #{userId}
+			      AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+			                      AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+			      AND UPT_VALUE > 0
+			),
+			AGG AS (
+			    SELECT
+			        COALESCE(AVG(UPT_VALUE), 0)                           AS AvgBlood,
+			        COALESCE(ROUND(0.023 * AVG(UPT_VALUE) + 3.312, 1), 0) AS GMI
+			    FROM FILTERED
+			),
+			FILTERED_HH AS (
+			    SELECT
+			        DATE_FORMAT(CGM_DTM, '%H') AS HourHH,
+			        UPT_VALUE
+			    FROM FILTERED
+			),
+			HOURS_ONLY AS (
+			    SELECT HourHH
+			    FROM FILTERED_HH
+			    WHERE UPT_VALUE <= 70
+			    GROUP BY HourHH
+			)
+			SELECT
+			    A.AvgBlood,
+			    A.GMI,
+			    COALESCE(
+			        (SELECT GROUP_CONCAT(CONCAT(H.HourHH, '시') ORDER BY H.HourHH SEPARATOR ', ')
+			         FROM HOURS_ONLY H),
+			        '-'
+			    ) AS MinHours
+			FROM AGG A;
+	  ]]>
+	</select>  
+	<!--  공복혈당 -->
+	<select id="analfastingBlood" parameterType="map" resultType="map">
+	 <![CDATA[	
+		WITH F AS (  
+		  SELECT 
+		      USER_UUID,
+		      STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') AS meal_ts,
+		      GROUP_CONCAT(FOOD_NAME ORDER BY FOOD_NAME SEPARATOR ', ') AS foods
+		  FROM T_FOOD_TRAN
+		  WHERE USER_UUID = #{userId}
+		    AND STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+		  GROUP BY USER_UUID, meal_ts
+		),
+		PRE_WINDOW AS (
+		  SELECT
+		      A.USER_UUID,
+		      F.meal_ts,
+		      F.foods,
+		      A.CGM_DTM,
+		      A.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY A.USER_UUID, F.meal_ts
+		        ORDER BY A.UPT_VALUE DESC, A.CGM_DTM ASC
+		      ) AS rn
+		  FROM T_BLDINF_TRAN A
+		  JOIN F
+		    ON A.USER_UUID = F.USER_UUID
+		   AND A.CGM_DTM >= F.meal_ts - INTERVAL 3 HOUR
+		   AND A.CGM_DTM <  F.meal_ts
+		  WHERE A.USER_UUID = #{userId}
+		    AND A.CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+		                      AND STR_TO_DATE(#{end},   '%Y-%m-%dT%H:%i:%s')
+		    AND A.UPT_VALUE > 0
+		),
+		PRE_MAX AS (
+		  SELECT
+		      USER_UUID,
+		      meal_ts,
+		      foods,
+		      CGM_DTM   AS fasting_at,
+		      UPT_VALUE AS fastingValue
+		  FROM PRE_WINDOW
+		  WHERE rn = 1
+		)
+		SELECT
+		    F.USER_UUID,
+		    DATE_FORMAT(F.meal_ts, '%Y-%m-%d %H:%i:%s')      AS mealTs,      
+		    F.foods,
+		    DATE_FORMAT(P.fasting_at, '%Y-%m-%d %H:%i:%s')   AS fastingAt,   
+		    P.fastingValue
+		FROM F
+		LEFT JOIN PRE_MAX P
+		  ON P.USER_UUID = F.USER_UUID
+		 AND P.meal_ts   = F.meal_ts
+		WHERE 1=1
+		ORDER BY F.meal_ts;
+	  ]]>    
+    </select> 
+    <select id="today_foodBlood" parameterType="map" resultType="map">
+ 	 <![CDATA[
+		WITH MEALS AS (
+		  SELECT
+		      USER_UUID,
+		      EAT_DATE,
+		      EAT_STIME,
+		      FOOD_NAME ,
+              FOOD_CNT ,
+		      STR_TO_DATE(CONCAT(EAT_DATE, LPAD(EAT_STIME, 6, '0')), '%Y%m%d%H%i%s') AS eat_dt
+		  FROM T_FOOD_TRAN
+		 WHERE user_uuid = #{userId}
+		   AND EAT_DATE = REPLACE(LEFT(#{start}, 10), '-', '')
+		),
+		JOINED AS (
+		  SELECT
+		      m.USER_UUID,
+		      m.EAT_DATE,
+		      m.EAT_STIME,
+		      m.FOOD_NAME ,
+              m.FOOD_CNT ,
+		      m.eat_dt,
+		      b.CGM_DTM,
+		      b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.user_uuid, m.EAT_DATE, m.EAT_STIME
+		        ORDER BY (b.CGM_DTM IS NULL), b.CGM_DTM ASC
+		      ) AS rn
+		  FROM MEALS m
+		  LEFT JOIN T_BLDINF_TRAN b
+		    ON b.user_uuid = m.user_uuid
+		   AND b.CGM_DTM >= m.eat_dt + INTERVAL 2 HOUR
+		)
+		SELECT
+		  USER_UUID,
+		  EAT_DATE,
+		  FOOD_NAME ,
+          FOOD_CNT  ,
+		  DATE_FORMAT(STR_TO_DATE(LPAD(EAT_STIME, 6, '0'), '%H%i%s'), '%H:%i') AS EAT_STIME,
+		  CGM_DTM AS CGM_AFTER_2H_NEAREST,  
+		  UPT_VALUE
+		FROM JOINED
+		WHERE rn = 1
+		ORDER BY eat_dt; 
+	  ]]>    
+    </select>	 	    
+     <select id="today_foodBlood_max" parameterType="map" resultType="map">
+ 	 <![CDATA[
+		WITH MEALS AS (
+		  SELECT
+		      USER_UUID,
+		      EAT_DATE,
+		      EAT_STIME,
+		      FOOD_NAME ,
+              FOOD_CNT ,
+		      STR_TO_DATE(CONCAT(EAT_DATE, LPAD(EAT_STIME, 6, '0')), '%Y%m%d%H%i%s') AS eat_dt
+		  FROM T_FOOD_TRAN
+		 WHERE user_uuid = #{userId}
+		   AND EAT_DATE = REPLACE(LEFT(#{start}, 10), '-', '')
+		),
+		JOINED AS (
+		  SELECT
+		      m.USER_UUID,
+		      m.EAT_DATE,
+		      m.EAT_STIME,
+		      m.FOOD_NAME ,
+              m.FOOD_CNT ,
+		      m.eat_dt,
+		      b.CGM_DTM,
+		      b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.user_uuid, m.EAT_DATE, m.EAT_STIME
+		        ORDER BY (b.CGM_DTM IS NULL), b.CGM_DTM ASC
+		      ) AS rn
+		  FROM MEALS m
+		  LEFT JOIN T_BLDINF_TRAN b
+		    ON b.user_uuid = m.user_uuid
+		   AND b.CGM_DTM >= m.eat_dt + INTERVAL 2 HOUR
+		)
+		SELECT 
+		    ROW_NUMBER() OVER (ORDER BY UPT_VALUE DESC) AS RN,   
+		    USER_UUID,
+		    EAT_DATE,
+		    FOOD_NAME,
+		    FOOD_CNT,
+		    DATE_FORMAT(STR_TO_DATE(LPAD(EAT_STIME, 6, '0'), '%H%i%s'), '%H:%i') AS EAT_STIME,
+		    CGM_DTM AS CGM_AFTER_2H_NEAREST,
+		    UPT_VALUE
+		FROM JOINED
+		WHERE rn = 1
+		ORDER BY UPT_VALUE DESC;
+	  ]]>    
+    </select>	   
+	 <select id="foodBlood_max" parameterType="map" resultType="map">
+	  <![CDATA[
+		WITH MEALS AS (
+		  SELECT
+		      USER_UUID,
+		      EAT_DATE,
+		      EAT_STIME,
+		      FOOD_NAME,
+		      FOOD_CNT,
+		      -- STORED 컬럼(EAT_DT)이 있으면 그걸 사용
+		      STR_TO_DATE(CONCAT(EAT_DATE, LPAD(EAT_STIME, 6, '0')), '%Y%m%d%H%i%s') AS eat_dt
+		  FROM T_FOOD_TRAN
+		  WHERE user_uuid = #{userId}
+		    -- 가능하면 바인드에서 YYYYMMDD 로 넘겨 함수 제거
+		    AND EAT_DATE >= REPLACE(LEFT(#{start}, 10), '-', '')
+		    AND EAT_DATE <= REPLACE(LEFT(#{end}, 10), '-', '')
+		),
+		
+		/* PRE/POST 둘 다: 각 식사행에 대해 '인덱스 범위 → 정렬방향 → LIMIT 1'로 직진 탐색 */
+		ENRICHED AS (
+		  SELECT
+		    m.USER_UUID,
+		    m.EAT_DATE,
+		    m.EAT_STIME,
+		    m.FOOD_NAME,
+		    m.FOOD_CNT,
+		    m.eat_dt,
+		    pre.CGM_DTM  AS CGM_BEFORE_NEAREST,
+		    pre.UPT_VALUE AS UPT_VALUE_BEFORE,
+		    post.CGM_DTM  AS CGM_AFTER_2H_NEAREST,
+		    post.UPT_VALUE AS UPT_VALUE_AFTER_2H
+		  FROM MEALS m
+		  /* 식사 직전: m.eat_dt 이하에서 가장 최근 */
+		  LEFT JOIN LATERAL (
+		    SELECT b.CGM_DTM, b.UPT_VALUE
+		    FROM T_BLDINF_TRAN b 
+		    WHERE b.user_uuid = m.user_uuid
+		      AND b.CGM_DTM <= m.eat_dt
+		    ORDER BY b.CGM_DTM DESC
+		    LIMIT 1
+		  ) pre ON TRUE
+		
+		  /* 식사 2시간 후: m.eat_dt + 2h 이상에서 가장 이른 */
+		  LEFT JOIN LATERAL (
+		    SELECT b.CGM_DTM, b.UPT_VALUE
+		    FROM T_BLDINF_TRAN b
+		    WHERE b.user_uuid = m.user_uuid
+		      AND b.CGM_DTM >= m.eat_dt + INTERVAL 2 HOUR
+		    ORDER BY b.CGM_DTM ASC
+		    LIMIT 1
+		  ) post ON TRUE
+		)
+		
+		, MATCHED AS (
+		  SELECT
+		    e.USER_UUID,
+		    e.EAT_DATE,
+		    e.FOOD_NAME,
+		    e.FOOD_CNT,
+		    DATE_FORMAT(STR_TO_DATE(LPAD(e.EAT_STIME, 6, '0'), '%H%i%s'), '%H:%i') AS EAT_STIME,
+		    e.CGM_BEFORE_NEAREST,
+		    e.UPT_VALUE_BEFORE,
+		    e.CGM_AFTER_2H_NEAREST,
+		    e.UPT_VALUE_AFTER_2H,
+		    (e.UPT_VALUE_AFTER_2H - e.UPT_VALUE_BEFORE) AS DELTA_2H
+		  FROM ENRICHED e
+		  WHERE e.UPT_VALUE_BEFORE IS NOT NULL
+		    AND e.UPT_VALUE_AFTER_2H IS NOT NULL
+		)
+		
+		, DEDUP AS (
+		  SELECT
+		    *,
+		    ROW_NUMBER() OVER (
+		      PARTITION BY USER_UUID, FOOD_NAME
+		      ORDER BY DELTA_2H DESC, CGM_AFTER_2H_NEAREST ASC
+		    ) AS food_rn
+		  FROM MATCHED
+		)
+		
+		SELECT
+		    ROW_NUMBER() OVER (ORDER BY DELTA_2H DESC) AS RN,
+		    USER_UUID,
+		    EAT_DATE,
+		    FOOD_NAME,
+		    FOOD_CNT,
+		    EAT_STIME,
+		    CGM_BEFORE_NEAREST,
+		    UPT_VALUE_BEFORE,
+		    CGM_AFTER_2H_NEAREST,
+		    UPT_VALUE_AFTER_2H,
+		    DELTA_2H
+		FROM DEDUP
+		WHERE food_rn = 1
+		ORDER BY DELTA_2H DESC
+		LIMIT 3;
+
+
+	  ]]>
+	</select>
+   <select id="today_exerBlood" parameterType="map" resultType="map">
+ 	 <![CDATA[
+		WITH EXERS AS (
+		  SELECT
+		      USER_UUID,
+		      EXER_DATE,
+		      EXER_ETIME,
+		      EXER_NAME ,
+		      TIMESTAMPDIFF(
+			    MINUTE,
+			    STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+			    STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+			  ) AS MINUTES_DIFF ,
+		      STR_TO_DATE(CONCAT(EXER_DATE, LPAD(EXER_ETIME, 6, '0')), '%Y%m%d%H%i%s') AS EXER_DT
+		  FROM T_EXER_TRAN
+		 WHERE user_uuid = #{userId}
+		   AND EXER_DATE = REPLACE(LEFT(#{start}, 10), '-', '')
+		),
+        JOINED AS (
+		  SELECT
+		      m.USER_UUID,
+		      m.EXER_DATE,
+		      m.EXER_ETIME,
+		      m.EXER_NAME ,
+              m.MINUTES_DIFF  ,
+		      m.EXER_DT,
+		      b.CGM_DTM,
+		      b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.user_uuid, m.EXER_DATE, m.EXER_ETIME
+		        ORDER BY (b.CGM_DTM IS NULL), b.CGM_DTM ASC
+		      ) AS rn
+		  FROM EXERS m
+		  LEFT JOIN T_BLDINF_TRAN b
+		    ON b.user_uuid = m.user_uuid
+		    AND b.CGM_DTM >= m.EXER_DT + INTERVAL 15 MINUTE
+		)
+		SELECT 
+		    ROW_NUMBER() OVER (ORDER BY UPT_VALUE DESC) AS RN,   
+		    USER_UUID,
+		    EXER_DATE,
+		    EXER_NAME,
+		    MINUTES_DIFF,
+		    DATE_FORMAT(STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s'), '%H:%i') AS EXER_STIME,
+		    UPT_VALUE
+		FROM JOINED
+		WHERE rn = 1
+		ORDER BY EXER_DT; 
+	  ]]>    
+    </select>	 	    
+     <select id="today_exerBlood_max" parameterType="map" resultType="map">
+ 	 <![CDATA[
+		WITH EXERS AS (
+		  SELECT
+		      USER_UUID,
+		      EXER_DATE,
+		      EXER_ETIME,
+		      EXER_NAME ,
+		      TIMESTAMPDIFF(
+			    MINUTE,
+			    STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+			    STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+			  ) AS MINUTES_DIFF ,
+		      STR_TO_DATE(CONCAT(EXER_DATE, LPAD(EXER_ETIME, 6, '0')), '%Y%m%d%H%i%s') AS EXER_DT
+		  FROM T_EXER_TRAN
+		 WHERE user_uuid = #{userId}
+		   AND EXER_DATE = REPLACE(LEFT(#{start}, 10), '-', '')
+		),
+		JOINED AS (
+		  SELECT
+		      m.USER_UUID,
+		      m.EXER_DATE,
+		      m.EXER_ETIME,
+		      m.EXER_NAME ,
+              m.MINUTES_DIFF  ,
+		      m.EXER_DT,
+		      b.CGM_DTM,
+		      b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.user_uuid, m.EXER_DATE, m.EXER_ETIME
+		        ORDER BY (b.CGM_DTM IS NULL), b.CGM_DTM ASC
+		      ) AS rn
+		  FROM EXERS m
+		  LEFT JOIN T_BLDINF_TRAN b
+		    ON b.user_uuid = m.user_uuid
+		    AND b.CGM_DTM >= m.EXER_DT + INTERVAL 15 MINUTE
+		)
+		SELECT 
+		    ROW_NUMBER() OVER (ORDER BY UPT_VALUE DESC) AS RN,   
+		    USER_UUID,
+		    EXER_DATE,
+		    EXER_NAME,
+		    MINUTES_DIFF,
+		    UPT_VALUE
+		FROM JOINED
+		WHERE rn = 1
+		ORDER BY UPT_VALUE DESC;
+	  ]]>    
+    </select>	   
+      <select id="exerBlood_max" parameterType="map" resultType="map">
+ 	 <![CDATA[
+			WITH EXERS AS (
+			  SELECT
+			      USER_UUID,
+			      EXER_DATE,
+			      EXER_STIME,
+			      EXER_ETIME,
+			      EXER_NAME,
+			      TIMESTAMPDIFF(
+			        MINUTE,
+			        STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+			        STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+			      ) AS MINUTES_DIFF,
+			      /* 운동 종료 시각 기준 (필요시 EXER_STIME로 교체) */
+			      STR_TO_DATE(CONCAT(EXER_DATE, LPAD(EXER_ETIME, 6, '0')), '%Y%m%d%H%i%s') AS EXER_DT
+			  FROM T_EXER_TRAN
+			  WHERE user_uuid = #{userId}
+			    AND EXER_DATE >= REPLACE(LEFT(#{start}, 10), '-', '')
+			    AND EXER_DATE <= REPLACE(LEFT(#{end}, 10), '-', '')
+			),
+			DELTA AS (
+			  SELECT
+			    e.*,
+			    /* 15분 전: 가장 최근 값 */
+			    (
+			      SELECT b.UPT_VALUE
+			      FROM T_BLDINF_TRAN b 
+			      WHERE b.user_uuid = e.user_uuid
+			        AND b.CGM_DTM <= e.EXER_DT - INTERVAL 15 MINUTE
+			      ORDER BY b.CGM_DTM DESC
+			      LIMIT 1
+			    ) AS pre_val,
+			    /* 15분 후: 가장 이른 값 */
+			    (
+			      SELECT b.UPT_VALUE
+			      FROM T_BLDINF_TRAN b
+			      WHERE b.user_uuid = e.user_uuid
+			        AND b.CGM_DTM >= e.EXER_DT + INTERVAL 15 MINUTE
+			      ORDER BY b.CGM_DTM ASC
+			      LIMIT 1
+			    ) AS post_val
+			  FROM EXERS e
+			),
+			CLEAN AS (
+			  SELECT
+			    *,
+			    (post_val - pre_val)    AS delta_15m,
+			    ABS(post_val - pre_val) AS abs_delta_15m
+			  FROM DELTA
+			  WHERE pre_val IS NOT NULL
+			    AND post_val IS NOT NULL
+			),
+			/* 운동명별 변동폭 최대 1건 선택 */
+			PICK_ONE_PER_NAME AS (
+			  SELECT
+			    c.*,
+			    ROW_NUMBER() OVER (PARTITION BY c.EXER_NAME ORDER BY c.abs_delta_15m DESC) AS per_name_rn
+			  FROM CLEAN c
+			),
+			/* 운동명별 1건만 남김 */
+			TOP_PER_NAME AS (
+			  SELECT *
+			  FROM PICK_ONE_PER_NAME
+			  WHERE per_name_rn = 1
+			)
+			/* 최종 RN: 전체 정렬 기준으로 1,2,3… */
+			SELECT
+			  ROW_NUMBER() OVER (ORDER BY abs_delta_15m DESC) AS RN,  -- 1,2,3 식으로 부여
+			  USER_UUID,
+			  EXER_DATE,
+			  EXER_NAME,
+			  MINUTES_DIFF,
+			  pre_val       AS UPT_VALUE_BEFORE_15M,
+			  post_val      AS UPT_VALUE_AFTER_15M,
+			  delta_15m     AS DELTA_15M,
+			  abs_delta_15m AS ABS_DELTA_15M
+			FROM TOP_PER_NAME
+			ORDER BY abs_delta_15m DESC
+			LIMIT 3;
+
+
+	  ]]>    
+    </select>	      
+    <select id="avgBlood" parameterType="String" resultType="map">
+		SELECT COALESCE(ROUND(AVG(UPT_VALUE), 0), 0) AS AVG_VAL
+		FROM T_BLDINF_TRAN
+		WHERE UPT_VALUE > 0
+		  AND USER_UUID = #{userId}
+		  AND LEFT(REPLACE(CGM_DTM, '-', ''), 8) = REPLACE(LEFT(#{start}, 10), '-', '')		  
+	</select>	
+		  
+    <!--  식후혈당 -->
+	<select id="analpostBlood" parameterType="map" resultType="map">
+	 <![CDATA[	
+			WITH F AS (
+			  SELECT 
+			      USER_UUID,
+			      STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') AS MEAL_TS,
+			      GROUP_CONCAT(FOOD_NAME ORDER BY FOOD_NAME SEPARATOR ', ') AS FOODS
+			  FROM T_FOOD_TRAN
+			  WHERE USER_UUID = #{userId}
+			    AND STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+			  GROUP BY USER_UUID, MEAL_TS
+			),
+			CAND AS (
+			  SELECT
+			      A.USER_UUID,
+			      F.MEAL_TS,
+			      F.FOODS,
+			      A.CGM_DTM,
+			      A.UPT_VALUE,
+			      ROW_NUMBER() OVER (
+			        PARTITION BY A.USER_UUID, F.MEAL_TS
+			        ORDER BY A.UPT_VALUE ASC, A.CGM_DTM ASC
+			      ) AS RN
+			  FROM T_BLDINF_TRAN A
+			  JOIN F
+			    ON F.USER_UUID = A.USER_UUID
+			   AND A.CGM_DTM >  F.MEAL_TS
+			   AND A.CGM_DTM <= F.MEAL_TS + INTERVAL 3 HOUR
+			  WHERE A.USER_UUID = #{userId}
+			    AND A.CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+			                      AND STR_TO_DATE(#{end},   '%Y-%m-%dT%H:%i:%s')
+			    AND A.UPT_VALUE > 0
+			),
+			PICKED AS (
+			  SELECT
+			      USER_UUID,
+			      MEAL_TS,
+			      FOODS,
+			      CGM_DTM   AS LOWEST_AT,
+			      UPT_VALUE AS LOWEST_VALUE
+			  FROM CAND
+			  WHERE RN = 1
+			)
+			SELECT
+			    F.USER_UUID,
+			    DATE_FORMAT(F.MEAL_TS,   '%Y-%m-%d %H:%i:%s') AS MEAL_TS,     
+			    F.FOODS,
+			    DATE_FORMAT(P.LOWEST_AT, '%Y-%m-%d %H:%i:%s') AS LOWEST_AT,   
+			    P.LOWEST_VALUE,
+			    AVG(P.LOWEST_VALUE)  OVER (PARTITION BY F.USER_UUID) AS after2hBlood,
+			    COUNT(P.LOWEST_VALUE) OVER (PARTITION BY F.USER_UUID) AS CNT_USED_BY_USER
+			FROM F
+			LEFT JOIN PICKED P
+			  ON P.USER_UUID = F.USER_UUID
+			 AND P.MEAL_TS   = F.MEAL_TS
+			ORDER BY F.MEAL_TS;
+
+	  ]]>    
+    </select>	
+
+    <!--  운동전후혈당 -->
+	<select id="analexerBlood" parameterType="map" resultType="map">
+	 <![CDATA[	
+		WITH X AS (  
+		  SELECT
+		      USER_UUID,
+		      STR_TO_DATE(CONCAT(EXER_DATE, EXER_STIME), '%Y%m%d%H%i%s') AS start_ts,
+		      CASE
+		          WHEN STR_TO_DATE(CONCAT(EXER_DATE, EXER_ETIME), '%Y%m%d%H%i%s')
+		               < STR_TO_DATE(CONCAT(EXER_DATE, EXER_STIME), '%Y%m%d%H%i%s')
+		          THEN STR_TO_DATE(CONCAT(EXER_DATE, EXER_ETIME), '%Y%m%d%H%i%s') + INTERVAL 1 DAY
+		          ELSE STR_TO_DATE(CONCAT(EXER_DATE, EXER_ETIME), '%Y%m%d%H%i%s')
+		      END AS end_adj,
+		      GROUP_CONCAT(EXER_NAME ORDER BY EXER_NAME SEPARATOR ', ') AS exer_names
+		  FROM T_EXER_TRAN
+		  WHERE USER_UUID = #{userId}
+		  GROUP BY USER_UUID, start_ts, end_adj
+		),
+		X2 AS ( 
+		  SELECT
+		      USER_UUID,
+		      start_ts,
+		      end_adj,
+		      exer_names,
+		      TIMESTAMPDIFF(MINUTE, start_ts, end_adj) AS duration_min,
+		      end_adj + INTERVAL 15 MINUTE AS end_plus15
+		  FROM X
+		),
+		PRE_WIN AS (
+		  SELECT
+		      x.USER_UUID, x.start_ts, x.end_plus15, x.exer_names, x.duration_min,
+		      b.CGM_DTM AS pre_at, b.UPT_VALUE AS pre_value,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY x.USER_UUID, x.start_ts
+		        ORDER BY b.CGM_DTM DESC                         -- 운동 시작 이전 ‘가장 최근’ 1개
+		      ) AS rn
+		  FROM X2 x
+		  JOIN T_BLDINF_TRAN b
+		    ON b.USER_UUID = x.USER_UUID
+		   AND b.CGM_DTM <= x.start_ts
+		   AND b.UPT_VALUE > 0
+		   AND b.CGM_DTM BETWEEN STR_TO_DATE(DATE(#{start}), '%Y-%m-%d')
+		                     AND DATE_ADD(STR_TO_DATE(DATE(#{end}), '%Y-%m-%d'), INTERVAL 1 DAY) - INTERVAL 1 SECOND
+		),
+		PRE_ONE AS (
+		  SELECT USER_UUID, start_ts, end_plus15, exer_names, duration_min, pre_at, pre_value
+		  FROM PRE_WIN
+		  WHERE rn = 1
+		),
+		POST_WIN AS (
+		  SELECT
+		      x.USER_UUID, x.start_ts,
+		      b.CGM_DTM AS post_at, b.UPT_VALUE AS post_value,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY x.USER_UUID, x.start_ts
+		        ORDER BY b.CGM_DTM ASC                           -- ★ 운동 종료+15분 이후 ‘가장 빠른’ 시각 1개
+		      ) AS rn
+		  FROM X2 x
+		  JOIN T_BLDINF_TRAN b
+		    ON b.USER_UUID = x.USER_UUID
+		   AND b.CGM_DTM >= x.end_plus15
+		   AND b.CGM_DTM <  x.end_plus15 + INTERVAL 2 HOUR
+		   AND b.UPT_VALUE > 0
+		   AND b.CGM_DTM BETWEEN STR_TO_DATE(DATE(#{start}), '%Y-%m-%d')
+		                     AND DATE_ADD(STR_TO_DATE(DATE(#{end}), '%Y-%m-%d'), INTERVAL 1 DAY) - INTERVAL 1 SECOND
+		),
+		POST_ONE AS (
+		  SELECT USER_UUID, start_ts, post_at, post_value
+		  FROM POST_WIN
+		  WHERE rn = 1
+		)
+		SELECT
+		  x.USER_UUID,
+		  DATE_FORMAT(x.start_ts, '%Y-%m-%d')          AS exerciseDate,
+		  DATE_FORMAT(x.start_ts, '%H:%i:%s')          AS startTime,
+		  DATE_FORMAT(x.end_adj,  '%H:%i:%s')          AS endTime,
+		  x.exer_names                                 AS exerciseName,
+		  x.duration_min                               AS durationMin,
+		  DATE_FORMAT(p.pre_at,  '%Y-%m-%d %H:%i:%s')  AS preAt,
+		  p.pre_value                                  AS preValue,
+		  DATE_FORMAT(po.post_at, '%Y-%m-%d %H:%i:%s') AS postAt,
+		  po.post_value                                AS postValue,
+		  TIMESTAMPDIFF(MINUTE, x.end_adj, po.post_at) AS postAfterMin,  -- 종료 후 경과 분
+		  CASE
+		    WHEN p.pre_value IS NULL OR po.post_value IS NULL THEN NULL
+		    ELSE po.post_value - p.pre_value
+		  END                                           AS deltaValue
+		FROM X2 x
+		LEFT JOIN PRE_ONE  p  ON p.USER_UUID = x.USER_UUID AND p.start_ts = x.start_ts
+		LEFT JOIN POST_ONE po ON po.USER_UUID = x.USER_UUID AND po.start_ts = x.start_ts
+		WHERE CASE
+		        WHEN p.pre_value IS NULL OR po.post_value IS NULL THEN NULL
+		        ELSE po.post_value - p.pre_value
+		      END IS NOT NULL
+		ORDER BY deltaValue asc, x.start_ts;
+
+
+	  ]]>    
+    </select>	
+    <!--  식사전후혈당 -->
+	<select id="analfoodBlood" parameterType="map" resultType="map">
+	 <![CDATA[	
+		WITH meals AS ( 
+		  SELECT
+		      USER_UUID,
+		      STR_TO_DATE(CONCAT(EAT_DATE, EAT_ETIME), '%Y%m%d%H%i%s') AS start_ts,
+		      DATE(STR_TO_DATE(CONCAT(EAT_DATE, EAT_ETIME), '%Y%m%d%H%i%s')) AS meal_date
+		  FROM T_FOOD_TRAN
+		  WHERE USER_UUID = #{userId}
+		
+		  GROUP BY USER_UUID, start_ts, meal_date
+		),
+		meal_foods AS (  
+		  SELECT
+		      USER_UUID,
+		      STR_TO_DATE(CONCAT(EAT_DATE, EAT_ETIME), '%Y%m%d%H%i%s') AS start_ts,
+		      GROUP_CONCAT(DISTINCT FOOD_NAME ORDER BY FOOD_NAME SEPARATOR ', ') AS foods_in_meal
+		  FROM T_FOOD_TRAN
+		  WHERE USER_UUID = #{userId}
+		  GROUP BY USER_UUID, start_ts
+		),
+		
+		daily_foods AS (
+		  SELECT
+		      USER_UUID,
+		      DATE(STR_TO_DATE(CONCAT(EAT_DATE, EAT_ETIME), '%Y%m%d%H%i%s')) AS meal_date,
+		      GROUP_CONCAT(DISTINCT FOOD_NAME ORDER BY FOOD_NAME SEPARATOR ', ') AS foods_in_day
+		  FROM T_FOOD_TRAN
+		  WHERE USER_UUID = #{userId}
+		  GROUP BY USER_UUID, meal_date
+		),
+		pre_ranked AS (  
+		  SELECT
+		      m.USER_UUID, m.start_ts, m.meal_date,
+		      b.CGM_DTM, b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.USER_UUID, m.start_ts
+		        ORDER BY b.CGM_DTM DESC
+		      ) AS rn
+		  FROM meals m
+		  JOIN T_BLDINF_TRAN b
+		    ON b.USER_UUID = m.USER_UUID
+		   AND b.UPT_VALUE > 0
+		   AND b.CGM_DTM <  m.start_ts
+		),
+		post_ranked AS ( 
+		  SELECT
+		      m.USER_UUID, m.start_ts, m.meal_date,
+		      b.CGM_DTM, b.UPT_VALUE,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY m.USER_UUID, m.start_ts
+		        ORDER BY b.CGM_DTM DESC
+		      ) AS rn
+		  FROM meals m
+		  JOIN T_BLDINF_TRAN b
+		    ON b.USER_UUID = m.USER_UUID
+		   AND b.UPT_VALUE > 0
+		   AND b.CGM_DTM BETWEEN STR_TO_DATE(DATE(#{start}), '%Y-%m-%d')
+		                      AND DATE_ADD(STR_TO_DATE(DATE(#{end}), '%Y-%m-%d'), INTERVAL 1 DAY) - INTERVAL 1 SECOND
+		),
+		pre_picked AS (   
+		  SELECT USER_UUID, start_ts, meal_date,
+		         CGM_DTM  AS pre_time,
+		         UPT_VALUE AS pre_value
+		  FROM pre_ranked
+		  WHERE rn = 1
+		),
+		post_picked AS ( 
+		  SELECT USER_UUID, start_ts, meal_date,
+		         CGM_DTM  AS post_time,
+		         UPT_VALUE AS post_value
+		  FROM post_ranked
+		  WHERE rn = 1
+		),
+		per_meal AS (  
+		  SELECT
+		      m.USER_UUID,
+		      m.meal_date AS foodDate,
+		      DATE_FORMAT(m.start_ts,  '%Y-%m-%d %H:%i:%s') AS start_ts,
+		      f.foods_in_meal AS foodName,
+		      DATE_FORMAT(pre.pre_time,  '%Y-%m-%d %H:%i:%s') AS pre_time,
+		      pre.pre_value,
+		      DATE_FORMAT(post.post_time, '%Y-%m-%d %H:%i:%s') AS post_time,
+		      post.post_value,
+		      (post.post_value - pre.pre_value) AS foodValue,  
+		      ROUND( (post.post_value - pre.pre_value) / NULLIF(pre.pre_value,0) * 100, 1 ) AS delta_pct
+		  FROM meals m
+		  LEFT JOIN meal_foods f
+		    ON f.USER_UUID = m.USER_UUID
+		   AND f.start_ts  = m.start_ts
+		  LEFT JOIN pre_picked  pre
+		    ON pre.USER_UUID = m.USER_UUID
+		   AND pre.start_ts  = m.start_ts
+		  LEFT JOIN post_picked post
+		    ON post.USER_UUID = m.USER_UUID
+		   AND post.start_ts  = m.start_ts
+		  WHERE pre.pre_value IS NOT NULL
+		    AND post.post_value IS NOT NULL
+		)
+		SELECT
+		    pm.USER_UUID,
+		    DATE_FORMAT(pm.foodDate, '%Y-%m-%d') as foodDate ,
+		    df.foods_in_day,             
+		    TRUNCATE(AVG(pm.foodValue), 0) AS avg_increase ,
+		    SUM(pm.foodValue)           AS sum_increase,   
+		    COUNT(*)                    AS meal_count     
+		FROM per_meal pm
+		LEFT JOIN daily_foods df
+		  ON df.USER_UUID = pm.USER_UUID
+		 AND df.meal_date = pm.foodDate
+		GROUP BY pm.USER_UUID, pm.foodDate, df.foods_in_day
+		ORDER BY 
+        CASE WHEN #{gubun} = '1' THEN -avg_increase ELSE avg_increase END ASC,
+        pm.foodDate
+     ]]>
+    </select>	
+	<select id="mealAvg" parameterType="String" resultType="map">
+		SELECT 
+			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
+		FROM 
+			T_BLDINF_TRAN a
+		JOIN 
+    		T_FOOD_TRAN b
+		WHERE a.USER_UUID = #{userId} AND 
+		DATE(a.CGM_DTM) BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s')) 
+		AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s'))  
+		AND DATE(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) 
+		    BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s'))AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s')) 
+		   AND TIME(a.CGM_DTM) BETWEEN TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) 
+		   AND TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 2 HOUR));
+	
+	</select> 
+	
+	<select id="tokenYn" parameterType="String" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			T_BLDCON_MST
+		WHERE
+			USER_UUID = #{userUuid}
+	</select>
+	
+	<select id="refreshToken" parameterType="String" resultType="String">
+		SELECT 
+			REF_TOKEN
+		FROM 
+			T_BLDCON_MST
+		WHERE
+			USER_UUID = #{userUuid}
+	</select>  
+	
+	<select id="getTodayBlood" parameterType="String" resultType="map">
+		SELECT  CGM_DTM,
+				CONCAT(
+				    IF(DATE_FORMAT(CGM_DTM, '%p') = 'AM', '오전', '오후'),
+				    ' ',
+    				DATE_FORMAT(CGM_DTM, '%h:%i')) AS formatedDate
+         			,UPT_VALUE
+      	FROM T_BLDINF_TRAN 
+     	WHERE 
+     	USER_UUID = #{userUuid} AND
+       	DATE(CGM_DTM) = CURDATE()
+ 		   ORDER BY CGM_DTM DESC
+ 		 	LIMIT 2
+	</select>  
+	
+	<select id="getTodayFastingBlood" parameterType="String" resultType="map">
+		-- 공복혈당 평균 
+		SELECT COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
+		  FROM T_BLDINF_TRAN a
+		 WHERE a.USER_UUID = #{userUuid}
+    	   AND DATE(a.CGM_DTM) = DATE(DATE_FORMAT(sysdate(), '%Y-%m-%d %H:%i:%s'))
+    	   AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' 
+    	   AND COALESCE(
+    				 	( SELECT MIN(TIME(b.EAT_DATE))
+         					FROM T_FOODHIS_TRAN b
+         			       WHERE b.USER_UUID = a.USER_UUID
+           				 	 AND DATE(b.EAT_DATE) = DATE(DATE_FORMAT(sysdate(), '%Y-%m-%d %H:%i:%s'))
+           				 	 AND TIME(DATE_FORMAT(b.EAT_DATE, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' AND '06:00:00')
+        				, '06:00:00'
+    			)
+	</select>
+	
+	<select id="getTodayMealBlood" parameterType="String" resultType="map">
+		SELECT 
+			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
+		FROM 
+			T_BLDINF_TRAN a
+		JOIN 
+    		T_FOODHIS_TRAN b
+		WHERE a.USER_UUID = #{userUuid} AND 
+		DATE(a.CGM_DTM) = CURDATE() AND 
+		DATE(b.EAT_DATE) = CURDATE() AND
+		TIME(a.CGM_DTM) BETWEEN TIME(b.EAT_DATE) AND TIME(DATE_ADD(b.EAT_DATE, INTERVAL 2 HOUR));
+	</select>
+	
+	<select id="getBMI" parameterType="String" resultType="map">
+		SELECT 
+		    height,
+		    weight,
+			ROUND(weight / ((height / 100) * (height / 100)),1) AS BMI
+		FROM 
+		    T_USER_TRAN
+		    WHERE USER_UUID = #{userUuid}
+	</select>
+	<select id="deleteToken" parameterType="String" resultType="int">
+		DELETE FROM T_BLDCON_MST WHERE USER_UUID = #{userUuid}
+	</select>
+    <select id="avgBloodlowhight" parameterType="String" resultType="map">
+    <![CDATA[	
+		WITH t AS (
+		  SELECT
+		    FLOOR(HOUR(CGM_DTM) / 3) AS time_grp,  
+		    UPT_VALUE
+		  FROM T_BLDINF_TRAN
+		  WHERE UPT_VALUE > 0
+		    AND USER_UUID = #{userId}
+		    AND DATE_FORMAT(CGM_DTM, '%Y-%m-%d') BETWEEN LEFT(#{start}, 10) AND LEFT(#{end}, 10)
+		)
+		SELECT
+		  CASE time_grp
+		    WHEN 0 THEN '오전12'
+		    WHEN 1 THEN '오전3'
+		    WHEN 2 THEN '오전6'
+		    WHEN 3 THEN '오전9'
+		    WHEN 4 THEN '오후12'
+		    WHEN 5 THEN '오후3'
+		    WHEN 6 THEN '오후6'
+		    WHEN 7 THEN '오후9'
+		  END AS HOUR_LABEL,
+	  	  ROUND(SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS LOW_PCT,
+		  ROUND(SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS NORMAL_PCT,
+		  ROUND(SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS HIGH_PCT
+		FROM t
+		GROUP BY time_grp
+		ORDER BY time_grp;		
+		]]>  
+	</select>
+</mapper>

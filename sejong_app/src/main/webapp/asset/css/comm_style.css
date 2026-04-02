@@ -1,0 +1,369 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.contents {
+  max-width: 720px;
+  margin: auto;
+  padding: 10px;
+}
+
+/* 탭 메뉴 */
+.tab-menu {
+  margin-top: 30px;    /* 위에 너무 붙지 않게 */
+  margin-bottom: -25px;  /* 아래와 불필요하게 떨어지지 않게 */
+  display: flex;
+  position: static;
+  z-index: 10;
+  background: #f9f9f9;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 0.9rem;
+  background-color: #bbb; /* ✅ 좀 더 진한 회색 */
+  color: #fff;             /* ✅ 글자색도 조금 더 진하게 */
+  border: none;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  margin-top: 50px; /* ✅ 운동일자부터 더 아래로 내려옴 */
+}
+
+/* ✅ input-group : 라벨 좌측, 인풋 우측 + 여유 공간 */
+.input-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 24px 0; /* ✅ 위아래 간격 증가 */
+}
+
+.input-group label {
+  width: 80px; /* ✅ 라벨 넓게 */
+  font-size: 1.0rem; /* ✅ 라벨 글자 더 큼 */
+  margin-right: 10px;
+}
+
+.input-group input {
+  width: 80%; /* ✅ input 좌측으로 이동 (너무 길지 않게) */
+  padding: 8px;
+  font-size: 1.0rem;
+  box-sizing: border-box;
+}
+/* 버튼 */
+.btn-wrapper {
+  margin-top: 30px;
+  padding-bottom: 70px;
+}
+
+button {
+  padding: 12px;
+  width: 100%;
+  font-size: 1.1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+/* 운동 이력 기록 */
+.exercise_record {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 30px;
+  border-radius: 6px;
+  background: #f8f8f8;
+}
+.food_record {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 30px;
+  border-radius: 6px;
+  background: #f8f8f8;
+}
+#calendar {
+  margin-top: 20px;
+}
+
+.custom-select {
+  position: relative;
+  width: 100%;
+  margin-left: 10px;
+}
+
+.custom-select-button {
+  padding: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 1.0rem;
+  cursor: pointer;
+  position: relative; /* ▼ 위치 기준 */
+}
+
+.custom-select-options {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.custom-select-options div {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.custom-select input {
+  width: 100%;
+  padding: 8px;
+  font-size: 1.0rem;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.custom-select-options div:hover {
+  background-color: #eee;
+}
+/* ▼ 아이콘 표시 */
+.custom-select-button::after {
+  content: "▼";
+  font-size: 0.6rem;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* 클릭 안 되게 */
+  color: #666;
+}
+.date-range {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  font-weight: bold;
+  gap: 8px;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.date-range input[type="date"] {
+  padding: 6px;
+  font-size: 1.0rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.date-range button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;     /* ✅ 더 크게 */
+  cursor: pointer;
+  color: #333;           /* ✅ 어두운 색상으로 더 잘 보이게 */
+  padding: 4px 10px;
+}
+
+.exercise-table th,
+.exercise-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  /* 추가 */
+  white-space: nowrap;  
+}
+
+.exercise-table td:last-child {
+  color: #888;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.exercise-table {
+  width: 100%;
+  max-height: 400px; /* 10행 정도 높이로 맞춰줌 (상황에 맞게 조절 가능) */
+  border-collapse: collapse;
+  font-size: 1.0rem;
+  overflow-y: auto;
+  display: block;
+}  
+
+
+.food-table {
+  width: 100%;
+  max-height: 400px; /* 10행 정도 높이로 맞춰줌 (상황에 맞게 조절 가능) */
+  border-collapse: collapse;
+  font-size: 1.0rem;
+  overflow-y: auto;
+  display: block;
+}
+
+.food-table th,
+.food-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  /* 추가 */
+  white-space: nowrap;  
+}
+
+.food-table td:last-child {
+  color: #888;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.date-input {
+  width: 143px; /* 기본보다 약간 좁게 */
+}
+.has-tooltip {
+  position: relative;  /* ✅ 기준 요소 */
+}
+.has-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: black;
+  color: white;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  top: -32px; /* ✅ 셀 위쪽에 뜨도록 조정 */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+}
+/* ===== Inline Search Panel ===== */
+.inline-search{
+  border: 1px solid #e9ecef;
+  border-radius: 16px;
+  box-shadow: 0 6px 28px rgba(0,0,0,.06);
+  background: #fff;
+  padding: 12px;
+  margin-top: 10px;
+  max-width: 680px;
+  /* 화면 덮는 느낌이 아니라, 입력 주변에 붙는 서랍 느낌 */
+}
+
+.inline-search__head{
+  display: flex; gap: 8px; align-items: center;
+  background: #f8f9fa; border-radius: 12px; padding: 8px 10px;
+}
+
+.inline-search__head input[type="search"]{
+  flex: 1 1 auto; border: none; background: transparent; outline: none;
+  font-size: 15px;
+}
+.inline-search__head input[type="search"]::placeholder{ color:#adb5bd; }
+
+/* 작은 버튼들 */
+.btn-search-sm, .btn-close-sm{
+  border: 1px solid #dee2e6; background: #fff; color: #495057;
+  padding: 6px 10px; border-radius: 10px; font-size: 13px;
+  transition: box-shadow .15s ease, transform .04s ease;
+}
+.btn-search-sm:hover, .btn-close-sm:hover{ box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.btn-search-sm:active, .btn-close-sm:active{ transform: translateY(1px); }
+
+/* 결과 메타 */
+.inline-search__meta{
+  display:flex; align-items:center; gap:10px;
+  font-size: 13px; color:#6c757d; padding:8px 2px 6px 2px;
+}
+.inline-search__meta #foodInlineCount{
+  display:inline-block; min-width: 20px; text-align:center;
+  padding:2px 8px; border-radius: 999px;
+  background:#f1f3f5; color:#495057; font-weight:600;
+}
+
+/* 결과 영역 */
+.inline-search__body{
+  border: 1px solid #f1f3f5; border-radius: 12px; overflow: hidden;
+  max-height: 340px; /* 스크롤 높이 */
+  overflow: auto;
+}
+
+/* 테이블 */
+.inline-search__table{
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 14px;
+}
+.inline-search__table thead th{
+  position: sticky; top: 0; z-index: 1;
+  background: #fff; border-bottom: 1px solid #e9ecef; padding: 10px 12px;
+  font-weight:600; color:#495057;
+}
+.inline-search__table tbody td{
+  padding: 10px 12px; border-bottom: 1px dashed #f1f3f5; color:#343a40;
+}
+.inline-search__table tbody tr{
+  transition: background-color .12s ease, transform .02s ease;
+  cursor: pointer;
+}
+.inline-search__table tbody tr:hover{ background:#f8f9fa; }
+.inline-search__table tbody tr.is-active{
+  background:#e7f1ff; /* 키보드 네비 초점 */
+}
+
+/* 스크롤 미세 스타일 */
+.inline-search__body::-webkit-scrollbar{ height:10px; width:10px; }
+.inline-search__body::-webkit-scrollbar-thumb{ background:#dee2e6; border-radius:10px; }
+.inline-search__body::-webkit-scrollbar-track{ background: #f8f9fa; }
+
+/* 다크모드(선호도 기반) */
+@media (prefers-color-scheme: dark){
+  .inline-search{ background:#101214; border-color:#1c1f24; box-shadow: 0 6px 28px rgba(0,0,0,.35); }
+  .inline-search__head{ background:#15181c; }
+  .inline-search__head input[type="search"]{ color:#e9ecef; }
+  .inline-search__head input[type="search"]::placeholder{ color:#6c757d; }
+  .btn-search-sm, .btn-close-sm{ background:#15181c; border-color:#2a2f36; color:#e9ecef; }
+  .inline-search__meta{ color:#98a2b3; }
+  .inline-search__meta #foodInlineCount{ background:#1d232b; color:#e9ecef; }
+  .inline-search__body{ border-color:#1c1f24; }
+  .inline-search__table thead th{ background:#101214; border-color:#1f242b; color:#e9ecef; }
+  .inline-search__table tbody td{ color:#e9ecef; border-color:#1f242b; }
+  .inline-search__table tbody tr:hover{ background:#17202a; }
+  .inline-search__table tbody tr.is-active{ background:#0b356a; }
+}
+.result-table th, .result-table td {
+  text-align: center !important;  /* 필요하면 !important */
+  vertical-align: middle;         /* 세로 정렬도 가운데 */
+}
+
+.result-table th {
+  text-align: center;       /* 가운데 정렬 */
+  font-weight: 400;         /* 보통 두께 (기본 bold → 연하게) */
+  color: #555;              /* 글자색 조금 연하게 */
+  opacity: 0.8;             /* 투명도 살짝 적용 */
+}
+.hidden-col {
+  display: none;
+}
+.custom-select-options {
+  display: none;          /* 기본은 숨김 */
+  max-height: 150px;      /* 옵션 5개 정도만 보이게 높이 제한 */
+  overflow-y: auto;       /* 넘치면 스크롤 */
+  border: 1px solid #ccc; /* 선택 영역 구분 */
+  background: #fff;
+}

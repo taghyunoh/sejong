@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML 문서의 버전 및 인코딩을 지정한다. -->
+
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<!-- Tiles의 정의를 위한 DTD(Document Type Definition)을 지정한다. -->
+<!-- Tiles의 정의들을 포함하는 최상위 요소입니다. -->
+
+<tiles-definitions>
+	<!-- main layout -->
+	<definition name="login" template="/WEB-INF/tiles/login/login.jsp">
+	<!-- "login"이라는 이름의 타일 정의를 선언한다. 이 정의는 "/WEB-INF/tiles/login/login.jsp" 템플릿을 기본 템플릿으로 사용한다. 레이아웃을 나타내는 정의이다.-->
+		<put-attribute name="header" value="/WEB-INF/tiles/login/header.jsp" />
+		<put-attribute name="content" value="/WEB-INF/tiles/login/content.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/tiles/login/footer.jsp" />
+	<!-- 정의된 템플릿에 대한 다양한 부분 템플릿들을 정의한다. 예를 들어, "header", "content"와 같은 부분 템플릿을 선언하고, 각각의 값을 특정 JSP 파일 경로로 설정한다. -->
+	</definition>
+	<definition name="popup" template="/WEB-INF/tiles/popup/popup.jsp">
+	<!-- "login"이라는 이름의 타일 정의를 선언한다. 이 정의는 "/WEB-INF/tiles/login/login.jsp" 템플릿을 기본 템플릿으로 사용한다. 레이아웃을 나타내는 정의이다.-->
+		<put-attribute name="header" value="/WEB-INF/tiles/popup/header.jsp" />
+		<put-attribute name="content" value="/WEB-INF/tiles/popup/content.jsp" />
+	<!-- 정의된 템플릿에 대한 다양한 부분 템플릿들을 정의한다. 예를 들어, "header", "content"와 같은 부분 템플릿을 선언하고, 각각의 값을 특정 JSP 파일 경로로 설정한다. -->
+	</definition>
+	<definition name="main" template="/WEB-INF/tiles/main/main.jsp">
+		<put-attribute name="header" value="/WEB-INF/tiles/main/header.jsp" />
+		<put-attribute name="top" value="/WEB-INF/tiles/main/top.jsp" />
+		<put-attribute name="content" value="/WEB-INF/tiles/main/content.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/tiles/main/footer.jsp" />
+	</definition>
+	
+	<!-- 타일 적용 부분  -->
+	<definition name=".login/*" extends="login">
+	<!-- ".login/*" 패턴에 해당하는 URL에 "login" 정의를 확장하여 사용한다. {1}은 URL 경로의 첫 번째 부분을 나타낸다. 이 경우 "/WEB-INF/jsp/login/{1}.jsp" 경로의 JSP 파일을 "content" 부분에 포함시킨다. -->
+		<put-attribute name="content" value="/WEB-INF/jsp/login/{1}.jsp" />
+	</definition>
+	<definition name=".popup/*" extends="popup">
+	<!-- ".login/*" 패턴에 해당하는 URL에 "login" 정의를 확장하여 사용한다. {1}은 URL 경로의 첫 번째 부분을 나타낸다. 이 경우 "/WEB-INF/jsp/login/{1}.jsp" 경로의 JSP 파일을 "content" 부분에 포함시킨다. -->
+		<put-attribute name="content" value="/WEB-INF/jsp/popup/{1}.jsp" />
+	</definition>
+	<definition name=".main/*" extends="main">
+	<!-- ".main/*" 패턴에 해당하는 URL에 "main" 정의를 확장하여 사용한다. 마찬가지로 URL 경로의 첫 번째 부분을 {1}에 대입하여 해당 JSP 파일을 "content" 부분에 포함시킨다. -->
+		<put-attribute name="content" value="/WEB-INF/jsp/main/{1}.jsp" />
+	</definition>
+	<definition name=".main/*/*" extends="main">
+	<!-- ".main//" 패턴에 해당하는 URL에 "main" 정의를 확장하여 사용한다. 이번에는 URL 경로의 두 번째 부분을 {2}에 대입하여 해당 JSP 파일을 "content" 부분에 포함시킨다. -->
+		<put-attribute name="content" value="/WEB-INF/jsp/main/{1}/{2}.jsp" />
+	</definition>
+	
+	<definition name=".main/*/*/*" extends="main">
+	<!-- ".main//" 패턴에 해당하는 URL에 "main" 정의를 확장하여 사용한다. 이번에는 URL 경로의 두 번째 부분을 {2}에 대입하여 해당 JSP 파일을 "content" 부분에 포함시킨다. -->
+		<put-attribute name="content" value="/WEB-INF/jsp/main/{1}/{2}/{3}.jsp" />
+	</definition>
+	
+
+</tiles-definitions>

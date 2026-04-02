@@ -1,0 +1,872 @@
+/* 기본 리셋 및 폰트 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 메인 컨테이너 */
+.main-container {
+    width: 360px;
+    height: 800px;
+    background: #f8f9fa;
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.back-button {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a8fe3;
+    transition: transform 0.2s ease;
+}
+
+.back-button:hover {
+    transform: scale(1.05);
+}
+
+.back-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 143, 227, 0.3);
+    border-radius: 4px;
+}
+
+.page-title {
+    color: #4a8fe3;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 22px;
+    text-align: center;
+    flex: 1;
+}
+
+.menu-button {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a8fe3;
+    transition: transform 0.2s ease;
+}
+
+.menu-button:hover {
+    transform: scale(1.05);
+}
+
+.menu-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 143, 227, 0.3);
+    border-radius: 4px;
+}
+
+/* 메인 콘텐츠 */
+.main-content {
+    flex: 1;
+    padding: 16px 16px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 탭 컨테이너 */
+.tab-container {
+    display: flex;
+    margin-top: 30px;   /* 👈 헤더와 탭 사이 간격 확보 */
+    margin-bottom: 10px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    flex-shrink: 0;
+}
+
+.tab-button {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-button.active {
+    background: #4a8fe3;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(74, 143, 227, 0.2);
+}
+
+.tab-button:hover:not(.active) {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 143, 227, 0.3);
+}
+
+/* 혈당 지표 카드 */
+.blood-metrics-card {
+    background: #ffffff !important;  /* 카드 전체 흰색 */
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+
+/* 단위 표시 */
+.unit-display {
+    font-size: 12px;
+    color: #6c757d;
+    text-align: right;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* 혈당 지표 */
+.blood-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metric-row {
+    display: flex;
+    gap: 10px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.metric-row:first-child {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-color: #4a8fe3;
+}
+
+.metric-row:last-child {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-color: #4a8fe3;
+}
+
+.metric-item {
+  flex: 1 1 0;                /* shrink 허용 (중요) */
+  min-width: 0;               /* flex 박스에서 텍스트 … 처리를 위해 필요 */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;          /* 내부도 한 줄 유지 */
+  white-space: nowrap;        /* 내부 인라인 줄바꿈 방지 */
+}
+
+.metric-label {
+  display: inline-block;
+  color: #ffffff;       /* 흰색으로 변경 */
+  font-weight: 500;
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+
+.metric-value {
+	color: #ffffff;       /* 흰색으로 변경 */
+    white-space: nowrap;        /* 값도 한 줄 고정 */
+}
+
+.metric-value.good {
+    color: #28a745;
+}
+
+.metric-value.low {
+    color: #dc3545;
+}
+
+.metric-value.high {
+    color: #fd7e14;
+}
+
+.metric-value.moderate {
+    color: #fd7e14;
+}
+
+.metric-value.normal {
+    color: #212529;
+}
+
+/* 스크롤 가능한 콘텐츠 영역 */
+.scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-bottom: 16px;
+}
+
+/* TOP3 카드 공통 스타일 */
+.top3-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.top2-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 8px ;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.top3-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.top3-card:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 143, 227, 0.3);
+}
+
+/* 카드 헤더 */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-title.increase {
+    color: #dc3545;
+}
+
+.card-title.decrease {
+    color: #4a8fe3;
+}
+
+.card-title.recommendation {
+    color: #4a8fe3;
+}
+
+.unit-text {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* 랭킹 그리드 - 새로운 그리드 레이아웃 */
+.ranking-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ranking-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.ranking-item:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.ranking-item[data-rank="1"] {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-color: #ffc107;
+}
+
+.ranking-item[data-rank="2"] {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    border-color: #6c757d;
+}
+
+.ranking-item[data-rank="3"] {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-color: #dc3545;
+}
+.ranking-item[data-rank="4"] {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-color: #ffc107;
+}
+
+.ranking-item[data-rank="5"] {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    border-color: #6c757d;
+}
+
+.ranking-item[data-rank="6"] {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-color: #dc3545;
+}
+.rank-badge {
+    background: #4a8fe3;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 10px;
+    min-width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.meal-details {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    font-size: 1.1vw
+}
+
+.meal-info {
+    font-size: 12px;
+    color: #212529;
+    font-weight: 500;
+    /* 텍스트 한 줄로 표시 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #212529;
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 30px;
+}
+
+/* 노트 텍스트 */
+.note-text {
+    font-size: 11px;
+    color: #6c757d;
+    text-align: center;
+}
+
+/* 추천 카드 */
+.recommendation-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-card:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 143, 227, 0.3);
+}
+
+.recommendation-content {
+    margin-top: 10px;
+}
+
+.recommendation-text {
+    font-size: 13px;
+    color: #212529;
+    line-height: 1.5;
+    margin: 0;
+    font-weight: 400;
+    /* 텍스트 자동 조절을 위한 스타일 */
+    text-align: left;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    /* 텍스트 길이에 따른 자동 조절 */
+    min-height: 18px;
+    max-height: none;
+    resize: none;
+    display: block;
+}
+
+/* 스크롤바 스타일 */
+.scrollable-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 400px) {
+    .main-container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .metric-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .metric-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .ranking-item {
+        grid-template-columns: auto 1fr;
+        gap: 6px;
+    }
+    
+    .meal-details {
+        grid-column: 2;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .value {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: end;
+    }
+    
+    .meal-info {
+        font-size: 11px;
+    }
+    
+    .value {
+        font-size: 12px;
+    }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .top3-card:hover,
+    .recommendation-card:hover {
+        border-color: #4a8fe3;
+    }
+    
+    .tab-button.active {
+        border: 2px solid #ffffff;
+    }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1a1a1a;
+    }
+    
+    .main-container {
+        background: #1a1a1a;
+    }
+    
+    .main-content {
+        background: #1a1a1a;
+    }
+    
+    .header {
+        background: #2d2d2d;
+        border-bottom-color: #404040;
+    }
+    
+    .blood-summary-card,
+    .top3-card,
+    .recommendation-card {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .tab-container {
+        background: #404040;
+    }
+    
+    .tab-button {
+        background: #2d2d2d;
+        color: #cccccc;
+    }
+    
+    .tab-button.active {
+        background: #4a8fe3;
+        color: #ffffff;
+    }
+    
+    .metric-label,
+    .unit-display,
+    .unit-text,
+    .note-text {
+        color: #cccccc;
+    }
+    
+    .metric-row:first-child {
+        background: linear-gradient(135deg, #1a3a4a 0%, #1a2a3a 100%);
+        border-color: #4a8fe3;
+    }
+    
+    .metric-row:last-child {
+        background: linear-gradient(135deg, #1a3a4a 0%, #1a2a3a 100%);
+        border-color: #4a8fe3;
+    }
+    
+    .meal-info,
+    .recommendation-text {
+        color: #ffffff;
+    }
+    
+    .metric-value.normal {
+        color: #ffffff;
+    }
+    
+    .back-button,
+    .menu-button {
+        color: #4a8fe3;
+    }
+}
+
+/* 애니메이션 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.blood-summary-card,
+.top3-card,
+.recommendation-card {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.blood-summary-card {
+    animation-delay: 0.1s;
+}
+
+.top3-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.top3-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.recommendation-card {
+    animation-delay: 0.4s;
+}
+
+/* 포커스 표시 개선 */
+button:focus-visible,
+.top3-card:focus-visible,
+.recommendation-card:focus-visible {
+    outline: 2px solid #4a8fe3;
+    outline-offset: 2px;
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+    .back-button,
+    .menu-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .tab-button {
+        min-height: 44px;
+    }
+    
+    .top3-card,
+    .recommendation-card {
+        min-height: 60px;
+    }
+}
+
+/* 헤더 스타일 개선 */
+.header {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 카드 스타일 개선 */
+.blood-summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.top3-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.recommendation-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* 랭킹 배지 개선 */
+.rank-badge {
+    background: linear-gradient(135deg, #4a8fe3 0%, #3a7bc8 100%);
+    box-shadow: 0 2px 4px rgba(74, 143, 227, 0.2);
+}
+
+/* 탭 버튼 개선 */
+.tab-button.active {
+    background: linear-gradient(135deg, #4a8fe3 0%, #3a7bc8 100%);
+    box-shadow: 0 2px 8px rgba(74, 143, 227, 0.3);
+}
+
+/* 카드 호버 효과 개선 */
+.top3-card:hover,
+.recommendation-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 메트릭 값 강조 */
+.metric-value {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 카드 제목 아이콘 효과 */
+.card-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: currentColor;
+    border-radius: 2px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* 단위 텍스트 스타일 */
+.unit-text {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+/* 추천 텍스트 강조 */
+.recommendation-text {
+    position: relative;
+    padding-left: 16px;
+}
+
+.recommendation-text::before {
+    content: '💡';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 16px;
+}
+
+/* 탭 전환 애니메이션 */
+.tab-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.tab-button:hover::before {
+    left: 100%;
+}
+
+/* 카드 클릭 효과 */
+.top3-card:active,
+.recommendation-card:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 메트릭 아이템 호버 효과 */
+.metric-item:hover .metric-value {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+/* 스크롤 시 헤더 그림자 */
+.main-content::before {
+    content: none !important;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
+    pointer-events: none;
+    z-index: 11;
+}
+/* 기존 .tab-button 전부 복사해서 .tab-btn에도 적용 */
+.tab-btn {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative; /* 아래 hover 이펙트용 */
+    overflow: hidden;
+}
+.tab-btn.active {
+    background: linear-gradient(135deg, #4a8fe3 0%, #3a7bc8 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(74, 143, 227, 0.3);
+}
+.tab-btn:hover:not(.active){ background:#e9ecef; color:#495057; }
+.tab-btn:focus { outline:none; box-shadow:0 0 0 2px rgba(74,143,227,.3); }
+.tab-btn::before{
+    content:'';
+    position:absolute; top:0; left:-100%; width:100%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+    transition:left .5s;
+}
+.tab-btn.active {
+    background-color: #007bff;
+    color: #fff;
+}
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+.exercise-info {
+    display: flex;
+    align-items: center;   /* 수직 가운데 정렬 */
+    justify-content: space-between; /* 좌측-우측 끝 정렬 */
+    gap: 8px; /* 요소 간 간격 */
+}
+
+.exercise-info .value {
+    margin-left: auto;  /* 필요 시 보조적으로 사용 */
+    text-align: right;
+}
+.tab-btn:hover::before{ left:100%; }
+
+/* 공통 클래스 */
+.font-small {
+  font-size: 3.1vw;
+}
+
+.font-large {
+  font-size: 4.1vw;
+}
+
+/* 반응형 처리 */
+
+/* 모바일 (최대 480px) */
+@media (max-width: 480px) {
+  .font-small {
+    font-size: 4vw;   /* 모바일은 조금 더 크게 */
+  }
+  .font-large {
+    font-size: 5vw;
+  }
+}
+
+/* 태블릿 (481px ~ 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .font-small {
+    font-size: 2.8vw;
+  }
+  .font-large {
+    font-size: 3.8vw;
+  }
+}
+
+/* 데스크탑 (769px 이상) */
+@media (min-width: 769px) {
+  .font-small {
+    font-size: 1rem;  /* px이나 rem 기준으로 고정 */
+  }
+  .font-large {
+    font-size: 1.2rem;
+  }
+}

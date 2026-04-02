@@ -1,0 +1,45 @@
+package egovframework.sejong.admin.mapper;
+import java.util.List;
+
+import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
+
+import egovframework.sejong.admin.model.PatientDTO;
+import egovframework.sejong.admin.model.AsqDTO;
+import egovframework.sejong.admin.model.AuserDTO;
+import egovframework.sejong.admin.model.FaqDTO;
+import egovframework.sejong.doctor.model.NoticeDTO;
+
+@Mapper("AdminMapper")
+public interface AdminMapper {
+	List<?> noticeList(NoticeDTO dto) throws Exception;
+	NoticeDTO noticeInfo(NoticeDTO dto) throws Exception;
+	boolean   insertNotice(NoticeDTO dto) throws Exception; 
+	boolean   updateNotice(NoticeDTO dto) throws Exception; 
+	boolean   deleteNotice(NoticeDTO dto) throws Exception; 
+	//환자
+	List<?> selectPatientList(PatientDTO dto) throws Exception;
+	PatientDTO patientInfo(PatientDTO dto) throws Exception;
+	boolean insertPatient(PatientDTO dto) throws Exception; 
+	boolean updatePatient(PatientDTO dto) throws Exception; 
+	boolean deletePatient(PatientDTO dto) throws Exception; 
+	
+	//관리자(의사)
+	List<?> selectAuserList(AuserDTO dto) throws Exception;
+	AuserDTO auserInfo(AuserDTO dto) throws Exception;
+	boolean insertAuser(AuserDTO dto) throws Exception; 
+	boolean updateAuser(AuserDTO dto) throws Exception; 
+	boolean deleteAuser(AuserDTO dto) throws Exception; 
+
+	//Foa
+	List<?>   selectfaqList(FaqDTO dto)   throws Exception;
+	FaqDTO    faqInfo(FaqDTO dto)         throws Exception;
+	boolean   insertfaq(FaqDTO dto)       throws Exception; 
+	boolean   updatefaq(FaqDTO dto)       throws Exception; 
+	boolean   deletefaq(FaqDTO dto)       throws Exception;	
+
+	List<?>   selectasqList(AsqDTO dto)   throws Exception;
+	AsqDTO    asqInfo(AsqDTO dto)         throws Exception;
+	boolean   insertasq(AsqDTO dto)       throws Exception; 
+	boolean   updateasq(AsqDTO dto)       throws Exception; 
+	boolean   deleteasq(AsqDTO dto)       throws Exception;
+}

@@ -1,0 +1,108 @@
+* {	
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+#All {
+	display: flex;
+	height: 100vh;
+}
+
+#left {
+	background: #EEE;
+	width: 500px;
+}
+
+#loginbox {
+	display: flex;
+	width: 405px;
+	padding: 200px 50px;
+	flex-direction: column;
+	align-items: flex-start;
+	flex-shrink: 0;
+	align-self: stretch;
+	background: #EEE;
+}
+
+.text {
+    color: #333;
+    text-align: center;
+    font-family: Noto Sans KR;
+    font-size: 32px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 100%;
+    letter-spacing: -0.5px;
+    margin-bottom: 40px;
+}
+
+#backimg {
+    width: 80%;
+    height: 100vh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-image: url("../../../images/loginimg/loginimg1.png");
+}
+
+.idpw {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+    margin-bottom: 40px;
+}
+
+.idck:hover{
+	cursor: pointer;
+}
+
+.pwlink{
+    text-decoration-line: none;
+    color: black;
+}
+
+.pwlink:hover{
+	cursor: pointer;
+}
+
+.login__btn {
+    display: flex;
+    width: 340px;
+    padding: 14px 40px;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    background: #218ECB;
+    border: none;
+    color: white;
+    font-size: large;
+    cursor: pointer;
+    opacity: 1;
+    margin-bottom: 10px;
+}
+.login__btn:hover {
+    opacity: 0.9;
+}
+
+.btnbox {
+    display: flex;
+    flex-direction: column;
+}
+
+.outlined-basic {
+    display: flex;
+    width: 340px;
+    height: 46px;
+    padding: 5px 10px;
+    align-items: center;
+    border-radius: 4px;
+    border: 1px solid #DADADA;
+    background: #FFF;
+}

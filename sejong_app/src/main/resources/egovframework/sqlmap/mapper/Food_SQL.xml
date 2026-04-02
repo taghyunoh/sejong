@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.food.mapper.FoodMapper">
+	
+	<resultMap id="foodMap" type="egovframework.sejong.food.model.FoodPositionDTO">
+	   <id property="foodhisSeq" column="foodhis_seq" />
+	   <id property="foodSeq" column="food_seq" />
+	   <id property="eatAmount" column="eat_amount" />
+	   <id property="foodImagepath" column="food_imagepath" />
+	        <association property="userSelectedFood"  javaType="egovframework.sejong.food.model.FoodSelectedDTO" >
+	             <result property="foodId"  column="food_id" />
+	             <result property="foodName"  column="food_name" />
+	             <result property="keyName"  column="key_name" />
+	             <association property="nutrition"  javaType="egovframework.sejong.food.model.NutritionDTO" >
+		             <result property="calcium"  column="calcium" />
+		             <result property="calories"  column="calories" />
+		             <result property="carbonhydrate"  column="carbonhydrate" />
+		             <result property="cholesterol"  column="cholesterol" />
+		             <result property="customFoodInfo"  column="custiom_food_info" />
+		             <result property="dietrayfiber"  column="dietrayfiber" />
+		             <result property="fat"  column="fat" />
+		             <result property="foodType"  column="food_type" />
+		             <result property="protein"  column="protein" />
+		             <result property="rawCalories"  column="raw_calories" />
+		             <result property="rawTotalGram"  column="raw_total_gram" />
+		             <result property="saturatedfat"  column="saturatedfat" />
+		             <result property="sodium"  column="sodium" />
+		             <result property="sugar"  column="sugar" />
+		             <result property="totalGram"  column="total_gram" />
+		             <result property="transfat"  column="transfat" />
+		             <result property="unit"  column="unit" />
+		             <result property="vitamina"  column="vitamina" />
+		             <result property="vitaminb"  column="vitaminb" />
+		             <result property="vitaminc"  column="vitaminc" />
+		             <result property="vitamind"  column="vitamind" />
+		             <result property="vitamine"  column="vitamine" />
+		        </association>
+	        </association>
+	</resultMap>
+
+	<!-- 식사 기록 Insert -->
+	<insert id="insertFoodHisData" parameterType="map" useGeneratedKeys="true" keyProperty="foodhisSeq" keyColumn="FOODHIS_SEQ">
+		INSERT INTO T_FOODHIS_TRAN(
+			USER_UUID,
+			EAT_DATE,
+			EAT_TYPE,
+			MEAL_TYPE,
+			PREDICTED_IMAGE_PATH,
+			REG_DTM,
+			MOD_DTM
+		) VALUES(
+			#{userUuid},
+			#{eatDate},
+			#{eatType},
+			#{mealType},
+			#{predictedImagePath},
+			sysdate(),
+			sysdate()
+		)
+	</insert>
+	
+		<!-- 식사 기록 Insert -->
+	<insert id="insertFoodData" parameterType="map" useGeneratedKeys="true" keyProperty="foodhisSeq" keyColumn="FOODHIS_SEQ">
+		INSERT INTO T_FOOD_TRAN(
+			FOODHIS_SEQ,
+			EAT_AMOUNT,
+			FOOD_IMAGEPATH,
+			FOOD_ID,
+			FOOD_NAME,
+			KEY_NAME,
+			CALCIUM,
+			CALORIES,
+			CARBONHYDRATE,
+			CHOLESTEROL,
+			CUSTOM_FOOD_INFO,
+			DIETRAYFIBER,
+			FAT,
+			FOOD_TYPE,
+			PROTEIN,
+			RAW_CALORIES,
+			RAW_TOTAL_GRAM,
+			SATURATEDFAT,
+			SODIUM,
+			SUGAR,
+			TOTAL_GRAM,
+			TRANSFAT,
+			UNIT,
+			VITAMINA,
+			VITAMINB,
+			VITAMINC,
+			VITAMIND,
+			VITAMINE
+		) VALUES(
+			#{foodhisSeq},
+			#{eatAmount},
+			#{foodImagepath},
+			#{foodId},
+			#{foodName},
+			#{keyName},
+			#{calcium},
+			#{calories},
+			#{carbonhydrate},
+			#{cholesterol},
+			#{customFoodInfo},
+			#{dietrayfiber},
+			#{fat},
+			#{foodType},
+			#{protein},
+			#{rawCalories},
+			#{rawTotalGram},
+			#{saturatedfat},
+			#{sodium},
+			#{sugar},
+			#{totalGram},
+			#{transfat},
+			#{unit},
+			#{vitamina},
+			#{vitaminb},
+			#{vitaminc},
+			#{vitamind},
+			#{vitamine}
+		)
+	</insert>
+	
+	<!-- 식사 기록 Insert -->
+	<update id="updateFoodHisData" parameterType="map">
+		UPDATE T_FOODHIS_TRAN SET 
+			EAT_DATE = #{eatDate},
+			EAT_TYPE = #{eatType},
+			MEAL_TYPE = #{mealType},
+			PREDICTED_IMAGE_PATH = #{predictedImagePath},
+			MOD_DTM = sysdate()
+		WHERE
+			FOODHIS_SEQ = #{foodhisSeq}
+	</update>
+	
+	<!-- 식사 기록 Insert -->
+	<insert id="updateFoodData" parameterType="map">
+		INSERT INTO T_FOOD_TRAN(
+			FOODHIS_SEQ,
+			EAT_AMOUNT,
+			FOOD_IMAGEPATH,
+			FOOD_ID,
+			FOOD_NAME,
+			KEY_NAME,
+			CALCIUM,
+			CALORIES,
+			CARBONHYDRATE,
+			CHOLESTEROL,
+			CUSTOM_FOOD_INFO,
+			DIETRAYFIBER,
+			FAT,
+			FOOD_TYPE,
+			PROTEIN,
+			RAW_CALORIES,
+			RAW_TOTAL_GRAM,
+			SATURATEDFAT,
+			SODIUM,
+			SUGAR,
+			TOTAL_GRAM,
+			TRANSFAT,
+			UNIT,
+			VITAMINA,
+			VITAMINB,
+			VITAMINC,
+			VITAMIND,
+			VITAMINE
+		) VALUES(
+			#{foodhisSeq},
+			#{eatAmount},
+			#{foodImagepath},
+			#{foodId},
+			#{foodName},
+			#{keyName},
+			#{calcium},
+			#{calories},
+			#{carbonhydrate},
+			#{cholesterol},
+			#{customFoodInfo},
+			#{dietrayfiber},
+			#{fat},
+			#{foodType},
+			#{protein},
+			#{rawCalories},
+			#{rawTotalGram},
+			#{saturatedfat},
+			#{sodium},
+			#{sugar},
+			#{totalGram},
+			#{transfat},
+			#{unit},
+			#{vitamina},
+			#{vitaminb},
+			#{vitaminc},
+			#{vitamind},
+			#{vitamine}
+		)
+	</insert>
+	
+	<select id="getFoodHisDTO" parameterType="map" resultType="FoodDTO">
+		SELECT 
+			* 
+		FROM 
+			T_FOOD_TRAN 
+		WHERE FOOD_SEQ = #{foodSeq}
+	</select>
+	
+	<select id="getFoodDTO" parameterType="map" resultMap="foodMap">
+		SELECT 
+			*
+		FROM 
+			T_FOOD_TRAN 
+		WHERE FOOD_SEQ = #{foodSeq}
+	</select>
+	
+	<select id="getFoodInfo" parameterType="hashmap" resultType="hashmap">
+		SELECT 
+		    T1.FOODHIS_SEQ AS foodhisSeq, 
+		    T2.PREDICTED_IMAGE_PATH AS imagePath,
+		    MAX(T1.FOOD_NAME) AS foodName,
+		    CONCAT(CASE WHEN HOUR(T2.REG_DTM) <![CDATA[<]]> 12 THEN '오전' ELSE '오후' END,' ',DATE_FORMAT(T2.REG_DTM, '%h:%i')) AS regDtm,
+		    CAST(T2.TOTAL_CALORIES AS UNSIGNED) AS totalCalories,
+		    CAST(T2.carbonhydrate AS UNSIGNED) AS carbonhydrate,
+		    CAST(T2.protein AS UNSIGNED) AS protein,
+		    CAST(T2.fat AS UNSIGNED) AS fat
+		FROM 
+		    T_FOOD_TRAN T1
+		JOIN 
+		    (
+		        SELECT 
+		            A.FOOD_SEQ,
+		            B.REG_DTM,
+		            B.PREDICTED_IMAGE_PATH,
+		            SUM(A.CALORIES) AS TOTAL_CALORIES,
+		            SUM(A.carbonhydrate) AS carbonhydrate,
+		            SUM(A.protein) AS protein,
+		            SUM(A.fat) AS fat
+		        FROM 
+		            T_FOOD_TRAN A
+				LEFT JOIN T_FOODHIS_TRAN B
+		        ON A.FOODHIS_SEQ = B.FOODHIS_SEQ 
+		        WHERE 
+		            A.FOODHIS_SEQ IN (
+		                SELECT FOODHIS_SEQ 
+		                FROM T_FOODHIS_TRAN 
+		                WHERE DATE(REG_DTM) = #{regDtm}
+		                AND USER_UUID = #{userUuid}
+		            )
+		        GROUP BY 
+		            A.FOOD_SEQ,B.REG_DTM
+		    ) T2 
+		ON 
+		    T1.FOODHIS_SEQ = T2.FOODHIS_SEQ
+		WHERE 
+		    T1.FOODHIS_SEQ = T2.FOODHIS_SEQ
+		AND T1.FOOD_NAME != '음식아님'
+		GROUP BY T1.FOODHIS_SEQ,T2.PREDICTED_IMAGE_PATH
+	</select>
+	
+	<select id="getChartFood" parameterType="String" resultType="map">
+		SELECT USER_UUID,
+		       EAT_DATE ,
+		       FOOD_NAME 
+  		  FROM T_FOOD_TRAN
+		 WHERE USER_UUID = #{userUuid}
+		   AND EAT_DATE  = #{start}
+		 ORDER BY EAT_DATE
+	</select>
+
+	<select id="getTodaysumFood" parameterType="String" resultType="map">
+		SELECT SUM(B.FOOD_KCAL) kCal
+  		  FROM T_FOOD_TRAN A , T_FOOD_MST B 
+		 WHERE A.FOOD_MSEQ = B.FOOD_SEQ 
+		   AND A.USER_UUID = #{userUuid}
+		   AND A.EAT_DATE  = #{start}
+	</select>
+		
+	<insert id="updateFood" parameterType="FoodDTO">
+	    INSERT INTO T_FOOD_TRAN
+	      (  USER_UUID
+	       , EAT_DATE
+	       , EAT_STIME
+	       , EAT_ETIME
+	       , FOOD_NAME
+	       , FOOD_DANWI
+	       , FOOD_CNT
+	       , FOOD_ACNT
+	       , FOOD_MSEQ
+	       , REG_DTTM
+	       , MOD_DTTM
+	      )
+	    VALUES
+	        (
+	          #{userUuid},
+	          DATE_FORMAT(STR_TO_DATE(#{eatDate}, '%Y-%m-%d'), '%Y%m%d'),
+	          #{eatStime},
+	          #{eatEtime},
+	          #{foodName},
+	          #{foodDanwi},
+	          1,
+	          #{foodAcnt},
+	          1,
+	          NOW(),
+	          NOW()
+	        )
+	    ON DUPLICATE KEY UPDATE
+	        USER_UUID   = #{userUuid},
+	        EAT_DATE    = DATE_FORMAT(STR_TO_DATE(#{eatDate}, '%Y-%m-%d'), '%Y%m%d'),
+	        EAT_STIME   = #{eatStime},
+	        EAT_ETIME   = #{eatEtime},
+	        FOOD_NAME   = #{foodName},
+	        FOOD_DANWI  = #{foodDanwi},
+	        FOOD_CNT    = 1,
+	        FOOD_ACNT   = #{foodAcnt},
+	        FOOD_MSEQ   = 1,
+	        MOD_DTTM    = NOW()
+	</insert>
+	
+	<delete id="deleteFood" parameterType="FoodDTO">
+	    DELETE FROM T_FOOD_TRAN
+	    WHERE    USER_UUID = #{userUuid}
+	        AND  FOOD_SEQ  = #{foodSeq}
+	</delete>
+	
+	<select id="getFoodList" parameterType="map" resultType="FoodDTO">
+	WITH RANKED AS(
+		SELECT 
+		    FOOD_SEQ  ,
+		    USER_UUID ,
+		    DATE_FORMAT(STR_TO_DATE(EAT_DATE, '%Y%m%d'), '%Y-%m-%d') AS EAT_DATE ,
+		    EAT_STIME ,
+		    EAT_ETIME ,
+		    FOOD_NAME , 
+		    FOOD_CNT , 
+		    CASE WHEN FOOD_ACNT = '' THEN FOOD_CNT ELSE FOOD_ACNT END FOOD_ACNT ,
+		    REG_DTTM  ,
+		    MOD_DTTM  ,
+		    ROW_NUMBER() OVER (PARTITION BY EAT_DATE ORDER BY EAT_DATE , EAT_ETIME DESC) AS RN 
+		FROM  T_FOOD_TRAN 
+		WHERE   STR_TO_DATE(EAT_DATE, '%Y%m%d') BETWEEN 
+                STR_TO_DATE(REPLACE(#{startDt}, '-', ''), '%Y%m%d') 
+            AND STR_TO_DATE(REPLACE(#{endDt}, '-', ''), '%Y%m%d')
+		    AND USER_UUID = #{userUuid}
+	)   
+   SELECT 
+         FOOD_SEQ  ,
+	     CASE WHEN RN = 1  THEN EAT_DATE ELSE EAT_DATE  END  EAT_DATE ,
+	     EAT_STIME ,
+	     FOOD_NAME ,
+	     FOOD_CNT  ,
+	     FOOD_ACNT 
+	FROM  RANKED
+	ORDER BY EAT_DATE DESC , EAT_STIME DESC    
+ </select>		
+ <select id="getFoodMstList" parameterType="map" resultType="FoodMDTO">
+		SELECT 
+		    FOOD_SEQ  ,
+		    FOOD_NAME ,
+		    FOOD_KCAL ,
+		    REG_DTTM  ,
+		    MOD_DTTM  
+		FROM  T_FOOD_MST
+		WHERE 1=1 
+		  AND  FOOD_NAME   LIKE CONCAT('%'  #{findData}  '%')
+    	ORDER BY FOOD_NAME ASC   
+ </select>		
+</mapper>

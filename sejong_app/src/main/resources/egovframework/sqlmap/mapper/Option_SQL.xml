@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.options.mapper.OptionsMapper">
+	<!-- 연결 테스트 -->
+	<select id="getNotiList" resultType="egovframework.sejong.options.model.NotiDTO">
+		SELECT * FROM T_NOTICE_TRAN WHERE USE_YN ='Y' AND DATE_FORMAT(NOW(), '%Y%m%d') BETWEEN POST_STR AND POST_END
+	</select>
+	
+	<select id="getNotiDetail" resultType="egovframework.sejong.options.model.NotiDTO">
+		SELECT * FROM T_NOTICE_TRAN WHERE NOTI_SEQ = #{notiSeq}
+	</select>
+	
+	<update id="updateUserInfo" parameterType="egovframework.sejong.login.model.UserDTO" >
+		UPDATE T_USER_TRAN 
+		SET WEIGHT = #{weight},
+			BLOD_GB = #{blodGb}
+		WHERE
+			USER_UUID = #{userUuid}
+	</update>
+	<!-- 질의응답 -->
+	<insert id="updateAsq" parameterType="AsqDTO">
+	    INSERT INTO T_ASQ_TRAN
+	      (  USER_UUID
+	       , QSTN_TITL
+	       , QSTN_CONTS
+	       , QSTN_YMD
+	       , ANSR_CONTS
+	       , ANSR_YN
+	      )
+	    VALUES
+	        (
+	          #{userUuid},
+	          #{qstnTitl},
+	          #{qstnConts},
+	          NOW(),
+	          #{ansrConts},
+	          'Y'
+	        )
+	    ON DUPLICATE KEY UPDATE
+	        USER_UUID   = #{userUuid},
+	        QSTN_TITL   = #{qstnTitl},
+	        QSTN_CONTS  = #{qstnConts},
+	        QSTN_YMD    = NOW(),
+	        ANSR_CONTS  = #{ansrConts},
+	        ANSR_YN     = 'Y'
+	</insert>
+	<!-- 질의응답 -->
+	<delete id="deleteAsq" parameterType="AsqDTO">
+	    DELETE FROM T_ASQ_TRAN
+	    WHERE    USER_UUID = #{userUuid}
+	        AND  ASQ_SEQ   = #{asqSeq}
+	</delete>
+	<!-- 질의응답 -->
+	<select id="getAsqList" parameterType="map" resultType="AsqDTO">
+	   SELECT ASQ_SEQ   
+	       , USER_UUID
+	       , QSTN_TITL
+	       , QSTN_CONTS
+	       , QSTN_YMD
+	       , ANSR_CONTS
+	       , ANSR_YN
+		FROM  T_ASQ_TRAN 
+		WHERE USER_UUID = #{userUuid}
+    	ORDER BY QSTN_YMD DESC 
+    </select>
+	<!-- 자주하는질문 -->
+	<select id="getFaqList" parameterType="map" resultType="FaqDTO">
+	   SELECT FAQ_SEQ   
+	        , QSTN_CONTS
+	        , ANSR_CONTS
+		    , FAQ_GB
+	        , FAQ_ITEM_GB       
+		FROM  T_FAQ_TRAN 
+		WHERE 1=1
+    	ORDER BY FAQ_SEQ ASC 
+    </select>    	 	
+</mapper>

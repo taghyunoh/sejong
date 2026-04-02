@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 부트스트랩 css -->
+  <link href="/bootstrap/css/bootstrap.css" rel="stylesheet">
+
+  <link href="/asset/css/common.css" rel="stylesheet">
+
+  <!-- 부트스트랩 js -->
+  <script src="/bootstrap/js/bootstrap.bundle.js"></script>
+  <!-- JQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <title>아파치 이차트 테스트</title>
+</head>
+
+<body>
+
+  <!-- ECharts 파일을 포함합니다 -->
+  <script src="/asset/js/echarts/echarts.min.js"></script>
+
+  <!-- 높이와 너비가 지정된 Dom을 생성합니다 -->
+  <div id="main" style="width:600px; height:400px;"></div>
+
+  <script type="text/javascript">
+    // 'main' id를 가진 요소를 찾고, ECharts 인스턴스를 초기화합니다
+    var chartDom = document.getElementById('main');
+    var myChart = echarts.init(chartDom);
+    var option;
+
+    // 자동측정된 혈당수치가 각각 범위에 들어간 갯수를 넣는 데이터 
+    // rawData에 음수 값이 없어야 합니다
+    const rawData = [
+      [4, 6, 60, 10, 1],  // AM12
+      [1, 9, 80, 10, 1],    // AM03
+      [6, 7, 50, 2, 1],    // AM06
+      [4, 6, 60, 10, 2],  // AM09
+      [1, 9, 80, 10, 1],    // PM12
+      [6, 7, 20, 2, 1],    // PM03
+      [4, 6, 60, 10, 1],  // PM06
+      [1, 9, 80, 10, 1]     // PM09
+      // [4, 6, 60, 20, 10, 15, 25, 35],  // AM12
+      // [1, 9, 80, 10, 0, 5, 15, 25],    // AM03
+      // [6, 72, 50, 2, 0, 8, 18, 28],    // AM06
+      // [4, 6, 60, 20, 10, 12, 22, 32],  // AM09
+      // [1, 9, 80, 10, 0, 4, 14, 24],    // PM12
+      // [6, 72, 20, 2, 0, 7, 17, 27],    // PM03
+      // [4, 6, 60, 20, 10, 11, 21, 31],  // PM06
+      // [1, 9, 80, 10, 0, 3, 13, 23]     // PM09
+    ];
+
+    // 각 열의 합계를 계산하여 각 시간별 총합을 계산합니다
+    const totalData = rawData.map(group => {
+      return group.reduce((acc, val) => acc + val, 0);
+    });
+
+    // 각 데이터의 비율을 계산하여 전체 높이가 100이 되도록 조정합니다
+    const percentageData = rawData.map((group, i) => {
+      return group.map(value => (value / totalData[i]) * 100);
+    });
+
+    // 차트의 그리드 설정을 정의합니다
+    const grid = {
+      left: 100,  // 왼쪽 여백
+      right: 100, // 오른쪽 여백
+      top: 50,    // 위쪽 여백
+      bottom: 50  // 아래쪽 여백
+    };
+
+    // 각 시리즈를 정의합니다
+    const series = [
+      { name: '매우 높음', color: '#FF4500' },      // 매우 높음
+      { name: '높음', color: '#FFA500' },           // 높음
+      { name: '목표 내 범위', color: '#008000' },   // 목표 내 범위
+      { name: '낮음', color: '#FF0000' },           // 낮음
+      { name: '매우 낮음', color: '#8B0000' }       // 매우 낮음
+    ].map((item, sid) => {
+      return {
+        name: item.name,         // 시리즈 이름
+        type: 'bar',  // 바 차트 타입
+        stack: 'total', // 데이터 누적
+        barWidth: '60%', // 바 너비
+        itemStyle: {
+          color: item.color // 색상 설정
+        },
+        label: {
+          show: true, // 라벨 표시
+          position: 'inside', // 라벨 위치를 내부로 설정
+          formatter: params => rawData[params.dataIndex][sid] // 라벨 포맷 (정수 값)
+        },
+        data: percentageData.map(group => group[sid]) // 각 시리즈의 데이터를 비율로 설정
+      };
+    });
+
+    // 차트 옵션을 설정합니다
+    option = {
+      legend: {
+        show: true, // 범례 표시
+        selectedMode: false // 범례 선택 모드 비활성화
+      },
+      grid, // 그리드 설정 적용
+      yAxis: {
+        type: 'value', // y축 값을 기준으로 설정
+        max: 100, // y축 최대값을 100으로 설정 (고정된 높이)
+        show: false
+      },
+      xAxis: {
+        type: 'category', // x축 카테고리 타입 설정
+        data: ['12 AM', '3 AM', '6 AM', '9 AM', '12 PM', '3 PM', '6 PM', '9 PM'] // x축 데이터
+      },
+      series // 시리즈 설정 적용
+    };
+
+    // 옵션을 차트에 적용합니다
+    option && myChart.setOption(option);
+  </script>
+
+</body>
+
+</html>

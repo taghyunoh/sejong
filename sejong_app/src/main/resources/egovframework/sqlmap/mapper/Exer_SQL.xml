@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.exercise.mapper.ExerciseMapper">
+	
+	<!-- 걸음수 기록 Insert -->
+	<insert id="updateHealth" parameterType="ExerciseDTO">
+	    INSERT INTO T_EXER_TRAN
+	      (  USER_UUID
+	       , EXER_DATE
+	       , EXER_STIME
+	       , EXER_ETIME
+	       , EXER_NAME
+	       , EXER_INT
+	       , EXER_CNT
+	       , REG_DTTM
+	       , MOD_DTTM
+	      )
+	    VALUES
+	        (
+	          #{userUuid},
+	          DATE_FORMAT(STR_TO_DATE(#{exerDate}, '%Y-%m-%d'), '%Y%m%d'),
+	          #{exerStime},
+	          #{exerEtime},
+	          #{exerName},
+	          #{exerInt},
+	          #{exerCnt},
+	          NOW(),
+	          NOW()
+	        )
+	    ON DUPLICATE KEY UPDATE
+	        USER_UUID   = #{userUuid},
+	        EXER_DATE   = DATE_FORMAT(STR_TO_DATE(#{exerDate}, '%Y-%m-%d'), '%Y%m%d'),
+	        EXER_STIME  = #{exerStime},
+	        EXER_ETIME  = #{exerEtime},
+	        EXER_NAME   = #{exerName},
+	        EXER_INT    = #{exerInt},
+	        EXER_CNT    = #{exerCnt},
+	        MOD_DTTM    = NOW()
+	</insert>
+	
+	<delete id="deleteHealth" parameterType="ExerciseDTO">
+	    DELETE FROM T_EXER_TRAN
+	    WHERE    USER_UUID = #{userUuid}
+	        AND  EXER_SEQ = #{exerSeq}
+	</delete>
+	
+	<select id="getExercise" parameterType="map" resultType="ExerciseDTO">
+	WITH RANKED AS(
+		SELECT 
+		    EXER_SEQ  ,
+		    USER_UUID ,
+		    DATE_FORMAT(STR_TO_DATE(EXER_DATE, '%Y%m%d'), '%Y-%m-%d') AS EXER_DATE ,
+		    EXER_STIME ,
+		    EXER_ETIME ,
+		    EXER_NAME , 
+		    EXER_INT , 
+		    EXER_CNT ,
+		    REG_DTTM  ,
+		    MOD_DTTM  ,
+		    ROW_NUMBER() OVER (PARTITION BY EXER_DATE ORDER BY EXER_DATE , EXER_ETIME DESC) AS RN ,
+		    TIMESTAMPDIFF(
+		        MINUTE,
+		        STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+		        STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+		    ) AS EXER_MINUTES		    
+		FROM  T_EXER_TRAN 
+		WHERE   STR_TO_DATE(EXER_DATE, '%Y%m%d') BETWEEN 
+                STR_TO_DATE(REPLACE(#{startDt}, '-', ''), '%Y%m%d') 
+            AND STR_TO_DATE(REPLACE(#{endDt}, '-', ''), '%Y%m%d')
+		    AND USER_UUID = #{userUuid}
+	)   
+   SELECT 
+         EXER_SEQ  ,
+	     CASE WHEN RN = 1  THEN EXER_DATE ELSE EXER_DATE   END  EXER_DATE ,
+	     EXER_STIME ,
+	     EXER_ETIME ,
+	     EXER_NAME  ,
+	     EXER_MINUTES
+	FROM  RANKED
+	ORDER BY EXER_DATE DESC , EXER_STIME DESC    
+		      
+	</select>
+	<select id="getTodayExecs" parameterType="ExerciseDTO"  resultType="ExerciseDTO">
+		SELECT 
+		    USER_UUID ,
+		    DATE_FORMAT(STR_TO_DATE(EXER_DATE, '%Y%m%d'), '%Y-%m-%d') AS EXER_DATE ,
+		    EXER_STIME ,
+		    EXER_ETIME ,
+		    EXER_NAME , 
+		    EXER_INT , 
+		    EXER_CNT ,
+		    REG_DTTM  ,
+		    MOD_DTTM 
+		FROM T_EXER_TRAN 
+		WHERE EXER_DATE = DATE_FORMAT(NOW(), '%Y%m%d')
+   		  AND USER_UUID = #{userUuid}
+	</select>
+	<select id="getTodaysumExecs" parameterType="String"  resultType="map">
+		SELECT 
+		    SUM(
+		        TIMESTAMPDIFF(
+		            MINUTE,
+		            STR_TO_DATE(EXER_STIME, '%H%i%s'),
+		            STR_TO_DATE(EXER_ETIME, '%H%i%s')
+		        )
+		    ) AS minutes
+		FROM T_EXER_TRAN
+		WHERE EXER_DATE = DATE_FORMAT(NOW(), '%Y%m%d')
+		  AND USER_UUID = #{userUuid};
+	</select>	
+</mapper>

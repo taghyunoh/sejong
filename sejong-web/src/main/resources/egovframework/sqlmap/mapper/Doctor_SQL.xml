@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.doctor.mapper.DoctorMapper">
+	
+	<resultMap id="doctorMap" type="egovframework.sejong.doctor.model.DoctorDTO">
+          <result property="user_uuid"  column="user_uuid" />
+          <result property="user_nm"  column="user_nm" />
+          <result property="user_id"  column="user_id" />
+          <result property="user_pw"  column="user_pw" />
+          <result property="user_gb"  column="user_gb" />
+          <result property="dept_nm"  column="dept_nm" />
+          <result property="birth"    column="birth" />
+          <result property="phone"    column="phone" />
+          <result property="dtl_code_nm"    column="dtl_code_nm" />
+          <result property="gender"   column="gender" />
+          <result property="title"    column="title" />
+          <result property="email"    column="email" />
+          <result property="qstn_conts"   column="qstn_conts" />
+          <result property="ansr_conts"    column="ansr_conts" />
+          <result property="mod_dtm"    column="mod_dtm" />
+          <result property="reg_dtm"    column="reg_dtm" />
+          <result property="mod_id"    column="mod_id" />
+          <result property="faq_seq"    column="faq_seq" />
+          <result property="searchText"  column="searchText" />
+          <result property="cgm_dtm"    column="cgm_dtm" />
+          <result property="upt_value"    column="upt_value" />
+          <result property="gap_value"    column="gap_value" />
+          <result property="height"    column="height" />
+          <result property="weight"  column="weight" />
+	</resultMap>
+	<resultMap id="noticeMap" type="egovframework.sejong.doctor.model.NoticeDTO">
+          <result property="title"    column="title" />
+          <result property="expln"    column="expln" />
+          <result property="post_str"    column="post_str" />
+          <result property="post_end"    column="post_end" />          
+          <result property="noti_seq"   column="noti_seq" />
+          <result property="reg_dtm"    column="reg_dtm" />
+          <result property="mod_dtm"    column="mod_dtm" />
+          <result property="reg_id"    column="reg_id" />
+          <result property="mod_id"    column="mod_id" />
+          <result property="searchGb"    column="searchGb" />
+          <result property="searchText"  column="searchText" />
+	</resultMap>
+	<resultMap id="bloodMap" type="egovframework.sejong.blood.model.BloodDTO">
+          <result property="start"    column="start" />
+          <result property="end"    column="end" />
+          <result property="user_uuid"  column="user_uuid" />
+          <result property="userId"  column="userId" />
+	</resultMap>
+	
+	<!-- 환자정보 조회-->
+	<select id="selectPatientList" parameterType="DoctorDTO"  resultMap="doctorMap"><![CDATA[
+	  	 select  A.USER_ID
+		 	   , A.USER_UUID
+	  	 	   , A.USER_NM
+	  	 	   , A.USER_GB
+			   , A.PHONE
+			   , A.GENDER
+			   , A.BIRTH                        
+			   , A.JOIN_YMD      
+			   , A.HEIGHT
+			   , A.WEIGHT 			   
+			   , IFNULL(A.EMAIl,'') AS  EMAIl                     
+			   , IFNULL(B.DTL_CODE_NM,'') AS  DTL_CODE_NM      	
+			   , A.REG_DTM		                     
+          From T_USER_TRAN A
+		  LEFT OUTER JOIN T_COMM_MST_DTL B ON B.CODE = 'CD7' AND B.DTL_CODE = A.BLOD_GB   
+		 where 1=1 
+		  AND USER_GB = #{user_gb}
+		 ]]>
+  
+		  <if test="user_nm != null and user_nm !=''"><![CDATA[
+	         AND (A.USER_NM LIKE CONCAT('%',#{user_nm},'%')
+	         OR A.PHONE LIKE CONCAT('%',#{user_nm},'%'))
+	      ]]>
+	      </if>
+	      <![CDATA[
+		Order by A.REG_DTM ,A.USER_NM, A.PHONE 
+	      ]]>
+	</select> 
+	
+	
+	<!-- 환자 정보 조회-->
+	<select id="patientInfo" parameterType="DoctorDTO"  resultMap="doctorMap"><![CDATA[ 
+		 select  USER_ID
+		 	   , USER_UUID
+	  	 	   , USER_NM
+			   , PHONE
+			   , GENDER
+			   , BIRTH      
+			   , EMAIl          
+			   , HEIGHT
+			   , WEIGHT                  
+		  from T_USER_TRAN 
+		 where 1=1
+		   and USER_UUID = #{user_uuid}
+		]]>
+	</select> 	
+	<!-- 환자 정보 입력 -->
+	<insert id="insertPatient" parameterType="DoctorDTO"><![CDATA[ 
+		insert into T_USER_TRAN
+			(
+			  USER_NM
+			, USER_ID
+			, USER_PW
+			, PHONE
+			, BIRTH
+			, GENDER
+			, EMAIL
+			, REG_DTM
+			, USER_GB
+			, LOCK_YN
+			)
+			values
+			(
+			  #{user_nm}
+			, #{user_id}
+			, #{user_pw}
+			, #{phone}
+			, #{birth}
+			, #{gender}
+			, #{email}
+			, NOW()
+			, DATE_FORMAT(now(),'%Y%m%d')
+			, 'p'
+			, 'N'
+			)
+		]]>
+	</insert>
+	
+	<!-- 환자 코드 수정 -->
+	<update id="updatePatient" parameterType="DoctorDTO"><![CDATA[
+		update T_USER_TRAN
+		   set PHONE   = #{phone}
+		     , EMAIL   = #{email}
+			 , USER_PW = #{user_pw}
+			 , USER_NM = #{user_nm}
+		 where 1=1
+		   and USER_ID = #{user_id}
+		   and GENDER  = #{gender}
+		   and BIRTH   = #{birth}
+		]]>
+	</update>
+	
+	
+	<!-- 공지목록 조회-->
+	<select id="noticeList" parameterType="NoticeDTO"  resultMap="noticeMap"><![CDATA[
+	  	 select  TITLE
+               , EXPLN
+               , DATE_FORMAT(POST_STR, '%Y-%m-%d') AS POST_STR
+               , DATE_FORMAT(POST_END, '%Y-%m-%d') AS POST_END   
+               , DATE_FORMAT(REG_DTM, '%Y-%m-%d') AS REG_DTM  
+               , DATE_FORMAT(MOD_DTM, '%Y-%m-%d') AS MOD_DTM 
+               , NOTI_SEQ                    
+        from T_NOTICE_TRAN 
+       where 1=1
+         AND date(#{start_date}) >=  POST_STR or POST_END >= date(#{end_date}) 
+        
+       ]]>
+ 		<if test='searchGb == "T" and searchText != null and searchText != ""'><![CDATA[
+            AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+        ]]></if>
+        <if test='searchGb == "E" and searchText != null and searchText != ""'><![CDATA[
+            AND EXPLN LIKE CONCAT('%', #{searchText}, '%')
+        ]]></if>
+        <if test='searchGb == "A" and searchText != null and searchText != ""'><![CDATA[
+	        AND (TITLE LIKE CONCAT('%', #{searchText}, '%')
+	        OR EXPLN LIKE CONCAT('%', #{searchText}, '%'))
+        ]]></if>
+         <![CDATA[
+      order by REG_DTM DESC 
+         ]]>
+	</select> 
+		
+	<!-- 선택된 공지 조회-->
+	<select id="noticeInfo" parameterType="NoticeDTO"  resultMap="noticeMap"><![CDATA[ 
+		 select  TITLE
+               , EXPLN
+               , DATE_FORMAT(POST_STR, '%Y-%m-%d') AS POST_STR
+               , DATE_FORMAT(POST_END, '%Y-%m-%d') AS POST_END     
+               , REG_ID 
+               , DATE_FORMAT(REG_DTM, '%Y-%m-%d') AS REG_DTM  
+               , MOD_ID 
+               , DATE_FORMAT(MOD_DTM, '%Y-%m-%d') AS MOD_DTM 
+               , NOTI_SEQ                               
+		  from T_NOTICE_TRAN 
+		 where 1=1
+		   and NOTI_SEQ = #{noti_seq}
+		]]>
+	</select> 	
+	
+	<select id="faqList" parameterType="DoctorDTO"  resultMap="doctorMap"><![CDATA[
+	  	 select QSTN_CONTS,
+	  	 		ANSR_CONTS,
+	  	 		USE_YN,
+	  	 		MOD_ID,
+	  	 		DATE_FORMAT(MOD_DTM, '%Y-%m-%d') AS MOD_DTM,
+	  	 		FAQ_SEQ             
+        from T_FAQ_TRAN 
+       where 1=1
+         AND USE_YN = 'Y'
+         AND FAQ_GB in('W','T')
+         AND (QSTN_CONTS LIKE CONCAT('%', #{searchText}, '%')OR ANSR_CONTS LIKE CONCAT('%', #{searchText}, '%'))
+      order by REG_DTM DESC 
+         ]]>
+	</select> 
+	<select id="faqInfo" parameterType="DoctorDTO"  resultMap="doctorMap"><![CDATA[
+	  	 select QSTN_CONTS,
+	  	 		ANSR_CONTS,
+	  	 		USE_YN,
+	  	 		MOD_ID,
+	  	 		DATE_FORMAT(MOD_DTM, '%Y-%m-%d') AS MOD_DTM,
+	  	 		FAQ_SEQ                        
+        from T_FAQ_TRAN 
+		 where 1=1
+		   and FAQ_SEQ = #{faq_seq}
+         ]]>
+	</select> 
+	<select id="getMostRecentDate" parameterType="DoctorDTO" resultMap="doctorMap">
+   	    SELECT CGM_DTM
+   	          , UPT_VALUE
+   	          , (select UPT_VALUE from 
+   	                   (
+						SELECT  CGM_DTM, UPT_VALUE
+						FROM T_BLDINF_TRAN
+							  WHERE USER_UUID = #{user_uuid}
+			    			  ORDER BY  date_add(CGM_DTM,interval - 1  hour) DESC limit 2
+				       )k  order by CGM_DTM ASC limit 1 ) - UPT_VALUE   AS GAP_VALUE 
+        FROM T_BLDINF_TRAN
+        WHERE USER_UUID = #{user_uuid}
+        ORDER BY cgm_dtm DESC
+        LIMIT 1
+    </select>
+    <select id="drawMealsAveChart" parameterType="BloodDTO" resultMap="bloodMap">
+		SELECT 
+		    DATE(a.CGM_DTM) AS date,
+		    COALESCE(ROUND(AVG(a.UPT_VALUE), 1), 0) AS avgBlood
+		FROM 
+		    T_BLDINF_TRAN a
+		JOIN 
+		    T_FOODHIS_TRAN b ON a.USER_UUID = b.USER_UUID
+		WHERE a.USER_UUID = #{userId} AND 
+		DATE(a.CGM_DTM) BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s')) AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s')) AND 
+		DATE(b.EAT_DATE) BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s'))AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s')) AND
+		TIME(a.CGM_DTM) BETWEEN TIME(b.EAT_DATE) AND TIME(DATE_ADD(b.EAT_DATE, INTERVAL 2 HOUR))
+		GROUP BY 
+		    DATE(a.CGM_DTM)
+		ORDER BY 
+		    DATE(a.CGM_DTM);
+	</select> 
+</mapper>

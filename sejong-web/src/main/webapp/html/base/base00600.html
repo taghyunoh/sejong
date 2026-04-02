@@ -1,0 +1,351 @@
+<link href="/html/base/base.css" rel="stylesheet">
+
+<!-- 모달 -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <!-- 모달 class명으로 사이즈 조절 modal-320, 410, 520, 650, 820 -->
+  <div class="modal-dialog  modal-820">
+    <div class="modal-content">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-sm">저장</button>
+        <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal">목록</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-container">
+          <div class="form-wrap w-50">
+            <label for="" class="critical">사용자 ID</label>
+            <input type="text" class="form-control" placeholder="A000" value="A000" disabled>
+            <button type="button" class="btn btn-outline-dark">중복체크</button>
+          </div>
+          <div class="form-wrap w-50">
+
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">적용시작일</label>
+            <input type="text" id="datePicker" class="form-control" value="2023-06-27" disabled>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">적용종료일</label>
+            <input type="text" id="datePicker" class="form-control" value="2023-06-27">
+          </div>
+          <div class="form-wrap w-100">
+            <label for="" class="critical">사용자 명</label>
+            <input type="text" class="form-control" placeholder="사용자 명을 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">비밀번호</label>
+            <input type="password" class="form-control" placeholder="비밀번호를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">비밀번호 확인</label>
+            <input type="password" class="form-control" placeholder="비밀번호를 재입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">관리자 여부</label>
+            <p>
+              <input class="form-check-input" type="checkbox" value="" id="">
+              <span class="ml-1">관리자</span>
+            </p>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">사용여부</label>
+            <p>
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" checked>
+              <span class="ml-1">사용</span>
+            </p>
+            <p>
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+              <span class="ml-1">미사용</span>
+            </p>
+          </div>
+          <div class="form-wrap w-100">
+            <label for="" class="align-top">설명</label>
+            <textarea class="form-control" placeholder="설명을 입력하세요."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 본문 내용 -->
+<div class="tab-pane active">
+
+  <header class="header">
+    <h1>
+      사용자 정보 관리
+    </h1>
+  </header>
+  <div class="content-body">
+    <section class="top-pannel">
+      <div class="search-box">
+        <label for="search" class="form-title">검색어 입력</label>
+        <input type="text" class="form-control search" placeholder="검색어를 입력하세요">
+        <button class="buttcon"><span class="icon icon-search"></span></button>
+      </div>
+    </section>
+    <section class="main-pannel">
+      <div class="main-left w-100">
+        <header class="main-hd">
+          <h2>사용자 현황</h2>
+          <div class="btn-box">
+            <button class="btn btn-dark btn-sm">비밀번호 초기화</button>
+            <button class="btn btn-outline-dark btn-sm">수정</button>
+            <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
+              data-bs-target="#exampleModal">입력</button>
+            <button class="btn btn-primary btn-sm">저장</button>
+          </div>
+        </header>
+        <div class="main-content">
+          <!-- 테이블 샘플 -->
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <colgroup>
+                <col style="width: 50px">
+                <col style="width: 160px">
+                <col style="width: 260px">
+                <col style="width: 100px">
+                <col style="width: 100px">
+                <col style="width: 100px">
+                <col style="width: 80px">
+                <col style="width: auto; min-width: 200px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>선택</th>
+                  <th>사용자 ID</th>
+                  <th>사용자 명</th>
+                  <th>관리자 여부</th>
+                  <th>적용시작일</th>
+                  <th>적용종료일</th>
+                  <th>사용여부</th>
+                  <th>설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>userID01</td>
+                  <td>박태진</td>
+                  <td>N</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>Y</td>
+                  <td>1번 사용자 설명 글</td>
+                </tr>
+
+
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- 페이지네이션 start -->
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination pagination-sm justify-content-center">
+            <!-- 비활성화 .disabled / 활성화 .active -->
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item"><a class="page-link" href="#">1</a></li>
+            <li class="page-item active"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item"><a class="page-link" href="#">4</a></li>
+            <li class="page-item"><a class="page-link" href="#">5</a></li>
+            <li class="page-item"><a class="page-link" href="#">6</a></li>
+            <li class="page-item"><a class="page-link" href="#">7</a></li>
+            <li class="page-item"><a class="page-link" href="#">8</a></li>
+            <li class="page-item"><a class="page-link" href="#">9</a></li>
+            <li class="page-item"><a class="page-link" href="#">10</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <!-- 페이지네이션 js -->
+        <script src="/asset/js/pagination.js"></script>
+        <!-- 페이지네이션 end -->
+      </div>
+    </section>
+  </div>
+  <footer class="bottom-pannel">
+    <div>
+      <span class="date">2024-02-05</span>
+      <span class="message">저장 완료</span>
+    </div>
+  </footer>
+</div>

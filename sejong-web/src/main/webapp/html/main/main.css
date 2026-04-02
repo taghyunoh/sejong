@@ -1,0 +1,23 @@
+@charset "UTF-8";
+.file-box input[type="file"] {
+  min-width: 300px;
+}
+.file-box.input-group {
+  width: 40%;
+  flex-flow: row nowrap;
+}
+.top-pannel select {
+  min-width: 150px;
+}
+.top-pannel.upload {
+  gap: 18px;
+}
+.btn-box.upload {
+  gap: 12px;
+}
+.btn-box.upload label {
+  text-wrap: nowrap;
+}
+.search-box.date input {
+  width: 174px;
+}

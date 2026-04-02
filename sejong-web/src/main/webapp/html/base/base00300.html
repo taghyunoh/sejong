@@ -1,0 +1,569 @@
+<link href="/html/base/base.css" rel="stylesheet">
+
+<!-- 모달 -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <!-- 모달 class명으로 사이즈 조절 modal-320, 410, 520, 650, 820 -->
+  <div class="modal-dialog  modal-820">
+    <div class="modal-content">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-sm">저장</button>
+        <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal">목록</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-container">
+          <div class="form-wrap w-50">
+            <label for="" class="critical">수가코드</label>
+            <input type="text" class="form-control" placeholder="A000" value="A000" disabled>
+            <button type="button" class="btn btn-outline-dark">중복체크</button>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">수가구분</label>
+            <select class="form-select">
+              <option value="">선택</option>
+              <option value="1">01. 일반수가</option>
+              <option value="2">02. 약가수가</option>
+              <option value="3">03. 재료수가</option>
+            </select>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">적용시작일</label>
+            <input type="text" id="datePicker" class="form-control" value="2023-06-27" disabled>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="" class="critical">적용종료일</label>
+            <input type="text" id="datePicker" class="form-control" value="2023-06-27">
+          </div>
+          <div class="form-wrap w-100">
+            <label for="" class="critical">수가한글명</label>
+            <input type="text" class="form-control" placeholder="수가한글명을 입력하세요.">
+          </div>
+          <div class="form-wrap w-100">
+            <label for="" class="critical">수가영문명</label>
+            <input type="text" class="form-control" placeholder="수가영문명을 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">1-2구분</label>
+            <input type="text" class="form-control" placeholder="1 또는 2">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">수술여부</label>
+            <p>
+              <input class="form-check-input" type="checkbox" value="" id="">
+              <span class="ml-1">수술</span>
+            </p>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">의원 단가</label>
+            <input type="text" class="form-control" placeholder="의원 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">병원급 이상 단가</label>
+            <input type="text" class="form-control" placeholder="병원급 이상 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">치과 병의원 단가</label>
+            <input type="text" class="form-control" placeholder="치과 병의원 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">보건기관 단가</label>
+            <input type="text" class="form-control" placeholder="보건기관 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">조산원 단가</label>
+            <input type="text" class="form-control" placeholder="조산원 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">한방병원 단가</label>
+            <input type="text" class="form-control" placeholder="한방병원 단가를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">상대가치 점수</label>
+            <input type="text" class="form-control" placeholder="상대가치 점수를 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">
+              <div>본인부담률</div>
+              <p><span>50</span>/100</p>
+            </label>
+            <input type="text" class="form-control" placeholder="본인부담률을 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">
+              <div>본인부담률</div>
+              <p><span>80</span>/100</p>
+            </label>
+            <input type="text" class="form-control" placeholder="본인부담률을 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">
+              <div>본인부담률</div>
+              <p><span>90</span>/100</p>
+            </label>
+            <input type="text" class="form-control" placeholder="본인부담률을 입력하세요.">
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">중복인정 여부</label>
+            <p>
+              <input class="form-check-input" type="checkbox" value="" id="">
+              <span class="ml-1">인정</span>
+            </p>
+          </div>
+          <div class="form-wrap w-50">
+            <label for="">산정명칭</label>
+            <input type="text" class="form-control" placeholder="산정명칭을 입력하세요.">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- 본문 내용 -->
+<div class="tab-pane active">
+
+  <header class="header">
+    <h1>
+      수가 정보 관리
+    </h1>
+  </header>
+  <div class="content-body">
+    <section class="top-pannel">
+      <div class="search-box">
+        <label for="search" class="form-title">검색어 입력</label>
+        <input type="text" class="form-control search" placeholder="수가코드 또는 수가명을 입력하세요">
+        <button class="buttcon"><span class="icon icon-search"></span></button>
+      </div>
+    </section>
+    <section class="main-pannel">
+      <div class="main-left w-100">
+        <header class="main-hd">
+          <h2>수가 정보 목록</h2>
+          <div class="btn-box">
+            <button class="btn btn-outline-dark btn-sm">수정</button>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal">입력</button>
+            <button class="btn btn-dark btn-sm">삭제</button>
+          </div>
+        </header>
+        <div class="main-content">
+          <!-- 테이블 샘플 -->
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <colgroup>
+                <col style="width: 50px">
+                <col style="width: 80px">
+                <col style="width: 120px">
+                <col style="width: auto">
+                <col style="width: 100px">
+                <col style="width: 100px">
+                <col style="width: 80px">
+                <col style="width: 120px">
+                <col style="width: 120px">
+                <col style="width: 120px">
+                <col style="width: 120px">
+                <col style="width: 100px">
+                <col style="width: 200px">
+                <col style="width: 80px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>선택</th>
+                  <th>번호</th>
+                  <th>수가코드</th>
+                  <th>수가한글명</th>
+                  <th>적용시작일</th>
+                  <th>적용종료일</th>
+                  <th>1-2구분</th>
+                  <th>의원단가</th>
+                  <th>병원급단가</th>
+                  <th>치과단가</th>
+                  <th>보건기관단가</th>
+                  <th>상대가치점수</th>
+                  <th>산정명칭</th>
+                  <th>수술여부</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td class="ellips">가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+                <tr>
+                  <td><input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"></td>
+                  <td>111</td>
+                  <td>aaaaaaa</td>
+                  <td>가나다라마바사</td>
+                  <td>2024-01-01</td>
+                  <td>2024-11-01</td>
+                  <td>1</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>999</td>
+                  <td>99</td>
+                  <td>aaaaaaa</td>
+                  <td>Y</td>
+                </tr>
+
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 페이지네이션 start -->
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination pagination-sm justify-content-center">
+            <!-- 비활성화 .disabled / 활성화 .active -->
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item"><a class="page-link" href="#">1</a></li>
+            <li class="page-item active"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item"><a class="page-link" href="#">4</a></li>
+            <li class="page-item"><a class="page-link" href="#">5</a></li>
+            <li class="page-item"><a class="page-link" href="#">6</a></li>
+            <li class="page-item"><a class="page-link" href="#">7</a></li>
+            <li class="page-item"><a class="page-link" href="#">8</a></li>
+            <li class="page-item"><a class="page-link" href="#">9</a></li>
+            <li class="page-item"><a class="page-link" href="#">10</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <!-- 페이지네이션 js -->
+        <script src="/asset/js/pagination.js"></script>
+        <!-- 페이지네이션 end -->
+      </div>
+    </section>
+  </div>
+  <footer class="bottom-pannel">
+    <div>
+      <span class="date">2024-02-05</span>
+      <span class="message">저장 완료</span>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.base.mapper.BaseMapper">
+    <!-- ResultMap 정의 -->
+    <resultMap id="NotiMap" type="egovframework.sejong.base.model.NotiDTO">
+        <result property="noti_seq" column="noti_seq"/>
+        <result property="file_gb" column="file_gb"/>
+        <result property="start_dt" column="start_dt"/>
+        <result property="end_dt" column="end_dt"/>
+        <result property="start_date" column="start_date"/>
+        <result property="end_date" column="end_date"/>
+        <result property="user_nm" column="user_nm"/>
+        <result property="sub_code_nm" column="sub_code_nm"/>   
+        <result property="noti_nm" column="noti_nm"/>      
+        <result property="use_yn" column="use_yn"/>
+        <result property="hosp_cd" column="hosp_cd"/>
+        <result property="hosp_uuid" column="hosp_uuid"/>
+        <result property="noti_title" column="noti_title"/>
+        <result property="noti_content" column="noti_content"/>
+        <result property="update_sw" column="update_sw"/>
+        <result property="noti_redcnt" column="noti_redcnt"/>
+        <result property="reg_dttm" column="reg_dttm"/>
+        <result property="reg_user" column="reg_user"/>
+        <result property="reg_ip" column="reg_ip"/>
+        <result property="upd_dttm" column="upd_dttm"/>
+        <result property="upd_user" column="upd_user"/>
+        <result property="upd_ip" column="upd_ip"/>
+    </resultMap>    
+    <resultMap id="AsqMap" type="egovframework.sejong.base.model.AsqDTO">
+        <result property="asq_seq" column="ASQ_SEQ" />
+        <result property="hosp_cd" column="HOSP_CD" />
+        <result property="hosp_uuid" column="HOSP_UUID"/>
+        <result property="file_gb" column="FILE_GB" />
+        <result property="qstn_title" column="QSTN_TITLE" />
+        <result property="qstn_conts" column="QSTN_CONTS" /> 
+        <result property="asq_share" column="ASQ_SHARE" />
+        <result property="ansr_conts" column="ANSR_CONTS" />
+        <result property="qstn_wan" column="QSTN_WAN" />
+        <result property="ansr_wan" column="ANSR_WAN" />        
+        <result property="user_nm" column= "USER_NM" />
+        <result property="asq_share" column="ASQ_SHARE" />
+        <result property="qstn_stat" column="QSTN_STAT" />
+        <result property="ansr_stat" column="ANSR_STAT" />
+        <result property="hosp_nm" column="HOSP_NM" />
+        <result property="update_sw" column="UPDATE_SW" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="read_cnt" column="READ_CNT" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip" column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip" column="UPD_IP" />
+        <result property="ansr_dttm" column="ANSR_DTTM" />
+        <result property="ansr_user" column="ANSR_USER" />
+        <result property="ansr_ip" column="ANSR_IP" />
+        <result property="ansr_upd_dttm" column="ANSR_UPD_DTTM" />
+        <result property="ansr_upd_user" column="ANSR_UPD_USER" />
+        <result property="ansr_upd_ip" column="ANSR_UPD_IP" />
+    </resultMap> 
+    <resultMap id="HospEmpMAP" type="egovframework.sejong.base.model.HospEmpDTO">
+        <result property="hosp_uuid" column="hosp_uuid" />
+        <result property="lic_num" column="lic_num" />
+        <result property="ip_dt" column="ip_dt" />
+        <result property="user_id" column="user_id" />
+        <result property="user_nm" column="user_nm" />
+        <result property="hosp_nm" column="hosp_nm" />
+        <result property="lic_type" column="lic_type" />
+        <result property="lic_detail" column="lic_detail" />
+        <result property="lic_str_dt" column="lic_str_dt" />
+        <result property="jumin_id" column="jumin_id" />
+        <result property="te_dt" column="te_dt" />
+        <result property="hosp_cd" column="hosp_cd" />
+        <result property="use_yn" column="use_yn" />
+        <result property="dept_code" column="dept_code" />
+        <result property="start_dt" column="start_dt" />
+        <result property="end_dt" column="end_dt" />
+        <result property="sub_code_nm" column="sub_code_nm"/>   
+        <result property="dept_name" column="dept_name" />
+        <result property="stat_name" column="stat_name" />
+        <result property="reg_dttm" column="reg_dttm" />
+        <result property="reg_user" column="reg_user" />
+        <result property="reg_ip" column="reg_ip" />
+        <result property="upd_dttm" column="upd_dttm" />
+        <result property="upd_user" column="upd_user" />
+        <result property="upd_ip" column="upd_ip" />
+    </resultMap>      
+	<resultMap id= "licworkMAP"  type ="egovframework.sejong.base.model.LicworkDTO">
+	    <result property="hosp_uuid"    column="hosp_uuid" />
+	    <result property="seq"           column="seq" />
+	    <result property="lic_num"       column="lic_num" />
+        <result property="lic_detail"    column="lic_detail" />	    
+	    <result property="hosp_cd"       column="hosp_cd" />
+        <result property="user_nm"       column="user_nm" />
+        <result property="hosp_nm"       column="hosp_nm" />	    
+	    <result property="vac_gb"        column="vac_gb" />
+	    <result property="ip_dt"         column="ip_dt" />
+	    <result property="te_dt"         column="te_dt" />
+	    <result property="vac_start_dt"  column="vac_start_dt" />
+	    <result property="vac_end_dt"    column="vac_end_dt" />
+	    <result property="sub_code_nm"   column="sub_code_nm" />
+	    <result property="sub_dep_nm"   column="sub_dep_nm"/>   
+	    <result property="sub_name"      column="sub_name" />	    
+	    <result property="sub_start_dt"  column="sub_start_dt" />
+	    <result property="sub_end_dt"    column="sub_end_dt" />
+	    <result property="ward_nm"       column="ward_nm" />
+	    <result property="ward_dan"      column="ward_dan" />
+	    <result property="ward_start_dt" column="ward_start_dt" />
+	    <result property="ward_end_dt" column="ward_end_dt" />
+	    <result property="ecch_yn"     column="ecch_yn" />
+	    <result property="upd_dttm"    column="upd_dttm" />
+	    <result property="upd_user"    column="upd_user" />
+	    <result property="upd_ip"      column="upd_ip" />
+	</resultMap>
+    <resultMap id="UrlpathMAP" type ="egovframework.sejong.base.model.UrlpathDTO">
+        <result property="hosp_cd"   column="HOSP_CD" />
+        <result property="hosp_uuid" column="HOSP_UUID" />
+        <result property="sub_code_nm"   column="SUB_CODE_NM" />
+        <result property="start_dt"  column="START_DT" />
+        <result property="url_path"  column="URL_PATH" />
+        <result property="end_dt"    column="END_DT" />
+        <result property="use_yn"    column="USE_YN" />
+        <result property="bigo"      column="BIGO" />
+        <result property="user_nm"   column="USER_NM" />
+        <result property="hosp_nm"   column="HOSP_NM" />
+        <result property="reg_dttm"  column="REG_DTTM" />
+        <result property="reg_user"  column="REG_USER" />
+        <result property="reg_ip"    column="REG_IP" />
+        <result property="upd_dttm"  column="UPD_DTTM" />
+        <result property="upd_user"  column="UPD_USER" />
+        <result property="upd_ip"    column="UPD_IP" />
+    </resultMap>     	
+    <!-- 예제: 데이터 삽입 -->
+    <select id="selectNotiMstList" parameterType="NotiDTO" resultMap="NotiMap"> <![CDATA[ 
+        SELECT 
+          A.NOTI_SEQ ,
+          A.FILE_GB  , 
+          C.SUB_CODE_NM AS  NOTI_NM,
+          B.USER_NM ,
+          DATE_FORMAT(A.START_DT, '%Y-%m-%d') START_DT ,
+	      DATE_FORMAT(A.END_DT, '%Y-%m-%d') END_DT, 
+          A.USE_YN , 
+          IFNULL(A.HOSP_CD,'') HOSP_CD ,
+          A.NOTI_TITLE , 
+          A.NOTI_CONTENT , 
+          A.UPDATE_SW ,
+          A.NOTI_REDCNT , 
+          A.REG_DTTM ,
+          A.REG_USER , 
+          A.REG_IP , 
+          A.UPD_DTTM ,
+          A.UPD_USER , 
+          A.UPD_IP , 
+          A.HOSP_UUID 
+        FROM TBL_NOTI_MST A , TBL_USER_MST B , TBL_CODE_DTL C
+        WHERE 1=1  
+             AND B.USER_ID = A.UPD_USER  
+             AND B.HOSP_UUID = A.HOSP_UUID 
+             AND C.CODE_GB = 'Z' AND C.CODE_CD = 'NOTI_GB' AND C.SUB_CODE = A.FILE_GB
+             AND DATE_FORMAT(now(),'%Y%m%d') BETWEEN REPLACE(A.START_DT,'-','') AND REPLACE(A.END_DT,'-','')
+             AND DATE_FORMAT(A.UPD_DTTM,'%Y%m%d') BETWEEN REPLACE(#{start_date},'-','') AND REPLACE(#{end_date},'-','')
+		 ]]>
+	    <choose>
+	        <when test="searchGb = 'T' and searchText != null and searchText != ''"><![CDATA[
+	            AND (A.NOTI_TITLE LIKE CONCAT('%', #{searchText}, '%'))
+	        ]]></when>
+	        <when test="searchGb = 'E' and searchText != null and searchText != ''"><![CDATA[
+	            AND (A.NOTI_CONTENT LIKE CONCAT('%', #{searchText}, '%'))
+	        ]]></when>
+	        <when test="searchText != null and searchText != ''"><![CDATA[
+	            AND (A.NOTI_TITLE LIKE CONCAT('%', #{searchText}, '%')
+	            OR A.NOTI_CONTENT LIKE CONCAT('%', #{searchText}, '%'))
+	        ]]></when>
+	    </choose>
+	         <![CDATA[
+	      order by A.UPD_DTTM DESC 
+	         ]]>
+    </select>         
+    
+    <select id="selectNotiMstinfo" parameterType="NotiDTO" resultMap="NotiMap"> <![CDATA[ 
+        SELECT 
+          A.NOTI_SEQ ,
+          A.FILE_GB  , 
+          A.START_DT , 
+          A.END_DT ,
+          A.USE_YN , 
+          A.HOSP_CD ,
+          A.NOTI_TITLE , 
+          A.NOTI_CONTENT , 
+          A.UPDATE_SW ,
+          A.NOTI_REDCNT , 
+          A.REG_DTTM ,
+          A.REG_USER , 
+          A.REG_IP , 
+          A.UPD_DTTM ,
+          A.UPD_USER , 
+          A.UPD_IP ,
+          A.HOSP_UUID
+        FROM TBL_NOTI_MST A
+        WHERE 1=1
+         AND A.NOTI_SEQ = #{noti_seq} 
+    ]]> 
+    </select> 
+      
+    <insert id="insertNotiMst" parameterType="NotiDTO"> <![CDATA[ 
+        INSERT INTO TBL_NOTI_MST (
+            FILE_GB, 
+            START_DT, 
+            END_DT, 
+            USE_YN, 
+            HOSP_CD, 
+            NOTI_TITLE, 
+            NOTI_CONTENT, 
+            UPDATE_SW, 
+            NOTI_REDCNT, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP ,
+            HOSP_UUID
+        ) 
+        VALUES (
+            #{file_gb}, 
+            REPLACE(#{start_dt} , '-', ''), 
+            REPLACE(#{end_dt} , '-', '') , 
+            #{use_yn}, 
+            #{hosp_cd}, 
+            #{noti_title}, 
+            #{noti_content}, 
+            #{update_sw}, 
+            #{noti_redcnt}, 
+            now(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+            now(), 
+            #{upd_user}, 
+            #{upd_ip} ,
+            #{hosp_uuid}
+        )
+    ]]>    
+    </insert>    
+    <!--        NOTI_REDCNT  = #{noti_redcnt}, -->
+    <update id="updateNotiMst" parameterType="NotiDTO"> <![CDATA[ 
+        UPDATE TBL_NOTI_MST
+        SET 
+            START_DT     = REPLACE(#{start_dt} , '-', ''),
+            END_DT       = REPLACE(#{end_dt} , '-', '') ,    
+            USE_YN       = #{use_yn},
+            HOSP_CD      = #{hosp_cd},
+            NOTI_TITLE   = #{noti_title},
+            NOTI_CONTENT = #{noti_content},
+            UPDATE_SW    = #{update_sw},
+            UPD_DTTM     = now(),
+            UPD_USER     = #{upd_user},
+            UPD_IP       = #{upd_ip} ,
+            HOSP_UUID    = #{hosp_uuid}
+        WHERE NOTI_SEQ   = #{noti_seq} 
+         AND  FILE_GB    = #{file_gb} 
+    ]]>    
+    </update>
+    <delete id="deleteNotiMst" parameterType="NotiDTO"> <![CDATA[ 
+        DELETE FROM TBL_NOTI_MST
+        WHERE NOTI_SEQ = #{noti_seq}
+        AND   FILE_GB    = #{file_gb} 
+    ]]>    
+    </delete>  
+    <select id="selectqstnlist" parameterType="AsqDTO" resultMap="AsqMap"> <![CDATA[ 
+        SELECT 
+            A.HOSP_CD, 
+            A.FILE_GB, 
+            A.QSTN_TITLE, 
+            A.ASQ_SEQ ,
+            B.USER_NM ,
+            C.HOSP_NM ,
+            A.QSTN_CONTS, 
+            A.ASQ_SHARE, 
+            IFNULL(A.ANSR_CONTS,'') ANSR_CONTS , 
+            A.UPDATE_SW, 
+            A.REG_DTTM, 
+            A.REG_USER, 
+            A.REG_IP, 
+            A.READ_CNT ,
+            A.UPD_DTTM, 
+            A.UPD_USER, 
+            A.UPD_IP, 
+            A.ANSR_DTTM, 
+            A.ANSR_USER, 
+            A.ANSR_IP, 
+            A.ANSR_UPD_DTTM, 
+            A.ANSR_UPD_USER, 
+            A.ANSR_UPD_IP , 
+            A.HOSP_UUID ,
+            A.QSTN_WAN  ,
+            A.ANSR_WAN  ,
+            CASE WHEN  A.QSTN_WAN = 'Y' THEN '질문완료'
+            ELSE '질문진행' END QSTN_STAT ,
+            CASE WHEN  A.ANSR_WAN = 'Y' THEN '답변완료'
+            ELSE '답변진행' END ANSR_STAT             
+           FROM TBL_ASQ_MST A , TBL_USER_MST B , TBL_HOSP_MST C 
+        WHERE 1=1  
+             AND B.HOSP_UUID = A.HOSP_UUID
+             AND B.USER_ID   = A.UPD_USER  
+             AND C.HOSP_UUID = A.HOSP_UUID 
+		 ]]>
+		  <if test='qstn_title != null and qstn_title !="" '><![CDATA[
+	         AND (A.QSTN_TITLE LIKE CONCAT(#{qstn_title},'%')
+	          OR  A.QSTN_CONTS LIKE CONCAT(#{qstn_title},'%') )
+	      ]]>
+	      </if>
+	      <![CDATA[
+		     Order by A.UPD_DTTM  DESC
+	      ]]>
+    </select>
+     <!-- 질문입력  -->   
+     <insert id="insertqstnMst" parameterType="AsqDTO"> <![CDATA[ 
+        INSERT INTO TBL_ASQ_MST (
+            HOSP_CD, 
+            FILE_GB, 
+            QSTN_TITLE, 
+            QSTN_CONTS, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP, 
+            HOSP_UUID ,
+            QSTN_WAN
+        ) VALUES (
+            #{hosp_cd}, 
+            #{file_gb}, 
+            #{qstn_title}, 
+            #{qstn_conts}, 
+            NOW(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+            NOW(), 
+            #{upd_user}, 
+            #{upd_ip}, 
+            #{hosp_uuid} ,
+            #{qstn_wan}
+        )
+    ]]>    
+    </insert>    
+    <!-- 질문수정 -->
+     <update id="updateqstnMst" parameterType="AsqDTO"> <![CDATA[ 
+        UPDATE TBL_ASQ_MST
+        SET 
+            QSTN_TITLE   = #{qstn_title},
+            QSTN_CONTS   = #{qstn_conts},
+            UPDATE_SW    = #{update_sw},
+            UPD_DTTM     = NOW(),
+            UPD_USER     = #{upd_user},
+            UPD_IP       = #{upd_ip} ,
+            QSTN_WAN     = #{qstn_wan}
+        WHERE ASQ_SEQ  = #{asq_seq} 
+          AND FILE_GB  = #{file_gb}
+     ]]>   
+    </update>   
+     <select  id="selectqstnInfo" parameterType="AsqDTO" resultMap="AsqMap"> <![CDATA[ 
+        SELECT 
+            QSTN_TITLE ,
+            QSTN_CONTS ,
+            QSTN_WAN   ,
+            ANSR_CONTS , 
+            ANSR_WAN   ,
+            UPDATE_SW  ,
+            UPD_DTTM   ,
+            UPD_USER   ,
+            UPD_IP     
+         FROM  TBL_ASQ_MST   
+        WHERE ASQ_SEQ  = #{asq_seq} 
+     ]]>   
+    </select> 
+  <!-- 답변수정 -->
+     <update id="updateAnsrMst" parameterType="AsqDTO"> <![CDATA[ 
+        UPDATE TBL_ASQ_MST
+        SET 
+            ASQ_SHARE       = #{asq_share},
+            ANSR_CONTS      = #{ansr_conts},
+            ANSR_DTTM       = NOW(),
+            ANSR_USER       = #{ansr_user},
+            ANSR_IP         = #{ansr_ip} ,
+            ANSR_UPD_DTTM   = NOW(),
+            ANSR_UPD_USER   = #{ansr_upd_user},
+            ANSR_UPD_IP     = #{ansr_upd_ip} ,
+            ANSR_WAN        = #{ansr_wan}
+        WHERE ASQ_SEQ  = #{asq_seq} 
+          AND FILE_GB  = #{file_gb}
+     ]]>   
+    </update>        
+    <select id="selectHospEmpInfo" parameterType="HospEmpDTO" resultMap="HospEmpMAP"> <![CDATA[ 
+        SELECT 
+            HOSP_UUID, 
+            LIC_NUM, 
+            DATE_FORMAT(IP_DT, '%Y-%m-%d') IP_DT ,
+            USER_ID, 
+            USER_NM,
+            LIC_TYPE,
+            LIC_DETAIL, 
+            DATE_FORMAT(LIC_STR_DT, '%Y-%m-%d') LIC_STR_DT ,
+            JUMIN_ID, 
+            DATE_FORMAT(TE_DT, '%Y-%m-%d') TE_DT ,
+            HOSP_CD, 
+            USE_YN,
+            DEPT_CODE, 
+            DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT ,
+            DEPT_NAME, 
+            STAT_NAME,
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP 
+        FROM TBL_HOSPEMP_MST  
+        WHERE 1=1 
+          AND HOSP_UUID   = #{hosp_uuid}
+          AND LIC_NUM     = #{lic_num}
+          AND IP_DT       = REPLACE(#{ip_dt},'-','')
+     ]]>     
+    </select>   
+    <select id="selectHospEmpList" parameterType="HospEmpDTO" resultMap="HospEmpMAP"> <![CDATA[ 
+        SELECT 
+            A.HOSP_UUID, 
+            A.LIC_NUM, 
+            DATE_FORMAT(A.IP_DT, '%Y-%m-%d') IP_DT ,
+            A.USER_ID, 
+            A.USER_NM,
+            B.HOSP_NM , 
+            A.LIC_TYPE,
+            CASE WHEN  A.LIC_TYPE <> '' THEN (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+                                               WHERE CODE_CD  = 'LIC_TYPE' 
+                                                 AND SUB_CODE =  A.LIC_TYPE) 
+            ELSE '' END SUB_CODE_NM ,
+            A.LIC_DETAIL, 
+            DATE_FORMAT(A.LIC_STR_DT, '%Y-%m-%d') LIC_STR_DT ,
+            A.JUMIN_ID, 
+            DATE_FORMAT(A.TE_DT, '%Y-%m-%d') TE_DT ,
+            A.HOSP_CD, 
+            A.USE_YN,
+            A.DEPT_CODE, 
+            DATE_FORMAT(A.START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(A.END_DT, '%Y-%m-%d') END_DT ,
+            A.DEPT_NAME, 
+            A.STAT_NAME,
+            A.REG_DTTM, 
+            A.REG_USER, 
+            A.REG_IP, 
+            A.UPD_DTTM, 
+            A.UPD_USER, 
+            A.UPD_IP 
+        FROM TBL_HOSPEMP_MST A , TBL_HOSP_MST B 
+        WHERE 1=1 
+          AND B.HOSP_UUID = A.HOSP_UUID  
+     ]]>     
+     <if test='user_nm != null and user_nm !="" '><![CDATA[
+	       AND (A.LIC_NUM LIKE CONCAT(#{user_nm},'%')
+	        OR  A.USER_NM LIKE CONCAT(#{user_nm},'%') )
+	 ]]>
+	 </if>
+	  <![CDATA[
+	    Order by A.USER_NM ASC  , A.IP_DT ASC
+	 ]]>
+    </select>  
+     <insert id="insertHospEmp" parameterType="HospEmpDTO"> <![CDATA[ 
+        INSERT INTO TBL_HOSPEMP_MST (
+            HOSP_UUID, 
+            LIC_NUM, 
+            IP_DT, 
+            USER_ID, 
+            USER_NM, 
+            LIC_TYPE,
+            LIC_DETAIL, 
+            LIC_STR_DT, 
+            JUMIN_ID, 
+            TE_DT, 
+            HOSP_CD, 
+            USE_YN,
+            DEPT_CODE, 
+            START_DT, 
+            END_DT, 
+            DEPT_NAME, 
+            STAT_NAME,
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        ) VALUES (
+            #{hosp_uuid}, 
+            #{lic_num}, 
+            REPLACE(#{ip_dt},'-',''), 
+            #{user_id}, 
+            #{user_nm}, 
+            #{lic_type},
+            #{lic_detail}, 
+            REPLACE(#{lic_str_dt},'-',''), 
+            #{jumin_id}, 
+            REPLACE(#{te_dt},'-',''),  
+            #{hosp_cd}, 
+            #{use_yn},
+            #{dept_code}, 
+            REPLACE(#{start_dt},'-',''), 
+            REPLACE(#{end_dt},'-',''), 
+            #{dept_name}, 
+            #{stat_name},
+            NOW(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+            NOW(), 
+            #{upd_user}, 
+            #{upd_ip}
+        )
+    ]]>    
+    </insert> 
+    <update id="updateHospEmp" parameterType="HospEmpDTO"> <![CDATA[ 
+        UPDATE TBL_HOSPEMP_MST
+        SET 
+            USER_ID    = #{user_id},
+            USER_NM    = #{user_nm},
+            LIC_TYPE   = #{lic_type},
+            LIC_DETAIL = #{lic_detail},
+            LIC_STR_DT = REPLACE(#{lic_str_dt},'-',''),
+            JUMIN_ID   = #{jumin_id},
+            TE_DT      = REPLACE(#{te_dt},'-',''),
+            HOSP_CD    = #{hosp_cd},
+            USE_YN     = #{use_yn},
+            DEPT_CODE  = #{dept_code},
+            START_DT   = REPLACE(#{start_dt},'-',''),
+            END_DT     = REPLACE(#{end_dt},'-',''),
+            DEPT_NAME  = #{dept_name},
+            STAT_NAME  = #{stat_name},
+            UPD_DTTM   =  NOW(),
+            UPD_USER   = #{upd_user},
+            UPD_IP     = #{upd_ip}
+        WHERE 1=1 
+          AND HOSP_UUID   = #{hosp_uuid}
+          AND LIC_NUM     = #{lic_num}
+          AND IP_DT       = REPLACE(#{ip_dt},'-','')
+    ]]>        
+   </update>  
+   <select id="selectlicworkList" parameterType="licworkDTO" resultMap="licworkMAP"> <![CDATA[     
+        SELECT 
+            A.SEQ , 
+            A.HOSP_UUID, 
+            A.LIC_NUM, 
+            DATE_FORMAT(B.IP_DT, '%Y-%m-%d') IP_DT ,
+            B.USER_ID, 
+            B.USER_NM,
+            C.HOSP_NM , 
+            A.VAC_GB,
+            CASE WHEN  B.LIC_TYPE <> '' THEN (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+                                               WHERE CODE_CD  = 'LIC_TYPE' 
+                                                 AND SUB_CODE =  B.LIC_TYPE) 
+            ELSE '' END SUB_DEP_NM ,            
+            CASE WHEN  A.VAC_GB <> '' THEN (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+                                               WHERE CODE_CD  = 'VAC_GB' 
+                                                 AND SUB_CODE =  A.VAC_GB) 
+            ELSE '' END SUB_CODE_NM ,
+            B.LIC_DETAIL, 
+            DATE_FORMAT(B.IP_DT, '%Y-%m-%d') IP_DT ,
+            DATE_FORMAT(B.TE_DT, '%Y-%m-%d') TE_DT ,
+            DATE_FORMAT(A.VAC_START_DT, '%Y-%m-%d') VAC_START_DT ,
+            DATE_FORMAT(A.VAC_END_DT , '%Y-%m-%d')  VAC_END_DT ,
+            A.SUB_NAME , 
+            DATE_FORMAT(A.SUB_START_DT, '%Y-%m-%d') SUB_START_DT ,
+            DATE_FORMAT(A.SUB_END_DT, '%Y-%m-%d')  SUB_END_DT ,
+            A.WARD_NM   ,
+            A.WARD_DAN , 
+            DATE_FORMAT(A.WARD_START_DT , '%Y-%m-%d') WARD_START_DT, 
+            DATE_FORMAT(A.WARD_END_DT , '%Y-%m-%d')  WARD_END_DT,
+            A.ECCH_YN ,
+            A.UPD_DTTM, 
+            A.UPD_USER, 
+            A.UPD_IP 
+        FROM TBL_LICWORK_TBL A  , TBL_HOSPEMP_MST B , TBL_HOSP_MST C
+        WHERE 1=1 
+          AND C.HOSP_UUID = A.HOSP_UUID
+          AND B.HOSP_UUID = A.HOSP_UUID  
+          AND B.LIC_NUM   = A.LIC_NUM  
+     ]]>     
+     <if test='user_nm != null and user_nm !="" '><![CDATA[
+	       AND (B.USER_NM LIKE CONCAT(#{user_nm},'%')
+	        OR  B.USER_NM LIKE CONCAT(#{user_nm},'%') )
+	 ]]>
+	 </if>
+	  <![CDATA[
+	    Order by B.USER_NM ASC  , B.IP_DT ASC
+	 ]]>
+    </select>  
+    <insert id="insertlicwork" parameterType= "licworkDTO"> <![CDATA[
+        INSERT INTO TBL_LICWORK_TBL (
+            HOSP_UUID, 
+            LIC_NUM, 
+            HOSP_CD, 
+            VAC_GB, 
+            VAC_START_DT, 
+            VAC_END_DT, 
+            SUB_NAME, 
+            SUB_START_DT, 
+            SUB_END_DT, 
+            WARD_NM, 
+            WARD_DAN, 
+            WARD_START_DT, 
+            WARD_END_DT, 
+            ECCH_YN, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        ) VALUES (
+            #{hosp_uuid}, 
+            #{lic_num}, 
+            #{hosp_cd}, 
+            #{vac_gb}, 
+            REPLACE(#{vac_start_dt},'-',''), 
+            REPLACE(#{vac_end_dt},'-',''),  
+            #{sub_name}, 
+            REPLACE(#{sub_start_dt},'-',''),  
+            REPLACE(#{sub_end_dt},'-',''),   
+            #{ward_nm}, 
+            #{ward_dan}, 
+            REPLACE(#{ward_start_dt},'-',''),   
+            REPLACE(#{ward_end_dt},'-',''),   
+            #{ecch_yn}, 
+            NOW(), 
+            #{upd_user}, 
+            #{upd_ip}
+        )
+    ]]>    
+    </insert>      
+    <update id="updatelicwork" parameterType="licworkDTO"> <![CDATA[
+        UPDATE TBL_LICWORK_TBL
+        SET 
+            LIC_NUM       = #{lic_num},
+            HOSP_CD       = #{hosp_cd},
+            VAC_GB        = #{vac_gb},
+            VAC_START_DT  = #{vac_start_dt},
+            VAC_END_DT    = #{vac_end_dt},
+            SUB_NAME      = #{sub_name},
+            SUB_START_DT  = #{sub_start_dt},
+            SUB_END_DT    = #{sub_end_dt},
+            WARD_NM       = #{ward_nm},
+            WARD_DAN      = #{ward_dan},
+            WARD_START_DT = #{ward_start_dt},
+            WARD_END_DT   = #{ward_end_dt},
+            ECCH_YN       = #{ecch_yn},
+            UPD_DTTM      = NOW(),
+            UPD_USER      = #{upd_user},
+            UPD_IP        = #{upd_ip}
+        WHERE HOSP_UUID = #{hosp_uuid} 
+          AND SEQ       = #{seq}
+    ]]>      
+    </update>                 
+    <select  id="selectlicworkInfo" parameterType="licworkDTO" resultMap="licworkMAP"> <![CDATA[
+       SELECT  
+            A.LIC_NUM       ,
+            A.HOSP_CD       ,
+            A.VAC_GB        ,
+            A.VAC_START_DT  ,
+            A.VAC_END_DT    ,
+            B.LIC_DETAIL    ,
+            CASE WHEN  B.LIC_TYPE <> '' THEN (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+                                               WHERE CODE_CD  = 'LIC_TYPE' 
+                                                 AND SUB_CODE =  B.LIC_TYPE) 
+            ELSE '' END SUB_DEP_NM ,             
+            A.SUB_NAME      ,
+            B.USER_NM       , 
+            C.HOSP_NM       , 
+            A.SUB_START_DT  ,
+            A.SUB_END_DT    ,
+            A.WARD_NM       ,
+            A.WARD_DAN      ,
+            A.WARD_START_DT ,
+            A.WARD_END_DT   ,
+            A.ECCH_YN       ,
+            A.UPD_DTTM      ,
+            A.UPD_USER      ,
+            A.UPD_IP        ,
+            B.IP_DT         ,
+            B.TE_DT 
+         FROM TBL_LICWORK_TBL A , TBL_HOSPEMP_MST B , TBL_HOSP_MST C
+        WHERE 1=1 
+          AND C.HOSP_UUID = A.HOSP_UUID
+          AND B.HOSP_UUID = A.HOSP_UUID  
+          AND B.LIC_NUM   = A.LIC_NUM  
+          AND A.HOSP_UUID = #{hosp_uuid} 
+          AND SEQ         = #{seq}
+    ]]>      
+    </select>    
+    <select id="selectUrlpathInfo" parameterType="UrlpathDTO" resultMap="UrlpathMAP"> <![CDATA[
+        SELECT A.HOSP_CD  ,
+               B.HOSP_NM  ,  
+               A.START_DT ,
+               A.URL_PATH ,
+               A.HOSP_UUID ,  
+               A.END_DT  ,
+               A.USE_YN  , 
+               A.BIGO    ,
+               A.REG_DTTM , 
+               A.REG_USER , 
+               A.REG_IP   ,
+               A.UPD_DTTM ,
+               A.UPD_USER ,
+               A.UPD_IP   
+        FROM TBL_URL_MST A , TBL_HOSP_MST B 
+        WHERE 1=1 
+          AND B.HOSP_UUID = A.HOSP_UUID  
+          AND A.HOSP_UUID = #{hosp_uuid} 
+          AND A.START_DT  = REPLACE(#{start_dt},'-','') 
+          AND A.URL_PATH  = #{url_path}
+    ]]>    
+    </select>    
+    <select id="selectUrlpathList" parameterType="UrlpathDTO" resultMap="UrlpathMAP"> <![CDATA[
+        SELECT B.HOSP_CD  ,
+               B.HOSP_NM  ,  
+               DATE_FORMAT(A.START_DT, '%Y-%m-%d') START_DT ,
+               A.URL_PATH ,
+               (SELECT SUB_CODE_NM FROM TBL_CODE_DTL WHERE CODE_CD = 'URL_PATH' AND SUB_CODE = A.URL_PATH)  SUB_CODE_NM ,
+               A.HOSP_UUID ,  
+               C.USER_NM , 
+               DATE_FORMAT(A.END_DT, '%Y-%m-%d') END_DT ,
+               A.USE_YN  , 
+               A.BIGO    ,
+               A.REG_DTTM , 
+               A.REG_USER , 
+               A.REG_IP   ,
+               A.UPD_DTTM ,
+               A.UPD_USER ,
+               A.UPD_IP   
+        FROM TBL_URL_MST A , TBL_HOSP_MST B , TBL_USER_MST C
+        WHERE 1=1 
+          AND A.HOSP_UUID = #{hosp_uuid} 
+          AND B.HOSP_UUID = A.HOSP_UUID  
+          AND C.HOSP_UUID = B.HOSP_UUID
+          AND C.USER_ID   = A.UPD_USER
+    ]]>  
+     <if test='url_path != null and url_path !="" '><![CDATA[
+	       AND (A.URL_PATH LIKE CONCAT(#{url_path},'%')
+	        OR  A.URL_PATH LIKE CONCAT(#{url_path},'%') )
+	 ]]>
+	 </if>
+	  <![CDATA[
+	    Order by C.USER_NM ASC  
+	 ]]>      
+    </select>  
+    <insert id="insertUrlPathMst" parameterType="UrlpathDTO"> <![CDATA[
+        INSERT INTO TBL_URL_MST 
+            (
+             HOSP_CD ,
+             HOSP_UUID ,
+             START_DT, 
+             URL_PATH, 
+             END_DT, 
+             USE_YN, 
+             BIGO, 
+             REG_DTTM, 
+             REG_USER, 
+             REG_IP, 
+             UPD_DTTM, 
+             UPD_USER, 
+             UPD_IP
+             )
+        VALUES (
+             #{hosp_cd}, 
+             #{hosp_uuid} ,
+             REPLACE(#{start_dt},'-','') ,
+             #{url_path}, 
+             REPLACE(#{end_dt},'-','')  ,
+             #{use_yn}, 
+             #{bigo}, 
+             NOW(), 
+             #{reg_user}, 
+             #{reg_ip}, 
+             NOW(), 
+             #{upd_user}, 
+             #{upd_ip}
+             )
+    ]]>    
+    </insert> 
+    <update id="updateUrlPathMst" parameterType="UrlpathDTO"> <![CDATA[
+        UPDATE TBL_URL_MST
+          SET END_DT   = REPLACE(#{end_dt},'-','') , 
+              USE_YN   = #{use_yn}, 
+              BIGO     = #{bigo}, 
+              UPD_DTTM = NOW(), 
+              UPD_USER = #{upd_user}, 
+              UPD_IP   = #{upd_ip}
+        WHERE HOSP_UUID  = #{hosp_uuid} 
+          AND START_DT   = REPLACE(#{start_dt},'-','') 
+          AND URL_PATH   = #{url_path}
+    ]]>      
+    </update>           
+</mapper>

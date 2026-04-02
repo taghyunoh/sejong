@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.base.mapper.BaseMapper">
+    <!-- ResultMap 정의 -->
+    <resultMap id="MberMap" type="egovframework.sejong.base.model.MberDTO">
+        <result property="email" column="EMAIL"/>
+        <result property="hosp_cd" column="HOSP_CD"/>
+        <result property="hosp_uuid" column="HOSP_UUID"/>
+        <result property="hosp_nm" column="HOSP_NM"/>
+        <result property="hosp_uuid" column="HOSP_UUID"/>
+        <result property="sub_code_nm" column="SUB_NM"/>
+        <result property="start_dt" column="START_DT"/>
+        <result property="end_dt" column="END_DT"/>
+        <result property="sub_nm1" column="SUB_NM1"/>
+        <result property="start_dt1" column="START_DT1"/>
+        <result property="end_dt1" column="END_DT1"/>
+        <result property="user_id" column="USER_ID"/>
+        <result property="use_yn" column="USE_YN"/>
+        <result property="pass_wd" column="PASS_WD"/>
+        <result property="mbr_nm" column="MBR_NM"/>
+        <result property="job_nm" column="JOB_NM"/>
+        <result property="mbr_tel" column="MBR_TEL"/>
+        <result property="per_use_cd" column="PER_USE_CD"/>
+        <result property="per_use_nm" column="PER_USE_NM"/>
+        <result property="per_use_red" column="PER_USE_RED"/>
+        <result property="per_use_yn" column="PER_USE_YN"/>
+        <result property="per_info_cd" column="PER_INFO_CD"/>
+        <result property="per_info_nm" column="PER_INFO_NM"/>        
+        <result property="per_info_red" column="PER_INFO_RED"/>
+        <result property="per_info_yn" column="PER_INFO_YN"/>
+        <result property="per_pro_cd" column="PER_PRO_CD"/>
+        <result property="per_pro_nm" column="PER_PRO_NM"/>
+        <result property="per_pro_red" column="PER_PRO_RED"/>
+        <result property="per_pro_yn" column="PER_PRO_YN"/>
+        <result property="join_dt" column="JOIN_DT"/>
+        <result property="reg_dttm" column="REG_DTTM"/>
+        <result property="reg_user" column="REG_USER"/>
+        <result property="reg_ip" column="REG_IP"/>
+        <result property="upd_dttm" column="UPD_DTTM"/>
+        <result property="upd_user" column="UPD_USER"/>
+        <result property="upd_ip" column="UPD_IP"/>
+    </resultMap>
+<!-- ResultMap 정의 -->
+    <resultMap id="HospConMap" type="egovframework.sejong.base.model.HospConDTO">
+        <result property="hosp_uuid" column="HOSP_UUID" />
+        <result property="start_dt" column="START_DT" />
+        <result property="end_dt" column="END_DT" />
+        <result property="conact_gb" column="CONACT_GB" />
+        <result property="hosp_cd" column="HOSP_CD" />
+        <result property="hosp_cd2" column="HOSP_CD2" />
+        <result property="start_dt2" column="START_DT2" />
+        <result property="end_dt2" column="END_DT2" />        
+        <result property="hosp_uuid2" column="HOSP_UUID2" />
+        <result property="con_content" column="CON_CONTENT" />
+        <result property="con_user_id" column="CON_USER_ID" />
+        <result property="con_user_tel" column="CON_USER_TEL" />
+        <result property="con_email" column="CON_EMAIL" />
+        <result property="ocs_company" column="OCS_COMPANY" />
+        <result property="ocs_user_id" column="OCS_USER_ID" />
+        <result property="ocs_user_pw" column="OCS_USER_PW" />
+        <result property="join_dt" column="JOIN_DT" />
+        <result property="accept_dt" column="ACCEPT_DT" />
+        <result property="close_dt" column="CLOSE_DT" />
+        <result property="join_dt2" column="JOIN_DT2" />
+        <result property="accept_dt2" column="ACCEPT_DT2" />
+        <result property="close_dt2" column="CLOSE_DT2" />
+        <result property="sub_code_nm" column="SUB_CODE_NM" />
+        <result property="use_yn" column="USE_YN" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip" column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip" column="UPD_IP" />
+    </resultMap>    
+    
+    <resultMap id="DietMap" type="egovframework.sejong.base.model.DietDTO">  
+        <result property="hosp_uuid" column="HOSP_UUID" />
+        <result property="diet_gb" column="DIET_GB" />
+        <result property="start_dt" column="START_DT" />
+        <result property="end_dt" column="END_DT" />
+        <result property="hosp_cd" column="HOSP_CD" />
+        <result property="bigo" column="BIGO" />
+        <result property="hosp_nm" column="HOSP_NM" />
+        <result property="use_yn" column="USE_YN" />
+        <result property="user_nm" column="USER_NM" />
+        <result property="sub_code_nm" column="SUB_CODE_NM" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip" column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip" column="UPD_IP" />
+    </resultMap>
+        
+    <!-- INSERT 쿼리 -->
+    <insert id="insertMember" parameterType="MberDTO" ><![CDATA[
+        INSERT INTO TBL_MEMBER_MST (
+            EMAIL, 
+            HOSP_CD, 
+            HOSP_NM, 
+            PASS_WD, 
+            MBR_NM, 
+            MBR_TEL ,
+            USER_ID , 
+            JOB_NM ,
+            PER_USE_CD,
+            PER_USE_RED, 
+            PER_USE_YN ,
+            PER_INFO_CD,
+            PER_INFO_RED, 
+            PER_INFO_YN, 
+            PER_PRO_CD, 
+            PER_PRO_RED, 
+            PER_PRO_YN , 
+            HOSP_UUID , 
+            JOIN_DT, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+                                 
+        ) VALUES (
+            #{email}, 
+            #{hosp_cd}, 
+            #{hosp_nm}, 
+            #{pass_wd}, 
+            #{mbr_nm}, 
+            #{mbr_tel} ,
+            #{user_id}, 
+            #{job_nm} ,
+            #{per_use_cd},  
+            #{per_use_red}, 
+            #{per_use_yn} ,
+            #{per_info_cd}, 
+            #{per_info_red}, 
+            #{per_info_yn}, 
+            #{per_pro_cd},  
+            #{per_pro_red}, 
+            #{per_pro_yn},
+            #{hosp_uuid},
+            DATE_FORMAT(NOW(), '%Y%m%d'), 
+            NOW(), 
+            IFNULL(#{reg_user}, ''),
+            IFNULL(#{reg_ip}, ''), 
+            NOW(), 
+            IFNULL(#{upd_user}, ''),  
+            IFNULL(#{upd_ip}, '')                          
+        )       
+        ]]>
+    </insert>
+	<select id="selMberDupChk" parameterType="MberDTO"  resultType="String"> <![CDATA[
+	  SELECT 'Y'
+	    FROM TBL_MEMBER_MST
+	   WHERE HOSP_CD = #{hosp_cd}
+	     AND EMAIL   = #{email} 
+	]]>
+	</select>	    
+    <select   id="selectMbrList" parameterType="MberDTO"  resultMap= "MberMap"><![CDATA[
+        SELECT   
+            EMAIL, 
+            HOSP_CD, 
+            HOSP_NM, 
+            PASS_WD, 
+            MBR_NM, 
+            MBR_TEL ,
+            USER_ID , 
+            JOB_NM ,
+            IFNULL(USE_YN,'')  USE_YN , 
+            PER_USE_CD,
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_USE_CD) PER_USE_NM , 
+            PER_USE_RED, 
+            PER_USE_YN ,
+            PER_INFO_CD,
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_INFO_CD) PER_INFO_NM , 
+            PER_INFO_RED, 
+            PER_INFO_YN, 
+            PER_PRO_CD, 
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_PRO_CD) PER_PRO_NM ,
+            PER_PRO_RED, 
+            PER_PRO_YN , 
+            DATE_FORMAT(JOIN_DT, '%Y-%m-%d') JOIN_DT , 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        FROM TBL_MEMBER_MST 
+        WHERE 1=1                 
+        ]]>
+		  <if test='hosp_cd != null and hosp_cd !="" '><![CDATA[
+	         AND (HOSP_CD LIKE CONCAT('%',#{hosp_cd},'%')
+	          OR  HOSP_NM LIKE CONCAT('%',#{hosp_cd},'%') )
+	      ]]>
+	      </if>
+	      <![CDATA[
+		     Order by UPD_DTTM desc  , HOSP_NM
+	      ]]>        
+    </select>
+     <select   id="getMbrList" parameterType="MberDTO"  resultMap= "MberMap"><![CDATA[
+		 SELECT     B.HOSP_UUID ,
+		            B.EMAIL, 
+		            B.HOSP_CD, 
+		            B.HOSP_NM, 
+		            B.PASS_WD , 
+		            B.MBR_NM  , 
+		            B.MBR_TEL ,
+		            SUBSTRING(B.A1,17,20) SUB_NM,
+		            SUBSTRING(B.A1,1,8) START_DT  ,
+		            SUBSTRING(B.A1,9,8) END_DT ,
+		            SUBSTRING(B.A2,17,20) SUB_NM1,
+		            SUBSTRING(B.A2,1,8) START_DT1  ,
+		            SUBSTRING(B.A2,9,8) END_DT1             
+		            
+		 FROM 
+		(
+			SELECT      A.HOSP_UUID ,
+			            A.EMAIL, 
+			            A.HOSP_CD, 
+			            A.HOSP_NM, 
+			            A.PASS_WD , 
+			            A.MBR_NM  , 
+			            A.MBR_TEL ,
+			    (SELECT CONCAT(IFNULL(T.START_DT, ''), IFNULL(T.END_DT, '') , IFNULL((SELECT SUB_CODE_NM 
+			                        FROM TBL_CODE_DTL 
+			                        WHERE CODE_CD = 'CONACT_GB' AND SUB_CODE = T.CONACT_GB), '') 
+			            ) A1
+			     FROM TBL_HOSPCONT_MST T
+			     WHERE T.HOSP_UUID = A.HOSP_UUID 
+			       AND T.CONACT_GB = '1'
+			     ORDER BY T.START_DT DESC
+			     LIMIT 1) AS A1,
+			    (SELECT CONCAT(
+			                IFNULL(T.START_DT, ''), IFNULL(T.END_DT, '') ,   IFNULL((SELECT SUB_CODE_NM 
+			                        FROM TBL_CODE_DTL 
+			                        WHERE CODE_CD = 'CONACT_GB' AND SUB_CODE = T.CONACT_GB), '') 
+			            ) A2
+			     FROM TBL_HOSPCONT_MST T
+			     WHERE T.HOSP_UUID = A.HOSP_UUID 
+			       AND T.CONACT_GB = '2'
+			     ORDER BY T.START_DT DESC
+			     LIMIT 1) AS A2
+			FROM (
+			    SELECT 
+			        B.HOSP_CD , 
+			        B.HOSP_UUID, 
+			        A.MBR_NM, 
+			        A.MBR_TEL, 
+			        A.PASS_WD, 
+			        A.JOIN_DT, 
+			        A.HOSP_NM, 
+			        A.EMAIL ,
+			        A.JOB_NM
+			    FROM TBL_MEMBER_MST A
+			    INNER JOIN TBL_HOSP_MST B ON A.HOSP_CD = B.HOSP_CD
+		          WHERE A.HOSP_CD = #{hosp_cd}
+			) A
+		) B                          
+        ]]>
+	    <if test='mbr_nm != null and mbr_nm !="" '><![CDATA[
+           WHERE (B.MBR_NM LIKE CONCAT('%',#{mbr_nm},'%')
+            OR  B.MBR_NM LIKE CONCAT('%',#{mbr_nm},'%') )
+        ]]>
+        </if>
+        <![CDATA[
+	       Order by B.HOSP_CD  , B.HOSP_NM
+        ]]>        
+    </select>
+    <select   id="selectMbrInfo" parameterType="MberDTO"  resultMap= "MberMap"><![CDATA[
+        SELECT   
+            EMAIL, 
+            HOSP_CD, 
+            HOSP_NM, 
+            PASS_WD, 
+            MBR_NM, 
+            MBR_TEL ,
+            USER_ID , 
+            IFNULL(USE_YN,'')  USE_YN ,
+            JOB_NM ,
+            PER_USE_CD,
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_USE_CD) PER_USE_NM ,
+            PER_USE_RED, 
+            PER_USE_YN ,
+            PER_INFO_CD,
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_INFO_CD) PER_INFO_NM , 
+            PER_INFO_RED, 
+            PER_INFO_YN, 
+            PER_PRO_CD, 
+            (SELECT CODE_NM FROM TBL_CODE_MST WHERE CODE_CD = PER_PRO_CD) PER_PRO_NM ,
+            PER_PRO_RED, 
+            PER_PRO_YN , 
+            JOIN_DT, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        FROM TBL_MEMBER_MST 
+        WHERE 1=1     
+          AND HOSP_CD = #{hosp_cd} 
+          AND EMAIL   = #{email}            
+        ]]>
+    </select> 
+    <update   id="updateMember" parameterType="MberDTO"><![CDATA[
+        UPDATE  TBL_MEMBER_MST  
+        SET  
+            USER_ID = #{user_id} , 
+            USE_YN  = #{use_yn} 
+        WHERE 1=1     
+          AND HOSP_CD = #{hosp_cd} 
+          AND EMAIL   = #{email}            
+        ]]>
+    </update>  
+ 
+    <select id="selectHospConList" parameterType="HospConDTO" resultMap= "HospConMap"><![CDATA[
+        SELECT 
+            A.HOSP_UUID, 
+            A.CONACT_GB, 
+            DATE_FORMAT(A.START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(A.END_DT, '%Y-%m-%d') END_DT , 
+            A.HOSP_CD,
+            B.SUB_CODE_NM ,  
+            A.CON_CONTENT, 
+            A.CON_USER_ID, 
+            A.CON_USER_TEL, 
+            A.CON_EMAIL, 
+            A.OCS_COMPANY, 
+            A.OCS_USER_ID, 
+            A.OCS_USER_PW, 
+            DATE_FORMAT(A.JOIN_DT, '%Y-%m-%d') JOIN_DT , 
+            IFNULL(DATE_FORMAT(A.ACCEPT_DT, '%Y-%m-%d'),'') ACCEPT_DT ,  
+            IFNULL(DATE_FORMAT(A.CLOSE_DT, '%Y-%m-%d'),'') CLOSE_DT ,  
+            A.USE_YN, 
+            A.REG_DTTM, 
+            A.REG_USER, 
+            A.REG_IP
+          FROM TBL_HOSPCONT_MST A 
+          INNER JOIN  TBL_CODE_DTL B ON B.CODE_CD = 'CONACT_GB' AND B.SUB_CODE = A.CONACT_GB    
+          Where 1=1  
+          AND A.HOSP_UUID = #{hosp_uuid2}
+          ORDER BY  START_DT DESC 
+     ]]>   
+    </select>                
+    <insert id="insertHospCon" parameterType="HospConDTO"><![CDATA[
+        INSERT INTO TBL_HOSPCONT_MST (
+            HOSP_UUID, 
+            CONACT_GB, 
+            START_DT, 
+            END_DT, 
+            HOSP_CD, 
+            CON_CONTENT, 
+            CON_USER_ID, 
+            CON_USER_TEL, 
+            CON_EMAIL, 
+            OCS_COMPANY, 
+            OCS_USER_ID, 
+            OCS_USER_PW, 
+            JOIN_DT, 
+            ACCEPT_DT, 
+            CLOSE_DT, 
+            USE_YN, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP
+        ) VALUES (
+            #{hosp_uuid2}, 
+            #{conact_gb}, 
+            REPLACE(#{start_dt2},'-','') ,
+            REPLACE(#{end_dt2},'-','') ,
+            #{hosp_cd2}, 
+            #{con_content}, 
+            #{con_user_id}, 
+            #{con_user_tel}, 
+            #{con_email}, 
+            #{ocs_company}, 
+            #{ocs_user_id}, 
+            #{ocs_user_pw}, 
+            REPLACE(#{join_dt2},'-','') , 
+            REPLACE(#{accept_dt2},'-','') ,
+            REPLACE(#{close_dt2},'-',''),
+            #{use_yn}, 
+            NOW(), 
+            #{reg_user}, 
+            #{reg_ip}
+        )
+     ]]>   
+    </insert>     
+     <update id="updateHospCon" parameterType="HospConDTO"><![CDATA[
+        UPDATE TBL_HOSPCONT_MST
+        SET 
+            HOSP_CD      = #{hosp_cd},
+            CON_CONTENT  = #{con_content},
+            CON_USER_ID  = #{con_user_id},
+            CON_USER_TEL = #{con_user_tel},
+            CON_EMAIL    = #{con_email},
+            OCS_COMPANY  = #{ocs_company},
+            OCS_USER_ID  = #{ocs_user_id},
+            OCS_USER_PW  = #{ocs_user_pw},
+            JOIN_DT      = REPLACE(#{join_dt2},'-','') ,
+            ACCEPT_DT     = REPLACE(#{accept_dt2},'-',''),
+            CLOSE_DT     = REPLACE(#{close_dt2},'-',''),
+            USE_YN       = #{use_yn},
+            UPD_DTTM     = NOW(),
+            UPD_USER     = #{upd_user},
+            UPD_IP       = #{upd_ip}
+        WHERE HOSP_UUID  = #{hosp_uuid2} 
+          AND START_DT   = REPLACE(#{start_dt2},'-','') 
+          AND END_DT     = REPLACE(#{end_dt2},'-','') 
+          AND CONACT_GB  = #{conact_gb}
+     ]]>   
+    </update>   
+     <select id="selectHospConInfo" parameterType="HospConDTO" resultMap= "HospConMap"><![CDATA[
+        SELECT 
+            HOSP_CD      ,
+            HOSP_UUID    , 
+            DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+            CONACT_GB    , 
+            CON_CONTENT  ,
+            CON_USER_ID  ,
+            CON_USER_TEL ,
+            CON_EMAIL    ,
+            OCS_COMPANY  ,
+            OCS_USER_ID  ,
+            OCS_USER_PW  ,
+            DATE_FORMAT(JOIN_DT, '%Y-%m-%d') JOIN_DT ,
+            DATE_FORMAT(ACCEPT_DT, '%Y-%m-%d') ACCEPT_DT ,
+            DATE_FORMAT(CLOSE_DT, '%Y-%m-%d') CLOSE_DT ,
+            USE_YN       ,
+            UPD_DTTM     ,
+            UPD_USER     ,
+            UPD_IP       
+        FROM TBL_HOSPCONT_MST     
+        WHERE 1=1
+         AND  HOSP_UUID  = #{hosp_uuid2} 
+         AND  START_DT   = REPLACE(#{start_dt2},'-','') 
+         AND  END_DT     = REPLACE(#{end_dt2},'-','')  
+         AND  CONACT_GB = #{conact_gb}
+     ]]>   
+    </select>   
+     <select id="getHospConInfo" parameterType="HospConDTO" resultType= "String"><![CDATA[
+        SELECT 'Y'     
+        FROM TBL_HOSPCONT_MST     
+        WHERE 1=1
+         AND  HOSP_UUID  = #{hosp_uuid} 
+         AND  START_DT   <= REPLACE(#{start_dt},'-','') 
+         AND  END_DT     >= REPLACE(#{end_dt},'-','') 
+         LIMIT 1  
+     ]]>   
+    </select>      
+    <select id="selectDietlist" parameterType="DietDTO" resultMap="DietMap"><![CDATA[
+        SELECT A.HOSP_UUID, 
+               A.DIET_GB,
+               CASE WHEN  A.DIET_GB <> '' THEN (SELECT RTRIM(SUB_CODE_NM) SUB_CODE_NM 
+                                                 FROM TBL_CODE_DTL 
+                                                  WHERE CODE_GB = 'Z' 
+                                                   AND  CODE_CD = 'GASAN_SIK' 
+                                                   AND  SUB_CODE = A.DIET_GB)
+               ELSE '' END  SUB_CODE_NM ,                                             
+               B.USER_NM ,
+               C.HOSP_NM ,
+               DATE_FORMAT(A.START_DT, '%Y-%m-%d') START_DT , 
+               DATE_FORMAT(A.END_DT, '%Y-%m-%d')   END_DT , 
+               A.HOSP_CD, 
+               IFNULL(A.USE_YN,'') USE_YN , 
+               A.BIGO, 
+               A.REG_DTTM, 
+               A.REG_USER, 
+               A.REG_IP, 
+               A.UPD_DTTM, 
+               A.UPD_USER, 
+               A.UPD_IP
+        FROM TBL_DIET_MST A , TBL_USER_MST B , TBL_HOSP_MST C    
+        WHERE B.HOSP_UUID = A.HOSP_UUID
+          AND B.USER_ID   = A.UPD_USER 
+          AND C.HOSP_UUID = A.HOSP_UUID
+     ]]>     
+    </select>     
+    <insert id="insertDiet" parameterType="DietDTO" ><![CDATA[
+        INSERT INTO TBL_DIET_MST (
+            HOSP_UUID, 
+            DIET_GB, 
+            START_DT, 
+            END_DT, 
+            HOSP_CD, 
+            USE_YN ,
+            BIGO, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        ) VALUES (
+            #{hosp_uuid}, 
+            #{diet_gb}, 
+            REPLACE(#{start_dt},'-',''), 
+            REPLACE(#{end_dt},'-','') , 
+            #{hosp_cd}, 
+            #{use_yn} , 
+            #{bigo}, 
+            NOW(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+            NOW(), 
+            #{upd_user}, 
+            #{upd_ip}
+        )
+    ]]>    
+    </insert>  
+     <update id="updateDiet" parameterType="DietDTO" ><![CDATA[
+        UPDATE TBL_DIET_MST
+        SET HOSP_CD   = #{hosp_cd},
+            BIGO      = #{bigo},
+            USE_YN    = #{use_yn},
+            UPD_DTTM  = NOW(),
+            UPD_USER  = #{upd_user},
+            UPD_IP    = #{upd_ip}
+        WHERE HOSP_UUID = #{hosp_uuid}
+          AND DIET_GB   = #{diet_gb}
+          AND START_DT  = REPLACE(#{start_dt},'-','')
+          AND END_DT    = REPLACE(#{end_dt},'-','')
+    ]]>      
+    </update>     
+     <select  id="selectDietInfo" parameterType="DietDTO" resultMap="DietMap"><![CDATA[
+       SELECT 
+            HOSP_CD ,  
+            DIET_GB ,
+            START_DT, 
+            END_DT,            
+            HOSP_UUID,
+            DIET_GB ,
+            BIGO    , 
+            USE_YN  ,  
+            UPD_DTTM , 
+            UPD_USER ,
+            UPD_IP  
+        FROM  TBL_DIET_MST     
+        WHERE HOSP_UUID = #{hosp_uuid}
+          AND DIET_GB   = #{diet_gb}
+          AND START_DT  = REPLACE(#{start_dt},'-','')
+          AND END_DT    = REPLACE(#{end_dt},'-','')
+    ]]>      
+    </select>               
+</mapper>

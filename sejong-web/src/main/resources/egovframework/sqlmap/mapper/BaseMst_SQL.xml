@@ -1,0 +1,1533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.base.mapper.BaseMapper">
+    <!-- ResultMap 정의 -->
+    <resultMap id="SugaMap" type="egovframework.sejong.base.model.SugaDTO">
+	    <result property="fee_code" column="fee_code" />
+	    <result property="fee_type" column="fee_type" />
+	    <result property="start_dt" column="start_dt" />
+	    <result property="end_dt" column="end_dt" />
+	    <result property="class_no" column="class_no" />
+	    <result property="kor_nm" column="kor_nm" />
+	    <result property="eng_nm" column="eng_nm" />
+	    <result property="div_type" column="div_type" />
+	    <result property="surg_yn"  column="surg_yn" />
+	    <result property="cln_price" column="cln_price" />
+	    <result property="hos_price" column="hos_price" />
+	    <result property="dnt_price" column="dnt_price" />
+	    <result property="pbl_price" column="pbl_price" />
+	    <result property="mid_price" column="mid_price" />
+	    <result property="orh_price" column="orh_price" />
+	    <result property="rlt_value" column="rlt_value" />
+	    <result property="copay_50" column="copay_50" />
+	    <result property="copay_80" column="copay_80" />
+	    <result property="copay_90" column="copay_90" />
+	    <result property="dup_yn"  column="dup_yn" />
+	    <result property="calc_nm" column="calc_nm" />
+	    <result property="sec_maj" column="sec_maj" />
+	    <result property="sec_min" column="sec_min" />
+	    <result property="sub_cat" column="sub_cat" />
+	    <result property="reg_dttm" column="reg_dttm" />
+	    <result property="reg_user" column="reg_user" />
+	    <result property="reg_ip"   column="reg_ip" />
+	    <result property="upd_dttm" column="upd_dttm" />
+	    <result property="upd_user" column="upd_user" />
+	    <result property="upd_ip"   column="upd_ip" />
+	    <result property="pageSize"   column="pageSize" />
+	    <result property="pageIndex"   column="pageIndex" />
+    </resultMap>
+	<resultMap id="CodeMdMap" type="egovframework.sejong.base.model.CodeMdDTO">
+        <result property="code_gb" column="CODE_GB" />
+        <result property="code_cd" column="CODE_CD" />
+        <result property="sub_code" column="SUB_CODE" />
+        <result property="dtl_code" column="DTL_CODE" />
+        <result property="code_nm" column="CODE_NM" />
+        <result property="sub_code_nm" column="SUB_CODE_NM" />
+        <result property="dtl_code_nm" column="DTL_CODE_NM" />
+        <result property="start_dt" column="START_DT" />
+        <result property="end_dt" column="END_DT" />
+        <result property="use_yn" column="USE_YN" />
+        <result property="sort" column="SORT" />
+        <result property="prop_1" column="PROP_1" />
+        <result property="prop_2" column="PROP_2" />
+        <result property="prop_3" column="PROP_3" />
+        <result property="prop_4" column="PROP_4" />
+        <result property="prop_5" column="PROP_5" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip" column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip" column="UPD_IP" />
+	</resultMap>
+    <resultMap id="UsermMap" type="egovframework.sejong.base.model.UsermDTO">
+        <result property="hosp_cd"  column="HOSP_CD" />
+        <result property="user_id"  column="USER_ID" />
+        <result property="start_dt" column="START_DT" />
+        <result property="user_nm"  column="USER_NM" />
+        <result property="end_dt"   column="END_DT" />
+        <result property="main_gu"  column="MAIN_GU" />
+        <result property="pass_wd"  column="PASS_WD" />
+        <result property="pass_cdt" column="PASS_CDT" />
+        <result property="bigo"     column="BIGO" />
+        <result property="email" column="EMAIL" />
+        <result property="user_tel"     column="USER_TEL" />
+        <result property="hosp_uuid"     column="HOSP_UUID" />
+        <result property="winner_yn"     column="WINNER_YN" />
+        <result property="use_yn"     column="USE_YN" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip"   column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip"   column="UPD_IP" />
+    </resultMap>
+	<resultMap id="HospMdMap" type="egovframework.sejong.base.model.HospMdDTO">
+	    <result property="hosp_cd"   column="hosp_cd"/>
+	    <result property="hosp_nm"   column="hosp_nm"/>
+	    <result property="start_ym"  column="START_YM" />
+	    <result property="hosp_addr" column="hosp_addr"/>
+	    <result property="hosp_ceo"  column="hosp_ceo"/>
+	    <result property="hosp_uuid" column="hosp_uuid"/>
+	    <result property="busi_num"  column="busi_num"/>
+	    <result property="inaccd"    column="inaccd"/>
+	    <result property="start_dt"  column="start_dt"/>
+	    <result property="end_dt"    column="end_dt"/>
+	    <result property="use_yn"    column="use_yn"/>
+	    <result property="wardcnt"   column="wardcnt"/>
+	    <result property="join_dt"   column="join_dt"/>
+	    <result property="accept_dt" column="accept_dt"/>
+	    <result property="close_dt"  column="close_dt"/>
+	    <result property="hosp_tel"  column="hosp_tel"/>	   
+	    <result property="hosp_fax"  column="hosp_fax"/>	
+	    <result property="hosp_extradr" column="hosp_extradr"/>	
+	    <result property="winner_yn"    column="winner_yn" />
+	    <result property="zip_cd"    column="zip_cd"/>	 
+	    <result property="icucnt"    column="icucnt"/>
+	    <result property="ercnt"     column="ercnt"/>
+	    <result property="doccnt"    column="doccnt"/>
+	    <result property="sthpnm"    column="sthpnm"/>
+	    
+	    <result property="name1"      column="NAME1"/>
+	    <result property="name2"      column="NAME2"/>
+	    <result property="start_dt2"  column="START_DT2"/>	    
+	    <result property="end_dt2"    column="END_DT2"/>
+	    <result property="join_dt2"   column="JOIN_DT2"/>
+	    <result property="accept_dt2" column="ACCEPT_DT2"/>
+	    <result property="close_dt2"  column="CLOSE_DT2"/>
+  
+	    <result property="reg_dttm"  column="reg_dttm"/>
+	    <result property="reg_user"  column="reg_user"/>
+	    <result property="reg_ip"    column="reg_ip"/>
+	    <result property="upd_dttm"  column="upd_dttm"/>
+	    <result property="upd_user"  column="upd_user"/>
+	    <result property="upd_ip"    column="upd_ip"/>
+	</resultMap>
+    <resultMap id="DiseMap" type="egovframework.sejong.base.model.DiseDTO">
+        <result property="diag_code"     column="DIAG_CODE" />
+        <result property="start_dt"      column="START_DT" />
+        <result property="kor_diag_name" column="KOR_DIAG_NAME" />
+        <result property="eng_diag_name" column="ENG_DIAG_NAME" />
+        <result property="gender_type"   column="GENDER_TYPE" />
+        <result property="infect_type"   column="INFECT_TYPE" />
+        <result property="diag_type"     column="DIAG_TYPE" />
+        <result property="icd10_code"    column="ICD10_CODE" />
+        <result property="end_dt"        column="END_DT" />
+        <result property="max_age"       column="MAX_AGE" />
+        <result property="min_age"       column="MIN_AGE" />
+        <result property="vcode"         column="VCODE" />
+        <result property="desc_info"     column="DESC_INFO" />
+        <result property="reg_dttm"      column="REG_DTTM" />
+        <result property="reg_user"      column="REG_USER" />
+        <result property="reg_ip"        column="REG_IP" />
+        <result property="upd_dttm"      column="UPD_DTTM" />
+        <result property="upd_user"      column="UPD_USER" />
+        <result property="upd_ip"        column="UPD_IP" />
+    </resultMap>	
+    <resultMap id= "SamverMap" type="egovframework.sejong.base.model.SamverDTO">
+        <result property="samver" column="SAMVER" />
+        <result property="tblinfo"  column="TBLINFO" />
+        <result property="version"  column="VERSION" />
+        <result property="seq"      column="SEQ" />
+        <result property="sub_code" column="SUB_CODE" />
+        <result property="sub_code_nm" column="SUB_CODE_NM" />
+        <result property="item_nm"     column="ITEM_NM" />
+        <result property="sort_seq"    column="SORT_SEQ" />
+        <result property="start_pos"   column="START_POS" />
+        <result property="end_pos"     column="END_POS" />
+        <result property="data_type"   column="DATA_TYPE" />
+        <result property="decimal_pos" column="DECIMAL_POS" />
+        <result property="dataproc_yn" column="DATAPROC_YN" />
+        <result property="prop_1"   column="PROP_1" />
+        <result property="prop_2"   column="PROP_2" />
+        <result property="prop_3"   column="PROP_3" />
+        <result property="prop_4"   column="PROP_4" />
+        <result property="prop_5"   column="PROP_5" />        
+        <result property="db_colnm" column="DB_COLNM" />
+        <result property="last_yn"  column="LAST_YN" />
+        <result property="col_size" column="COL_SIZE" />
+        <result property="reg_dttm" column="REG_DTTM" />
+        <result property="reg_user" column="REG_USER" />
+        <result property="reg_ip"   column="REG_IP" />
+        <result property="upd_dttm" column="UPD_DTTM" />
+        <result property="upd_user" column="UPD_USER" />
+        <result property="upd_ip"   column="UPD_IP" />
+    </resultMap>   
+    <resultMap id="WvalMap" type="egovframework.sejong.base.model.WvalDTO">
+        <result property="cate_code"  column="cate_code"/>
+        <result property="order_seq"  column="order_seq"/>
+        <result property="start_dt"   column="start_dt"/>
+        <result property="cal_gubun"  column="cal_gubun"/>
+        <result property="wevalue_nm" column="wevalue_nm"/>
+        <result property="start_indi" column="start_indi"/>
+        <result property="end_indi"   column="end_indi"/>
+        <result property="std_score"  column="std_score"/>
+        <result property="we_value"   column="we_value"/>
+        <result property="reg_dttm"   column="reg_dttm"/>
+        <result property="reg_user"   column="reg_user"/>
+        <result property="reg_ip"     column="reg_ip"/>
+        <result property="upd_dttm"   column="upd_dttm"/>
+        <result property="upd_user"   column="upd_user"/>
+        <result property="upd_ip"     column="upd_ip"/>
+        <result property="maxcnt"     column="maxcnt"/>
+    </resultMap>     
+    <!-- 예제: 데이터 삽입 -->
+    <insert id="insertSugaMst" parameterType="SugaDTO" > <![CDATA[ 
+        INSERT INTO TBL_SUGA_MST (
+            FEE_CODE , FEE_TYPE  , START_DT  , END_DT    , CLASS_NO , KOR_NM, ENG_NM,
+            DIV_TYPE , SURG_YN   , CLN_PRICE , HOS_PRICE , DNT_PRICE, PBL_PRICE,
+            MID_PRICE, ORH_PRICE , RLT_VALUE , COPAY_50  , COPAY_80 , COPAY_90 ,
+            DUP_YN   , CALC_NM   , SEC_MAJ   , SEC_MIN   , SUB_CAT  , REG_DTTM , 
+            REG_USER , REG_IP    , UPD_DTTM  , UPD_USER  , UPD_IP
+	    ) VALUES (
+	        #{fee_code} , #{fee_type}  , #{start_dt}  , #{end_dt}    , #{class_no}  , #{kor_nm}    , 
+	        #{eng_nm}   , #{div_type}  , #{surg_yn}   , #{cln_price} , #{hos_price} , #{dnt_price} , 
+	        #{pbl_price} , #{mid_price}, #{orh_price} , #{rlt_value} , #{copay_50}  , #{copay_80}  , #{copay_90} ,
+	        #{dup_yn}   , #{calc_nm}   , #{sec_maj}   , #{sec_min}   , #{sub_cat}   , #{reg_dttm}  , #{reg_user} , 
+	        #{reg_ip}   , #{upd_dttm}  , #{upd_user}  , #{upd_ip}
+	    )
+		]]>
+    </insert>
+    <insert id="inserExcelSugaMst" parameterType="java.util.List">
+       INSERT INTO TBL_SUGA_MST (
+            FEE_CODE, FEE_TYPE, START_DT, END_DT, CLASS_NO, KOR_NM, ENG_NM,
+            DIV_TYPE, SURG_YN, CLN_PRICE, HOS_PRICE, DNT_PRICE, PBL_PRICE,
+            MID_PRICE, ORH_PRICE, RLT_VALUE, COPAY_50, COPAY_80, COPAY_90,
+            DUP_YN, CALC_NM, SEC_MAJ, SEC_MIN, SUB_CAT, REG_DTTM, REG_USER, REG_IP
+	   ) VALUES 
+	  <foreach collection="list" item="item" separator=",">
+	    (
+	      #{item.fee_code}, #{item.fee_type}, #{item.start_dt}, #{item.end_dt}, #{item.class_no},
+	      #{item.kor_nm}, #{item.eng_nm}, #{item.div_type}, #{item.surg_yn}, #{item.cln_price},
+	      #{item.hos_price}, #{item.dnt_price}, #{item.pbl_price}, #{item.mid_price}, #{item.orh_price},
+	      #{item.rlt_value}, #{item.copay_50}, #{item.copay_80}, #{item.copay_90}, #{item.dup_yn},
+	      #{item.calc_nm}, #{item.sec_maj}, #{item.sec_min}, #{item.sub_cat}, NOW(),
+	      #{item.reg_user}, #{item.reg_ip}
+	    )
+	  </foreach>
+    </insert>
+	<select id="getSugaMstCount" parameterType="SugaDTO" resultType="int">
+	<![CDATA[
+	    SELECT COUNT(*) 
+	    FROM TBL_SUGA_MST
+	    WHERE 1=1
+	]]>
+    <if test='kor_nm != null and kor_nm != ""'>
+        <![CDATA[
+        AND (KOR_NM LIKE CONCAT(#{kor_nm}, '%')
+         OR  FEE_CODE LIKE CONCAT(#{kor_nm}, '%'))
+        ]]>
+    </if>
+	</select>   
+	<select id="SugaMstList" parameterType="SugaDTO"  resultMap="SugaMap"><![CDATA[
+	  	 select 
+	  	 	    FEE_CODE ,
+	  	 	    FEE_TYPE ,
+	  		    START_DT,
+	            END_DT,
+	            CLASS_NO,
+	            KOR_NM,
+	            ENG_NM,
+	            DIV_TYPE,
+	            SURG_YN,  
+	            CLN_PRICE,
+	            HOS_PRICE,   
+	            DNT_PRICE,
+	    		PBL_PRICE ,
+	    		MID_PRICE ,
+	    		ORH_PRICE ,
+	    		RLT_VALUE ,
+	    		COPAY_50  , 
+	    		COPAY_80  , 
+	    		COPAY_90  ,
+	    		DUP_YN    , 
+	    		CALC_NM   , 
+	    		SEC_MAJ   ,  
+	    		SEC_MIN   ,   
+	    		SUB_CAT               
+		  From TBL_SUGA_MST 
+		 where 1=1
+		 ]]>
+		  <if test='kor_nm != null and kor_nm !="" '><![CDATA[
+	         AND (KOR_NM LIKE CONCAT(#{kor_nm},'%')
+	          OR  FEE_CODE LIKE CONCAT(#{kor_nm},'%') )
+	      ]]>
+	      </if>
+	      <![CDATA[
+		     Order by FEE_CODE  , START_DT  
+		     LIMIT #{pageSize} OFFSET #{pageIndex}
+	      ]]>
+	</select> 
+    <select id="SugaMstInfo" parameterType="SugaDTO"  resultMap="SugaMap"> <![CDATA[ 
+       SELECT   FEE_CODE ,
+	  	 	    FEE_TYPE ,
+	  		    START_DT,
+	            END_DT,
+	            CLASS_NO,
+	            KOR_NM,
+	            ENG_NM,
+	            DIV_TYPE,
+	            SURG_YN,  
+	            CLN_PRICE,
+	            HOS_PRICE,   
+	            DNT_PRICE,
+	    		PBL_PRICE ,
+	    		MID_PRICE ,
+	    		ORH_PRICE ,
+	    		RLT_VALUE ,
+	    		COPAY_50  , 
+	    		COPAY_80  , 
+	    		COPAY_90  ,
+	    		DUP_YN    , 
+	    		CALC_NM   , 
+	    		SEC_MAJ   ,  
+	    		SEC_MIN   ,   
+	    		SUB_CAT               
+		  From TBL_SUGA_MST 
+       Where 1=1
+		   And FEE_CODE = #{fee_code}
+		   And START_DT = #{start_dt}
+     ]]>
+    </select>
+     <update id = "updateSugaMst"  parameterType="SugaDTO" ><![CDATA[ 
+       UPDATE TBL_SUGA_MST
+          SET end_dt     = #{end_dt},    fee_type   = #{fee_type}, 
+              class_no   = #{class_no},  kor_nm     = #{kor_nm}, 
+              eng_nm     = #{eng_nm},    div_type   = #{div_type},
+              surg_yn    = #{surg_yn},   cln_price  = #{cln_price}, 
+              hos_price  = #{hos_price}, dnt_price  = #{dnt_price},
+              pbl_price  = #{pbl_price}, mid_price  = #{mid_price}, 
+              orh_price  = #{orh_price}, rlt_value  = #{rlt_value}, 
+              copay_50   = #{copay_50},  copay_80   = #{copay_80},
+              copay_90   = #{copay_90},  dup_yn     = #{dup_yn},               
+              calc_nm    = #{calc_nm},   sec_maj    = #{sec_maj},   
+              sec_min    = #{sec_min},   sub_cat    = #{sub_cat},
+              upd_dttm   = NOW(),        upd_user   = #{upd_user},  
+              upd_ip     = #{upd_ip}
+       where 1=1
+		   and FEE_CODE = #{fee_code}
+		   and start_dt = #{start_dt}
+    ]]>
+    </update>	
+    
+  <!--   공콩코드  대표코드  -->  
+	<select id="selCommMstList" parameterType="CodeMdDTO"  resultMap="CodeMdMap"><![CDATA[
+	  SELECT CODE_CD , 
+	         RTRIM(CODE_NM) CODE_NM ,
+	         DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT ,
+	         DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT, 
+	         IFNULL(USE_YN,'') USE_YN ,
+	         SORT ,
+	         REG_DTTM , 
+	         REG_USER , 
+	         REG_IP   ,
+	         UPD_DTTM , 
+	         UPD_USER , 
+	         UPD_IP 
+	    FROM TBL_CODE_MST
+	   WHERE 1=1
+	]]>
+      <if test='code_cd != null and code_cd != "" '><![CDATA[
+         AND ( CODE_CD LIKE CONCAT('%',#{code_cd},'%')  OR
+               CODE_NM LIKE CONCAT('%',#{code_cd},'%')
+             ) 
+      ]]>
+      </if>
+      <![CDATA[
+       ORDER BY CODE_CD 
+        ]]>
+	</select>	
+		
+	<select id="selCommMstDupChk" parameterType="CodeMdDTO"  resultType="String"> <![CDATA[
+	  SELECT 'Y'
+	    FROM TBL_CODE_MST
+	   WHERE CODE_cd = #{code_cd}
+	]]>
+	</select>	
+	
+	<insert id="insertCommMst" parameterType="CodeMdDTO"><![CDATA[
+	  INSERT INTO TBL_CODE_MST
+      (CODE_CD  ,
+       CODE_NM  ,  
+       START_DT , 
+       END_DT   , 
+       USE_YN   ,
+       SORT     ,
+       REG_DTTM ,
+       REG_USER ,
+       REG_IP   , 
+       UPD_DTTM ,
+       UPD_USER , 
+       UPD_IP   
+      ) VALUES
+      (#{code_cd},
+       #{code_nm},  
+       REPLACE(#{start_dt} , '-', ''),
+       REPLACE(#{end_dt} , '-', '') ,    
+       #{use_yn},
+       #{sort},
+        NOW() ,
+       'admin', 
+       ''     ,
+        NOW() ,
+       'admin', 
+       ''  
+      ) 
+	]]>
+	</insert>	
+	
+    <update id = "updateCommMst"  parameterType="CodeMdDTO" ><![CDATA[ 
+       UPDATE TBL_CODE_MST
+          SET CODE_NM    = #{code_nm}, 
+              END_DT     = REPLACE(#{end_dt} , '-', '') ,    
+              USE_YN     = #{use_yn},
+              SORT       = #{sort} ,
+              UPD_USER   = 'admin' ,
+              UPD_DTTM   =  now() 
+        WHERE CODE_CD    = #{code_cd}
+    ]]>
+    </update>	
+    
+    <update id = "deleteCommMst"  parameterType="CodeMdDTO" ><![CDATA[ 
+       UPDATE TBL_CODE_MST
+          SET USE_YN    = 'N',
+              END_DT     = REPLACE(#{end_dt} , '-', '') ,   
+              UPD_USER   = 'admin' ,
+              UPD_DTTM   =  now() 
+        WHERE CODE_CD    = #{code_cd}
+    ]]>
+  	</update>
+  <!--   공콩코드  디테일코드  -->     
+    <select id ="selCommDetailList" parameterType="CodeMdDTO"  resultMap="CodeMdMap"><![CDATA[
+      SELECT CODE_GB,
+             CODE_CD,
+             SUB_CODE,
+             RTRIM(SUB_CODE_NM) SUB_CODE_NM,
+             DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+             DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+             IFNULL(USE_YN,'') USE_YN ,
+             IFNull(SORT,'1') SORT ,
+	         REG_DTTM , 
+	         REG_USER , 
+	         REG_IP   ,
+	         UPD_DTTM , 
+	         UPD_USER , 
+	         UPD_IP              
+        FROM TBL_CODE_DTL 
+       WHERE CODE_CD  = #{code_cd} 
+      ]]> 
+      <if test="sub_code != null and sub_code != '' "><![CDATA[
+         AND ( SUB_CODE LIKE CONCAT('%',#{sub_code},'%')  
+             ) 
+      ]]>
+      </if>
+      <![CDATA[
+       ORDER BY CODE_CD , CODE_GB , SUB_CODE
+      ]]>
+    </select>
+    
+	<select id="selectCodeDetailList" parameterType="CodeMdDTO" resultMap="CodeMdMap">
+	  <![CDATA[
+	  SELECT 
+	      A.CODE_GB,
+	      B.SUB_CODE_NM AS CODE_GBNM ,
+	      A.CODE_CD,
+	      A.SUB_CODE ,   
+	      A.SUB_CODE_NM  ,
+	      A.START_DT,
+	      A.END_DT,
+	      A.USE_YN,
+	      IFNULL(A.PROP_1,'') AS PROP_1 ,
+	      IFNULL(A.PROP_5,'') AS PROP_5 ,
+	      COALESCE(A.SORT, '1') AS SORT
+	  FROM TBL_CODE_DTL A
+	      INNER JOIN TBL_CODE_DTL B ON B.CODE_CD = 'CODE_GB' AND B.SUB_CODE = A.CODE_GB
+	  WHERE A.CODE_CD = #{code_cd}
+	  ]]>
+	  <if test='sub_code != null and sub_code != ""'>
+	    <![CDATA[
+	      AND A.SUB_CODE = #{sub_code}
+	    ]]>
+	  </if>
+	  <if test='sub_code_nm != null and sub_code_nm != ""'>
+	    <![CDATA[
+	      AND A.SUB_CODE_NM LIKE CONCAT('%', #{sub_code_nm}, '%')
+	    ]]>
+	  </if>
+	  <if test='use_yn != null and use_yn != ""'>
+	    <![CDATA[
+	      AND A.USE_YN = #{use_yn}
+	    ]]>
+	  </if>
+	  <if test='code_gb != null and code_gb != ""'>
+	    <![CDATA[
+	      AND A.CODE_GB = #{code_gb}
+	    ]]>
+	  </if>
+	  ORDER BY A.SORT, A.SUB_CODE, A.START_DT
+	</select>
+   
+   <insert id = "insertCommDetail" parameterType="CodeMdDTO"><![CDATA[ 
+      INSERT INTO TBL_CODE_DTL
+      (CODE_GB ,
+       CODE_CD,
+       SUB_CODE,
+       SUB_CODE_NM,
+       START_DT,   
+       END_DT, 
+       USE_YN,
+       SORT,
+       REG_DTTM ,
+       REG_USER ,
+       REG_IP   , 
+       UPD_DTTM ,
+       UPD_USER , 
+       UPD_IP   ,
+       PROP_1   , 
+       PROP_5     
+      ) VALUES
+      (#{code_gb},
+       #{code_cd},
+       #{sub_code},
+       #{sub_code_nm},
+       REPLACE(#{start_dt} , '-', ''),
+       REPLACE(#{end_dt} , '-', '') ,  
+       #{use_yn}, 
+       #{sort}  ,
+        NOW()   ,
+       'admin'  ,
+        ''      , 
+        NOW()   , 
+       'admin'  ,
+        ''      , 
+        prop_1  , 
+        prop_5            
+      ) 
+    ]]>
+    </insert>    
+    
+    <select id ="selCommDetailDupChk" parameterType="CodeMdDTO"  resultType="String"><![CDATA[ 
+      SELECT 'Y'
+        FROM TBL_CODE_DTL
+       WHERE CODE_CD   = #{code_cd}
+         AND SUB_CODE  = #{sub_code}
+         AND CODE_GB   = #{code_gb}
+    ]]>
+    </select> 
+           
+    <update id = "updateCommDetail"  parameterType="CodeMdDTO" ><![CDATA[ 
+       UPDATE TBL_CODE_DTL
+          SET 
+              PROP_1        = #{prop_1} ,
+              PROP_5        = #{prop_5} ,
+              SUB_CODE_NM   = #{sub_code_nm}, 
+              END_DT        = REPLACE(#{end_dt},'-',''), 
+              USE_YN        = #{use_yn},
+              SORT          = #{sort},
+              UPD_DTTM      = now() ,
+              UPD_USER      = 'admin'
+        WHERE CODE_CD       = #{code_cd} 
+          AND SUB_CODE      = #{sub_code}
+          AND CODE_GB       = #{code_gb}
+    ]]>
+    </update>    
+    <update id = "deleteCommDetail"  parameterType="CodeMdDTO" ><![CDATA[ 
+       UPDATE TBL_CODE_DTL
+          SET USE_YN     = 'N'
+              SORT       =  #{sort},
+              END_DT     =  DATE_FORMAT(NOW(), '%Y%m%d'), 
+              UPD_DTTM   =  now() ,
+              UPD_USER   = 'admin'
+        WHERE CODE_CD    = #{code_cd} 
+          AND SUB_CODE   = #{sub_code}
+          AND CODE_GB    = #{code_gb}
+    ]]>
+    </update>
+	<select id="selCommDtlInfo" parameterType="CodeMdDTO"  resultMap="CodeMdMap"><![CDATA[
+	   SELECT 
+          CODE_CD,
+          SUB_CODE_NM
+	   FROM TBL_CODE_DTL
+	   WHERE 1=1
+	    AND CODE_CD = #{code_cd}
+	 ]]>  
+	</select> 
+
+	<select id= "selCommMstInfo" parameterType="CodeMdDTO"  resultMap="CodeMdMap"><![CDATA[
+	  SELECT CODE_CD , 
+             CODE_NM 
+	    FROM TBL_CODE_MST
+	   WHERE 1=1
+	    AND CODE_CD = #{code_cd}
+  
+	 ]]>  
+	</select>
+		
+    <!-- Insert -->
+    <insert id="insertUser" parameterType="UsermDTO"> <![CDATA[ 
+        INSERT INTO TBL_USER_MST (
+            HOSP_CD, 
+            USER_ID, 
+            USER_NM, 
+            START_DT, 
+            END_DT, 
+            MAIN_GU, 
+            PASS_WD, 
+            PASS_CDT,
+            BIGO, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP ,
+            USE_YN ,
+            HOSP_UUID  ,
+            WINNER_YN ,
+            EMAIL     ,  
+            USER_TEL 
+        ) VALUES (
+            #{hosp_cd}, 
+            #{user_id}, 
+            #{user_nm}, 
+            REPLACE(#{start_dt} , '-', ''),
+            REPLACE(#{end_dt} , '-', '') ,
+            #{main_gu}, 
+            #{pass_wd}, 
+            DATE_FORMAT(NOW(),'%Y-%m-%d') ,
+            #{bigo}, 
+             NOW(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+             NOW(), 
+            #{upd_user}, 
+            #{upd_ip} ,
+            #{use_yn} ,
+            #{hosp_uuid} ,
+            #{winner_yn},
+            #{email} ,
+            #{user_tel}
+        )
+    ]]>
+    </insert>  
+    <!-- Update PASS_WD    = #{pass_wd},     PASS_CDT   = #{pass_cdt},  -->
+    <update id="updateUser" parameterType="UsermDTO"> <![CDATA[ 
+        UPDATE TBL_USER_MST
+        SET USER_NM    = #{user_nm},
+            MAIN_GU    = #{main_gu},
+            BIGO       = #{bigo},
+            USE_YN     = #{use_yn},
+            UPD_DTTM   = NOW(),
+            UPD_USER   = #{upd_user},
+            UPD_IP     = #{upd_ip},
+            END_DT     = REPLACE(#{end_dt} , '-', ''),
+            HOSP_UUID  = #{hosp_uuid} ,
+            WINNER_YN  = #{winner_yn} ,
+            EMAIL      = #{email} ,
+            USER_TEL   = #{user_tel}
+        WHERE HOSP_CD  = #{hosp_cd}
+          AND USER_ID  = #{user_id}
+          And START_DT = REPLACE(#{start_dt} , '-', '')
+    ]]>      
+    </update>     
+    
+    <delete id="deleteUser" parameterType="UsermDTO"> <![CDATA[ 
+        DELETE FROM TBL_USER_MST
+        WHERE _CD = #{hosp_cd}
+          AND USER_ID = #{user_id}
+          And START_DT = REPLACE(#{start_dt} , '-', '')
+     ]]>          
+    </delete> 
+    
+	<select id="selUserList" parameterType="UsermDTO"  resultMap="UsermMap"><![CDATA[
+	  SELECT HOSP_CD , 
+             USER_ID, 
+             USER_NM, 
+             DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+             DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+             MAIN_GU, 
+             PASS_WD, 
+             PASS_CDT,
+             BIGO, 
+             REG_DTTM, 
+             REG_USER, 
+             REG_IP, 
+             UPD_DTTM, 
+             UPD_USER, 
+             UPD_IP ,
+             IFNULL(USE_YN,'') USE_YN ,  
+             HOSP_UUID ,
+             WINNER_YN ,  
+             EMAIL    ,
+             USER_TEL  
+	    FROM TBL_USER_MST
+	   WHERE 1=1
+	  ]]>
+      <if test='user_nm != null and user_nm != "" '><![CDATA[
+         AND ( USER_ID LIKE CONCAT('%',#{user_nm},'%')  OR
+               USER_NM LIKE CONCAT('%',#{user_nm},'%')
+             ) 
+      ]]>
+      </if>
+      <![CDATA[
+       ORDER BY HOSP_CD ,USER_ID 
+        ]]>
+	</select>     
+	
+    <select id="UserInfo" parameterType="UsermDTO"  resultMap="UsermMap"> <![CDATA[ 
+	  SELECT HOSP_CD , 
+             TRIM(USER_ID) USER_ID , 
+             USER_NM, 
+             DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+             DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+             MAIN_GU, 
+             PASS_WD, 
+             PASS_CDT,
+             BIGO, 
+             REG_DTTM, 
+             REG_USER, 
+             REG_IP, 
+             UPD_DTTM, 
+             UPD_USER, 
+             UPD_IP,
+             USE_YN , 
+             HOSP_UUID ,
+             WINNER_YN ,
+             EMAIL    ,
+             USER_TEL               
+	    FROM TBL_USER_MST
+       Where 1=1
+		   And HOSP_UUID = #{hosp_uuid}
+		   And USER_ID = #{user_id}
+		   And START_DT = REPLACE(#{start_dt} , '-', '')
+    ]]>
+    </select>
+ 
+     <select id="UsernmInfo" parameterType="UsermDTO"  resultMap="UsermMap"> <![CDATA[ 
+	  SELECT PASS_WD , 
+             USER_ID  
+	    FROM TBL_USER_MST
+       Where 1=1
+		   And USER_NM = #{user_nm}
+		   And EMAIL   = #{email}
+    ]]>
+    </select>   
+    <select id="getUserInfo" parameterType="UsermDTO"  resultType="String"><![CDATA[ 
+	  SELECT 'Y'
+	    FROM TBL_USER_MST
+       Where 1=1
+		   And USER_ID = #{user_id}
+		   LIMIT 1
+    ]]>    
+    </select>	
+    
+    <select id="UserPasswdInfo" parameterType="UsermDTO"  resultMap="UsermMap"> <![CDATA[ 
+	    SELECT   HOSP_CD , 
+	             TRIM(USER_ID) USER_ID , 
+	             PASS_WD 
+		    FROM TBL_USER_MST
+	       Where 1=1
+			   And HOSP_UUID = #{hosp_uuid}
+			   And USER_ID = #{user_id}
+	    ]]>
+	    <![CDATA[
+		   ORDER BY START_DT DESC
+		   LIMIT 1 
+		]]>
+    </select>	    
+	<!-- 비밀번호 변경 처리 -->
+	<update id= "UserPasswdChange" parameterType="UsermDTO"><![CDATA[ 
+	  UPDATE TBL_USER_MST
+	     SET PASS_WD  = #{enc_user_pwd}
+       Where 1=1
+		   And HOSP_UUID = #{hosp_uuid}
+		   And USER_ID = #{user_id}
+	]]>
+	<![CDATA[
+	   ORDER BY START_DT DESC
+	   LIMIT 1 
+	 ]]>
+	</update>    
+    <select id="selHospList" parameterType="HospMdDTO"  resultMap="HospMdMap"><![CDATA[
+	    SELECT 
+	        HOSP_CD,
+	        HOSP_NM,
+	        HOSP_ADDR,
+	        HOSP_EXTRADR,
+	        HOSP_CEO,
+	        BUSI_NUM,
+	        INACCD,
+            DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+            DATE_FORMAT(JOIN_DT, '%Y-%m-%d') JOIN_DT , 
+            IFNULL(DATE_FORMAT(ACCEPT_DT, '%Y-%m-%d'),'') ACCEPT_DT , 
+            IFNULL(DATE_FORMAT(CLOSE_DT, '%Y-%m-%d'),'') CLOSE_DT , 
+            HOSP_TEL , 
+            HOSP_FAX , 
+            ZIP_CD ,             
+	        USE_YN,
+	        WARDCNT,
+	        ICUCNT,
+	        ERCNT,
+	        DOCCNT,
+	        STHPNM,
+	        REG_DTTM,
+	        REG_USER,
+	        REG_IP,
+	        UPD_DTTM,
+	        UPD_USER,
+	        UPD_IP,
+	        HOSP_UUID
+	    FROM TBL_HOSP_MST
+	    WHERE 1=1
+    	]]>
+      <if test='hosp_cd != null and hosp_cd != "" '><![CDATA[
+         AND ( HOSP_CD LIKE CONCAT('%',#{hosp_cd},'%')  OR
+               HOSP_NM LIKE CONCAT('%',#{hosp_cd},'%')
+             ) 
+      ]]>
+      </if>
+      
+      <![CDATA[
+          ORDER BY HOSP_CD , START_DT
+      ]]>
+     </select>  
+
+     <select id="selHospsumList" parameterType="HospMdDTO"  resultMap="HospMdMap"><![CDATA[
+        SELECT * FROM 
+		(
+		SELECT 
+		    HM.HOSP_CD,
+		    HM.HOSP_UUID,
+		    RTRIM(HM.HOSP_NM) AS HOSP_NM,
+		    HM.HOSP_ADDR,
+		    HM.HOSP_EXTRADR,
+		    HM.HOSP_CEO,
+		    HM.BUSI_NUM ,	
+  	 	    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN 
+			    (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+			     WHERE CODE_CD = 'CONACT_GB' AND SUB_CODE = HC.CONACT_GB)  END , ''))    AS NAME1,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN DATE_FORMAT(HC.START_DT,'%Y-%m-%d')  END , ''))  AS START_DT,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN DATE_FORMAT(HC.END_DT,'%Y-%m-%d')    END , ''))  AS END_DT,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN DATE_FORMAT(HC.JOIN_DT,'%Y-%m-%d')   END , ''))  AS JOIN_DT ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN DATE_FORMAT(HC.ACCEPT_DT,'%Y-%m-%d') END , ''))  AS ACCEPT_DT ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '1' THEN DATE_FORMAT(HC.CLOSE_DT,'%Y-%m-%d')  END , ''))  AS CLOSE_DT ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN 
+			    (SELECT SUB_CODE_NM FROM TBL_CODE_DTL 
+			     WHERE CODE_CD = 'CONACT_GB' AND SUB_CODE = HC.CONACT_GB)  END , ''))     AS NAME2, 
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN DATE_FORMAT(HC.START_DT,'%Y-%m-%d')  END , ''))   AS START_DT2,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN DATE_FORMAT(HC.END_DT,'%Y-%m-%d')    END , ''))   AS END_DT2 ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN DATE_FORMAT(HC.JOIN_DT,'%Y-%m-%d')   END , ''))   AS JOIN_DT2 ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN DATE_FORMAT(HC.ACCEPT_DT,'%Y-%m-%d') END , ''))   AS ACCEPT_DT2 ,
+		    MAX(IFNULL(CASE WHEN HC.CONACT_GB = '2' THEN DATE_FORMAT(HC.CLOSE_DT,'%Y-%m-%d')  END , ''))   AS CLOSE_DT2 ,
+		    MAX(CASE WHEN HM.HOSP_CD <> '' THEN HM.UPD_DTTM  END)   AS UPD_DTTM 
+		FROM TBL_HOSP_MST HM
+		LEFT OUTER JOIN TBL_HOSPCONT_MST HC 
+		    ON HM.HOSP_UUID = HC.HOSP_UUID
+		    AND HC.CONACT_GB IN ('1', '2')
+		GROUP BY 
+		    HM.HOSP_CD,
+		    HM.HOSP_UUID,
+		    HM.HOSP_NM,
+		    HM.HOSP_ADDR,
+		    HM.HOSP_EXTRADR,
+		    HM.HOSP_CEO,
+		    HM.BUSI_NUM
+		) A
+		WHERE 1 = 1
+    	]]>
+      <if test='hosp_cd != null and hosp_cd != "" '><![CDATA[
+         AND ( A.HOSP_CD LIKE CONCAT('%',#{hosp_cd},'%')  OR
+               A.HOSP_NM LIKE CONCAT('%',#{hosp_cd},'%')
+             ) 
+      ]]>
+      </if>
+      <![CDATA[
+          ORDER BY A.HOSP_CD , A.START_DT
+      ]]>
+   
+      </select>  
+           
+	  <insert id="insertHosp" parameterType="HospMdDTO"> <![CDATA[ 
+	    INSERT INTO TBL_HOSP_MST (
+	        HOSP_CD,
+	        HOSP_NM,
+	        HOSP_ADDR,
+	        HOSP_EXTRADR ,
+	        HOSP_CEO,
+	        BUSI_NUM,
+	        INACCD,
+	        START_DT,
+	        END_DT,
+	        JOIN_DT,
+	        ACCEPT_DT,
+	        CLOSE_DT,
+	        ZIP_CD,	 
+            HOSP_TEL , 
+            HOSP_FAX , 	               	        
+	        USE_YN,
+	        WARDCNT,
+	        ICUCNT,
+	        ERCNT,
+	        DOCCNT,
+	        STHPNM,
+	        REG_DTTM,
+	        REG_USER,
+	        REG_IP,
+	        UPD_DTTM,
+	        UPD_USER,
+	        UPD_IP , 
+	        HOSP_UUID
+	    ) VALUES (
+	        #{hosp_cd},
+	        #{hosp_nm},
+	        #{hosp_addr},
+	        #{hosp_extradr},
+	        #{hosp_ceo},
+	        #{busi_num},
+	        #{inaccd},
+            REPLACE(#{start_dt} , '-', '') ,
+            REPLACE(#{end_dt} , '-', ''),
+	        REPLACE(#{join_dt} , '-', ''),
+	        REPLACE(#{accept_dt} , '-', ''),
+	        REPLACE(#{close_dt} , '-', ''),
+	        #{zip_cd},   
+	        #{hosp_tel} , 
+            #{hosp_fax} ,          
+	        #{use_yn},
+	        #{wardcnt},
+	        #{icucnt},
+	        #{ercnt},
+	        #{doccnt},
+	        #{sthpnm},
+	        NOW(),
+	        #{reg_user},
+	        #{reg_ip},
+	        NOW(),
+	        #{upd_user},
+	        #{upd_ip} , 
+	        #{hosp_uuid}
+	    )
+    ]]>
+	</insert>   
+	
+	<update id="updateHosp" parameterType="HospMdDTO"> <![CDATA[ 
+	    UPDATE TBL_HOSP_MST
+	    SET 
+	        hosp_nm   = #{hosp_nm},
+	        hosp_addr = #{hosp_addr},
+	        hosp_extradr = #{hosp_extradr},
+	        hosp_ceo  = #{hosp_ceo},
+	        busi_num  = #{busi_num},
+	        inaccd    = #{inaccd},
+	        start_dt    = REPLACE(#{start_dt} , '-', '') ,
+	        end_dt    = REPLACE(#{end_dt} , '-', '') ,
+	        join_dt   = REPLACE(#{join_dt} , '-', ''),
+	        accept_dt = REPLACE(#{accept_dt} , '-', ''),
+	        close_dt  = REPLACE(#{close_dt} , '-', ''),
+	        zip_cd    = #{zip_cd}, 	
+	        hosp_tel  = #{hosp_tel},
+	        hosp_fax  = #{hosp_fax},        
+	        use_yn    = #{use_yn},
+	        wardcnt   = #{wardcnt},
+	        icucnt    = #{icucnt},
+	        ercnt     = #{ercnt},
+	        doccnt    = #{doccnt},
+	        sthpnm    = #{sthpnm},
+	        upd_dttm  = NOW(),
+	        upd_user  = #{upd_user},
+	        upd_ip    = #{upd_ip},
+	        hosp_uuid = #{hosp_uuid} 
+	    WHERE 1=1
+	      AND HOSP_CD  = #{hosp_cd}
+	    ]]>   
+    </update>
+    	   
+	<delete id="deleteHosp" parameterType="HospMdDTO"> <![CDATA[ 
+	    DELETE FROM TBL_HOSP_MST 
+	    WHERE 1=1 
+	      AND HOSP_CD  = #{hosp_cd}
+	    ]]>  
+	</delete> 
+
+	<select  id="getHospmst" parameterType="HospMdDTO" resultMap="HospMdMap"><![CDATA[ 
+	    SELECT HOSP_CD  
+	     FROM TBL_HOSP_MST 
+	    WHERE 1=1 
+	      AND HOSP_UUID  = #{hosp_uuid}
+	    ]]>  
+	</select> 
+	      
+	<select id="HospInfo" parameterType="HospMdDTO"  resultMap="HospMdMap"> <![CDATA[
+	    SELECT 
+	        HOSP_CD,
+	        HOSP_NM,
+	        HOSP_ADDR,
+	        HOSP_EXTRADR ,
+	        HOSP_CEO,
+	        BUSI_NUM,
+	        INACCD,
+            DATE_FORMAT(START_DT, '%Y-%m-%d') START_DT , 
+            DATE_FORMAT(END_DT, '%Y-%m-%d') END_DT , 
+            DATE_FORMAT(JOIN_DT, '%Y-%m-%d') JOIN_DT , 
+            DATE_FORMAT(ACCEPT_DT, '%Y-%m-%d') ACCEPT_DT , 
+            DATE_FORMAT(CLOSE_DT, '%Y-%m-%d') CLOSE_DT ,             
+            ZIP_CD ,  
+            HOSP_TEL ,
+            HOSP_FAX ,
+	        USE_YN,
+	        WARDCNT,
+	        ICUCNT,
+	        ERCNT,
+	        DOCCNT,
+	        STHPNM,
+	        REG_DTTM,
+	        REG_USER,
+	        REG_IP,
+	        UPD_DTTM,
+	        UPD_USER,
+	        UPD_IP ,
+	        HOSP_UUID
+	    FROM TBL_HOSP_MST
+	    WHERE 1=1 
+	      AND HOSP_CD  = #{hosp_cd}
+	   ]]>
+   </select> 	
+   
+   <select id="selHospDtlList" parameterType="HospMdDTO"  resultMap="HospMdMap"><![CDATA[
+	  SELECT HOSP_CD , 
+	         START_YM ,
+	         WARDCNT  , 
+	         ICUCNT   , 
+	         ERCNT    , 
+	         DOCCNT   , 
+	         REG_DTTM , 
+	         REG_USER , 
+	         REG_IP   ,
+	         UPD_DTTM , 
+	         UPD_USER , 
+	         UPD_IP 
+	    FROM TBL_HOSP_DTL
+	   WHERE 1=1
+	     AND  HOSP_CD = #{hosp_cd}
+      ]]>
+      <![CDATA[
+       	 ORDER BY HOSP_CD , START_YM DESC 
+      ]]>
+	</select>	
+  
+	<insert id="insertHospDtl" parameterType="HospMdDTO"> <![CDATA[ 
+	    INSERT INTO TBL_HOSP_DTL (
+	        HOSP_CD,
+	        START_YM,
+	        WARDCNT,
+	        ICUCNT,
+	        ERCNT,
+	        DOCCNT,
+	        REG_DTTM,
+	        REG_USER,
+	        REG_IP,
+	        UPD_DTTM,
+	        UPD_USER,
+	        UPD_IP
+	    ) VALUES (
+	        #{hosp_cd2},
+	        #{start_ym},
+	        #{wardcnt},
+	        #{icucnt},
+	        #{ercnt},
+	        #{doccnt},
+	        NOW(),
+	        #{reg_user},
+	        #{reg_ip},
+	        NOW(),
+	        #{upd_user},
+	        #{upd_ip}
+	    )
+	 ]]>
+	</insert> 
+	
+    <update id="updateHospDtl" parameterType="HospMdDTO"> <![CDATA[ 
+        UPDATE TBL_HOSP_DTL
+        SET WARDCNT   = #{wardcnt},
+            ICUCNT    = #{icucnt},
+            ERCNT     = #{ercnt},
+            DOCCNT    = #{doccnt},
+            UPD_DTTM  = NOW(),
+            UPD_USER  = #{upd_user},
+            UPD_IP    = #{upd_ip}
+        WHERE HOSP_CD  = #{hosp_cd2}
+          AND START_YM = #{start_ym}
+    ]]>      
+    </update>	
+    
+    <delete id="deleteHospDtl" parameterType="HospMdDTO"> <![CDATA[ 
+        DELETE FROM TBL_HOSP_DTL
+        WHERE HOSP_CD  = #{hosp_cd2}
+          AND START_YM = #{start_ym}
+    ]]>   
+    </delete>  
+    
+	<select id="HospDtlInfo" parameterType="HospMdDTO"  resultMap="HospMdMap"> <![CDATA[
+	    SELECT 
+	        HOSP_CD,
+	        START_YM,
+	        WARDCNT,
+	        ICUCNT,
+	        ERCNT,
+	        DOCCNT,
+	        REG_DTTM,
+	        REG_USER,
+	        REG_IP,
+	        UPD_DTTM,
+	        UPD_USER,
+	        UPD_IP
+	    FROM TBL_HOSP_DTL
+	    WHERE 1=1 
+	      AND HOSP_CD  = #{hosp_cd2}
+	      And START_YM = #{start_ym}
+	   ]]>
+   </select> 
+   <select id = "HospChk" parameterType="HospMdDTO"  resultType= "String"> <![CDATA[ 
+        SELECT 'Y'
+        FROM TBL_HOSP_MST
+        WHERE 1=1
+          AND HOSP_CD  = #{hosp_cd}
+    ]]>
+   </select>  
+   <!--병원정보일괄등록 --> 
+   <insert id="insertHospDtlMonlyList" parameterType="HospMdDTO"><![CDATA[ 
+		insert into TBL_HOSP_DTL
+			(
+			    HOSP_CD
+			  , START_YM               
+			  , DOCCNT                               
+			  , WARDCNT                               
+			  , ICUCNT                               
+			  , ERCNT  
+			  , REG_DTTM
+			  , REG_USER
+			  , REG_IP
+			)
+			values
+			(
+			  #hosp_cd#
+			, #strat_ym#
+			, '0'
+			, '0'
+			, '0'
+			, '0'
+			, NOW()
+			, #reg_user#
+			, #reg_ip#
+			)
+	 ]]>
+   </insert>
+	<select id="selDiseList" parameterType="DiseDTO"  resultMap="DiseMap"><![CDATA[
+	  	 select 
+             DIAG_CODE, 
+             START_DT, 
+             KOR_DIAG_NAME, 
+             ENG_DIAG_NAME, 
+             GENDER_TYPE, 
+             INFECT_TYPE, 
+             DIAG_TYPE, 
+             ICD10_CODE, 
+             END_DT, 
+             MAX_AGE, 
+             MIN_AGE, 
+             VCODE, 
+             DESC_INFO, 
+             REG_DTTM, 
+             REG_USER, 
+             REG_IP, 
+             UPD_DTTM, 
+             UPD_USER, 
+             UPD_IP
+		  From TBL_DISE_CODE
+		 where 1=1
+		 ]]>
+		  <if test='kor_diag_name != null and kor_diag_name !="" '><![CDATA[
+	         AND (KOR_DIAG_NAME LIKE CONCAT('%',#{kor_diag_name},'%')
+	          OR  DIAG_CODE LIKE CONCAT('%',#{kor_diag_name},'%') )
+	      ]]>
+	      </if>
+	      <![CDATA[
+		     Order by DIAG_CODE  , START_DT  
+		     LIMIT #{pageSize} OFFSET #{pageIndex}
+	      ]]>
+	</select> 
+	<select id="getDiseCount" parameterType="DiseDTO" resultType="int">
+		<![CDATA[
+		    SELECT COUNT(*) 
+		    FROM TBL_DISE_CODE
+		    WHERE 1=1
+		]]>
+	    <if test='kor_diag_name != null and kor_diag_name != ""'>
+	        <![CDATA[
+	             AND (KOR_DIAG_NAME LIKE CONCAT('%',#{kor_diag_name},'%')
+		          OR  DIAG_CODE LIKE CONCAT('%',#{kor_diag_name},'%') )
+	        ]]>
+	    </if>
+    </select>	
+ 	<select id="DiseInfo" parameterType="DiseDTO"  resultMap="DiseMap"><![CDATA[
+	  	 select 
+             DIAG_CODE, 
+             START_DT, 
+             KOR_DIAG_NAME, 
+             ENG_DIAG_NAME, 
+             GENDER_TYPE, 
+             INFECT_TYPE, 
+             DIAG_TYPE, 
+             ICD10_CODE, 
+             END_DT, 
+             MAX_AGE, 
+             MIN_AGE, 
+             VCODE, 
+             DESC_INFO, 
+             REG_DTTM, 
+             REG_USER, 
+             REG_IP, 
+             UPD_DTTM, 
+             UPD_USER, 
+             UPD_IP
+		  From TBL_DISE_CODE
+		 where 1=1
+		   AND  DIAG_CODE = #{diag_code}
+		   AND  START_DT  = #{start_dt}
+		 ]]>
+	</select>  
+    <insert id="insertDise" parameterType="DiseDTO"> <![CDATA[
+        INSERT INTO TBL_DISE_CODE 
+               (DIAG_CODE, 
+                START_DT, 
+                KOR_DIAG_NAME, 
+                ENG_DIAG_NAME, 
+                GENDER_TYPE, 
+                INFECT_TYPE, 
+                DIAG_TYPE, 
+                ICD10_CODE, 
+                END_DT, 
+                MAX_AGE, 
+                MIN_AGE, 
+                VCODE, 
+                DESC_INFO, 
+                REG_DTTM, 
+                REG_USER, 
+                REG_IP, 
+                UPD_DTTM, 
+                UPD_USER, 
+                UPD_IP
+                )
+        VALUES ( #{diag_code}, 
+                 REPLACE(#{start_dt},'-',''), 
+                 #{kor_diag_name}, 
+                 #{eng_diag_name}, 
+                 #{gender_type}  , 
+                 #{infect_type}  , 
+                 #{diag_type}    , 
+                 #{icd10_code}   , 
+                 REPLACE(#{end_dt},'-','') , 
+                 #{max_age}, 
+                 #{min_age}, 
+                 #{vcode}, 
+                 #{desc_info}, 
+                 NOW(), 
+                 #{reg_user}, 
+                 #{reg_ip}, 
+                 NOW(), 
+                 #{upd_user}, 
+                 #{upd_ip})
+		 ]]>
+    </insert>	
+    <update id="updateDise" parameterType="DiseDTO"> <![CDATA[
+        UPDATE TBL_DISE_CODE
+        SET KOR_DIAG_NAME = #{kor_diag_name}, 
+            ENG_DIAG_NAME = #{eng_diag_name}, 
+            GENDER_TYPE   = #{gender_type},
+            INFECT_TYPE   = #{infect_type}, 
+            DIAG_TYPE     = #{diag_type}, 
+            ICD10_CODE    = #{icd10_code},
+            END_DT        = #{end_dt}, 
+            MAX_AGE       = #{max_age}, 
+            MIN_AGE       = #{min_age}, 
+            VCODE         = #{vcode},
+            DESC_INFO     = #{desc_info}, 
+            UPD_DTTM      = NOW(), 
+            UPD_USER      = #{upd_user} ,
+            UPD_IP        = #{upd_ip}
+        WHERE DIAG_CODE = #{diag_code} 
+           AND START_DT =  REPLACE(#{start_dt},'-','')
+  	 ]]>
+    </update>    
+    <delete id="deleteDise" parameterType="DiseDTO"> <![CDATA[ 
+        DELETE FROM TBL_DISE_CODE
+        WHERE DIAG_CODE  = #{diag_code}
+          AND START_DT   = REPLACE(#{start_dt},'-','')
+    ]]>   
+    </delete>   
+    <select id="selectSamVerList" parameterType="SamverDTO" resultMap= "SamverMap">
+        SELECT 
+            A.SAMVER,
+            A.TBLINFO,
+            B.SUB_CODE_NM,
+            A.VERSION,
+            A.SEQ,
+            A.SORT_SEQ,
+            A.ITEM_NM,
+            A.START_POS,
+            A.END_POS,
+            A.DATA_TYPE,
+            IFNULL(A.DECIMAL_POS, '') AS DECIMAL_POS,       
+            A.DATAPROC_YN,                                 
+            IFNULL(A.DB_COLNM, '') AS DB_COLNM,           
+            IFNULL(A.LAST_YN, 'N') AS LAST_YN
+        FROM TBL_SAMFVER_MST A
+        INNER JOIN 
+            TBL_CODE_DTL B  ON B.CODE_CD = 'TBLINFO' AND B.SUB_CODE = A.TBLINFO
+        WHERE 1 = 1
+        <if test="samver != null and samver != ''">
+            AND (A.SAMVER LIKE CONCAT('%', #{samver}, '%') or  A.VERSION = #{version} or (A.SAMVER BETWEEN #{samver} AND #{prop_1})) 
+        </if>
+        <if test="tblinfo != null and tblinfo != ''">
+            AND A.TBLINFO = #{tblinfo}
+        </if>
+        <if test="dataproc_yn != null and dataproc_yn != ''">
+            AND A.DATAPROC_YN = #{dataproc_yn}
+        </if>
+        ORDER BY A.VERSION, A.SAMVER, B.SORT, A.TBLINFO,A.SEQ
+    </select>        
+ 	<select id ="selectCodeDetailDupChk" parameterType="CodeMdDTO"  resultType="String"><![CDATA[ 
+      SELECT TOP(1) 'Y'
+        FROM dbo.TBL_CODE_DTL A
+       WHERE A.CODE_CODE = #{code_cd}
+         AND A.CODE_GB   = #{code_gb}  
+         AND A.SUB_CODE  = #{sub_code}
+    ]]>
+    </select>   
+     <select id ="selectSamVerDupchk" parameterType="SamverDTO" resultType="String"><![CDATA[  
+      SELECT 'Y'
+        FROM TBL_SAMFVER_MST A 
+       WHERE A.SAMVER    = #{samver}
+         AND A.VERSION   = #{version} 
+         AND A.TBLINFO   = #{tblinfo}
+         AND A.DB_COLNM   = UPPER(#{db_coln})
+    ]]>
+    </select>    
+     <select id = "selectSamVerMgtView" parameterType="SamverDTO" resultMap="SamverMap"><![CDATA[ 
+      SELECT A.SAMVER,
+             A.TBLINFO,
+             A.VERSION,
+             A.SEQ,
+             A.ITEM_NM,
+             A.SORT_SEQ,
+             A.START_POS,
+             A.END_POS,
+             A.DATA_TYPE,
+             IFNULL(A.DECIMAL_POS,0) AS DECIMAL_POS,
+             IFNULL(A.DATAPROC_YN,'N') AS DATAPROC_YN,
+             A.DB_COLNM,
+             IFNULL(A.LAST_YN,'N') AS LAST_YN
+        FROM TBL_SAMFVER_MST A 
+       WHERE A.SAMVER    = #{samver}
+         AND A.VERSION   = #{version}
+         AND A.SEQ       = #{seq}
+         AND A.TBLINFO   = #{tblinfo}
+         AND (A.SAMVER LIKE CONCAT('%', #{samver}, '%') or  A.VERSION = #{version} or (A.SAMVER BETWEEN #{samver} AND #{prop_1})) 
+      ]]>  
+    </select>  
+    <insert id ="insertSamVerMgtInfo" parameterType="SamverDTO" ><![CDATA[ 
+      INSERT INTO TBL_SAMFVER_MST 
+      ( SAMVER,
+        TBLINFO,
+        VERSION,
+        SEQ,
+        ITEM_NM,
+        SORT_SEQ,
+        START_POS,
+        END_POS,
+        DATA_TYPE,
+        DECIMAL_POS,
+        DATAPROC_YN,
+        DB_COLNM,
+        LAST_YN 
+      ) VALUES
+      ( #{samver},
+        #{tblinfo},
+        #{version},
+        #{seq},
+        #{item_nm},
+        #{sort_seq},
+        #{start_pos},
+        #{end_pos},
+        #{data_type},
+        #{decimal_pos},
+        #{dataproc_yn},
+        UPPER(#{db_colnm}),
+        #{lastyn}  
+      ) 
+    ]]>
+    </insert> 
+    
+    <update  id ="updateSamVerMgtInfo" parameterType="SamverDTO" ><![CDATA[ 
+     UPDATE TBL_SAMFVER_MST
+        SET ITEM_NM      = #{item_nm}
+          , SORTSEQ      = #{sort_seq}
+          , STARTPOS     = #{start_pos}
+          , ENDPOS       = #{end_pos}
+          , DATA_TYPE    = #{data_type}
+          , DECIMAL_POS  = #{decimal_pos}
+          , DATAPROC_YN  = #{dataproc_yn}
+          , DB_COLNM     = UPPER(#{db_colnm}) 
+          , LAST_YN      = #{last_yn}
+       WHERE SAMVER      = #{samver}
+         AND VERSION     = #{version}
+         AND SEQ         = #{seq}
+    ]]>
+    </update>   
+    <select id ="selectSamVerMaxSeq" parameterType="SamverDTO" resultType="int"><![CDATA[  
+      SELECT ISNULL(MAX(SEQ),0)+1
+        FROM TBL_SAMFVER_MST A 
+       WHERE A.SAMVER    = #samver#
+         AND A.VERSION   = #version#  
+         AND A.TBLINFO   = #tblinfo#
+    ]]>
+    </select>    
+  <!-- 가중치관련   -->
+    <select id="selectWvalueList" parameterType="WvalDTO" resultMap="WvalMap"><![CDATA[ 
+        SELECT 
+            A.CATE_CODE,
+            A.ORDER_SEQ,
+		    CASE WHEN A.START_DT REGEXP '^[0-9]{8}$' 
+		        THEN DATE_FORMAT(STR_TO_DATE(A.START_DT, '%Y%m%d'), '%Y-%m-%d') 
+		    ELSE NULL 
+		    END AS START_DT ,
+            RTRIM(A.CAL_GUBUN) AS CAL_GUBUN ,
+            B.SUB_CODE_NM AS  WEVALUE_NM,
+            A.START_INDI,
+            A.END_INDI,
+            A.STD_SCORE,
+            A.WE_VALUE,
+            A.REG_DTTM,
+            A.REG_USER,
+            A.REG_IP,
+            A.UPD_DTTM,
+            A.UPD_USER,
+            A.UPD_IP
+        FROM TBL_WEVALUE_MST A
+             INNER JOIN TBL_CODE_DTL B ON B.CODE_GB = 'Z' AND B.CODE_CD = 'WVALUE' AND B.SUB_CODE = A.CATE_CODE
+        WHERE 1=1
+		 ]]>
+		  <if test='cate_code != null and cate_code !="" '><![CDATA[
+	         AND (WEVALUE_NM LIKE CONCAT('%',#{cate_code},'%')
+	          OR  CATE_CODE LIKE CONCAT('%',#{cate_code},'%') )
+	      ]]>
+	      </if>
+	      <![CDATA[
+		     Order by A.CATE_CODE  , A.START_DT ,  A.ORDER_SEQ 
+	      ]]>         
+    </select>  
+    <insert id="insertWvalue" parameterType="WvalDTO"> <![CDATA[ 
+        INSERT INTO TBL_WEVALUE_MST (
+            CATE_CODE, 
+            ORDER_SEQ, 
+            START_DT, 
+            CAL_GUBUN, 
+            WEVALUE_NM, 
+            START_INDI,
+            END_INDI, 
+            STD_SCORE, 
+            WE_VALUE, 
+            REG_DTTM, 
+            REG_USER, 
+            REG_IP, 
+            UPD_DTTM, 
+            UPD_USER, 
+            UPD_IP
+        ) VALUES (
+            #{cate_code}, 
+            #{order_seq}, 
+            replace(#{start_dt},'-',''), 
+            #{cal_gubun}, 
+            #{wevalue_nm}, 
+            #{start_indi},
+            #{end_indi}, 
+            #{std_score}, 
+            #{we_value}, 
+            NOW(), 
+            #{reg_user}, 
+            #{reg_ip}, 
+            NOW(), 
+            #{upd_user}, 
+            #{upd_ip}
+        )
+     ]]>   
+    </insert>
+     <update id="updateWvalue"  parameterType="WvalDTO"> <![CDATA[ 
+        UPDATE TBL_WEVALUE_MST
+        SET 
+            CAL_GUBUN   = #{cal_gubun},
+            WEVALUE_NM  = #{wevalue_nm},
+            START_INDI  = #{start_indi},
+            END_INDI    = #{end_indi},
+            STD_SCORE   = #{std_score},
+            WE_VALUE    = #{we_value},
+            UPD_DTTM    = NOW(),
+            UPD_USER    = #{upd_user},
+            UPD_IP      = #{upd_ip}
+        WHERE cate_code = #{cate_code} 
+          AND order_seq = #{order_seq} 
+          AND start_dt  = replace(#{start_dt},'-','')
+    ]]>    
+    </update>  
+     <delete id="deleteWvalue"  parameterType="WvalDTO"> <![CDATA[ 
+        DELETE FROM TBL_WEVALUE_MST
+        WHERE CATE_CODE = #{cate_code} 
+          AND ORDER_SEQ = #{order_seq} 
+          AND START_DT  = replace(#{start_dt},'-','')
+    ]]>    
+    </delete>   
+    <select id="selectWvalueInfo" parameterType="WvalDTO" resultMap="WvalMap"><![CDATA[ 
+        SELECT 
+            CATE_CODE,
+            ORDER_SEQ,
+            START_DT,
+            CAL_GUBUN,
+            WEVALUE_NM,
+            START_INDI,
+            END_INDI,
+            STD_SCORE,
+            WE_VALUE,
+            REG_DTTM,
+            REG_USER,
+            REG_IP,
+            UPD_DTTM,
+            UPD_USER,
+            UPD_IP
+        FROM TBL_WEVALUE_MST
+        WHERE cate_code = #{cate_code} 
+          AND order_seq = #{order_seq} 
+          AND start_dt  = replace(#{start_dt},'-','')
+    ]]>    
+    </select>   
+</mapper>

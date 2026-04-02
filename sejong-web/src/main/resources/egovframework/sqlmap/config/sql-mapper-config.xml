@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+    <typeAliases>
+    	<typeAlias  alias="UserDTO"    type="egovframework.sejong.user.model.UserDTO"/> 
+    	<typeAlias  alias="DoctorDTO"  type="egovframework.sejong.doctor.model.DoctorDTO"/> 
+    	<typeAlias  alias="NoticeDTO"  type="egovframework.sejong.doctor.model.NoticeDTO"/> 
+    	<typeAlias  alias="BloodDTO"   type="egovframework.sejong.blood.model.BloodDTO"/> 
+    	<typeAlias  alias="FaqDTO"     type="egovframework.sejong.admin.model.FaqDTO"/> 
+    	<typeAlias  alias="PatientDTO" type="egovframework.sejong.admin.model.PatientDTO"/> 
+    	<typeAlias  alias="AuserDTO"   type="egovframework.sejong.admin.model.AuserDTO"/>
+    	<typeAlias  alias="AsqDTO"     type="egovframework.sejong.admin.model.AsqDTO"/> 
+    	<typeAlias  alias="MenuDTO"    type="egovframework.sejong.login.model.MenuDTO"/> 
+    	<typeAlias  alias="CommDTO"    type="egovframework.sejong.admin.model.CommDTO"/> 
+    	
+    	<typeAlias  alias="CodeMdDTO"   type="egovframework.sejong.base.model.CodeMdDTO"/> 
+    	<typeAlias  alias="SugaDTO"     type="egovframework.sejong.base.model.SugaDTO"/> 
+    	<typeAlias  alias="UsermDTO"    type="egovframework.sejong.base.model.UsermDTO"/> 
+    	<typeAlias  alias="HospMdDTO"   type="egovframework.sejong.base.model.HospMdDTO"/> 
+        <typeAlias  alias="DiseDTO"     type="egovframework.sejong.base.model.DiseDTO"/> 
+        <typeAlias  alias="SamverDTO"   type="egovframework.sejong.base.model.SamverDTO"/> 
+        <typeAlias  alias="WvalDTO"     type="egovframework.sejong.base.model.WvalDTO"/> 
+        <typeAlias  alias="MberDTO"     type="egovframework.sejong.base.model.MberDTO"/> 
+        <typeAlias  alias="NotiDTO"     type="egovframework.sejong.base.model.NotiDTO"/> 
+        <typeAlias  alias="HospConDTO"  type="egovframework.sejong.base.model.HospConDTO"/> 
+        <typeAlias  alias="DietDTO"      type="egovframework.sejong.base.model.DietDTO"/>  
+        <typeAlias  alias="HospEmpDTO"      type="egovframework.sejong.base.model.HospEmpDTO"/>   
+        <typeAlias  alias="LicworkDTO"      type="egovframework.sejong.base.model.LicworkDTO"/> 
+        <typeAlias  alias="UrlpathDTO"      type="egovframework.sejong.base.model.UrlpathDTO"/>             
+	</typeAliases>
+	
+</configuration>
