@@ -31,6 +31,7 @@
           <div class="data" id="nowBloodUpt"></div>
           <div class="time" id="nowBloodDtm"></div>
         </div>
+        
       </article>
       <!-- //혈당 대시보드 -->
       <div class="lyInner">
