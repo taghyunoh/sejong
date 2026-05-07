@@ -19,7 +19,6 @@
     cal.add(Calendar.DATE, -6);
     String startDate = sfDate.format(cal.getTime());
 %>
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
