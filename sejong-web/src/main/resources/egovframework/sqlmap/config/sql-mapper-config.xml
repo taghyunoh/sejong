@@ -18,6 +18,8 @@
 		<typeAlias alias="CommDTO"    type="egovframework.sejong.admin.model.CommDTO"/>
 
 		<typeAlias alias="UsermDTO"   type="egovframework.sejong.base.model.UsermDTO"/>
+
+		<typeAlias alias="FoodDTO"    type="egovframework.sejong.food.model.FoodDTO"/>
 	</typeAliases>
 
 </configuration>

@@ -25,8 +25,8 @@
 
 window.onload = function() {
 	
-    var userIdInput = document.getElementById("user_id");
-    // Check if the user_id field has a value
+    var userIdInput = document.getElementById("userId");
+    // Check if the userId field has a value
     if (userIdInput.value.trim() !== "") {
      // userIdInput.disabled = true;  // Disable the input field if it has a value
     } else {
@@ -36,13 +36,13 @@ window.onload = function() {
   
 	function fnSave(){
 		 
-		if( $("#pass_wd").val() == "") {
+		if( $("#passWd").val() == "") {
 			alert("비밀번호를 입력하세요.!");
-			$("#pass_wd").focus();
+			$("#passWd").focus();
 			return;
-		}else if( $("#bf_pass_wd").val() != $("#af_pass_wd").val()) {
+		}else if( $("#bfPassWd").val() != $("#afPassWd").val()) {
 			alert("변경할 비밀번호를 확인하세요.!");
-			$("#bf_user_pwd").focus();
+			$("#bfPassWd").focus();
 			return;
 		}
 
@@ -75,10 +75,10 @@ window.onload = function() {
 	       <form:form commandName="DTO" id="regForm" name="regForm" method="post">
 	        <h3>비밀번호 변경</h3>
 	        <div class="pass-box w-100">                                               <!--  "${sessionScope['q_user_id']}"  -->
-			  <input type="text" name="user_id" class="form-control mt-2" id="user_id"  value="" placeholder="사용자ID"/>
-	          <input type="password" class="form-control mt-2" id="pass_wd" name="pass_wd" placeholder="현재 비밀번호">
-	          <input type="password" class="form-control mt-2" id="bf_pass_wd" name="bf_pass_wd"  placeholder="변경 비밀번호">
-	          <input type="password" class="form-control mt-2" id="af_pass_wd" name="af_pass_wd"  placeholder="변경 비밀번호 확인">
+			  <input type="text" name="userId" class="form-control mt-2" id="userId"  value="" placeholder="사용자ID"/>
+	          <input type="password" class="form-control mt-2" id="passWd" name="passWd" placeholder="현재 비밀번호">
+	          <input type="password" class="form-control mt-2" id="bfPassWd" name="bfPassWd"  placeholder="변경 비밀번호">
+	          <input type="password" class="form-control mt-2" id="afPassWd" name="afPassWd"  placeholder="변경 비밀번호 확인">
 	        </div>
 			</form:form>
 	        <div class="set-btn-box w-100">

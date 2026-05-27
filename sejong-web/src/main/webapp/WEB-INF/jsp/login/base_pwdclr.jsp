@@ -25,9 +25,9 @@
 	
 function fnSave(){ 
 	 
-	if( $("#user_id").val() == ""){
+	if( $("#userId").val() == ""){
 		alert("사용자 ID를 입력하세요.!");
-		$("#user_id").focus();
+		$("#userId").focus();
 		return;
 	}
 	if(!confirm("해당사용자의 비밀번호를 초기화 하시겠습니까?")) return;
@@ -35,17 +35,17 @@ function fnSave(){
 	$.ajax( {
 		type : "post",
 		url : CommonUtil.getContextPath() + "/base/pwdresetAct.do",
-		data : {user_id : $("#user_id").val()},
+		data : {userId : $("#userId").val()},
 		dataType : "json",
 		success : function(data) {   
 			if(data.error_code != "0"){
 				if(data.error_code == "20000"){ 
 					alert(data.error_msg);
-					$("#user_id").focus();
+					$("#userId").focus();
 				}	
 				else{ 
 					alert(data.error_msg);
-					$("#user_id").focus();
+					$("#userId").focus();
 				}
 			}else{
 				alert("비밀번호가 '1234'로 초기화되었습니다.\n비밀번호를 변경 후 로그인 하세요.");
@@ -78,7 +78,7 @@ function fnPwdChange(){
       <div class="set-pass-wrap">
         <h3>비밀번호 초기화</h3>
         <div class="pass-box w-100">
-          <input name="user_id" class="form-control" type="text" id="user_id" placeholder="사용자ID" aria-label="사용자ID"> 
+          <input name="userId" class="form-control" type="text" id="userId" placeholder="사용자ID" aria-label="사용자ID">
         </div> 
         <div class="set-btn-box w-100">
           <button type="button" class="btn btn-outline-dark" onclick="window.close();">취소</button>

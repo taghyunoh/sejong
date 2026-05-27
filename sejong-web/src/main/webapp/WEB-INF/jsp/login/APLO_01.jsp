@@ -32,15 +32,15 @@ $(document).ready(function(){
 	try {
 		var savedId = localStorage.getItem(SAVED_USER_ID_KEY);
 		if (savedId) {
-			$("#user_id").val(savedId);
+			$("#userId").val(savedId);
 			$("#save_id").prop("checked", true);
-			$("#user_pw").focus();   // ID 자동입력 → 비밀번호 포커스
+			$("#userPw").focus();   // ID 자동입력 → 비밀번호 포커스
 		} else {
-			$("#user_id").focus();
+			$("#userId").focus();
 		}
 	} catch (e) {
 		// localStorage 미지원/차단 시 무시
-		$("#user_id").focus();
+		$("#userId").focus();
 	}
 });
 
@@ -55,13 +55,13 @@ function fnSaveIdToggle(){
 
 function loginproc2(){
 
-	if( $("#user_id").val() == ""){
+	if( $("#userId").val() == ""){
 		alert("사용자 ID를 입력하세요.!");
-		$("#user_id").focus();
+		$("#userId").focus();
 		return;
-	}else if( $("#user_pw").val() == "") {
+	}else if( $("#userPw").val() == "") {
 		alert("비밀번호를 입력하세요.!");
-		$("#user_pw").focus();
+		$("#userPw").focus();
 		return;
 	}
 	//location.href="/com/main.do" ;
@@ -70,28 +70,28 @@ function loginproc2(){
 		type : "post",
 	//	CommonUtil.callAjax(CommonUtil.getContextPath() + "/user/loginAct.do", "POST", formData, function(response) {
 		url : CommonUtil.getContextPath() + "/user/loginAct.do",
-		data : {user_id : $("#user_id").val(),
-			    user_pw : $("#user_pw").val()},
+		data : {userId : $("#userId").val(),
+			    userPw : $("#userPw").val()},
 		dataType : "json",
 		success : function(data) {
 
 			if(data.error_code != "00000"){
 				if(data.error_code == "20000"){
 					alert(data.error_msg);
-					$("#user_id").focus();
+					$("#userId").focus();
 				}else if(data.error_code == "10000"){   //비밀번호 초기화
 					alert(data.error_msg);
 					fnPwdChange();
 				}
 				else{
 					alert(data.error_msg);
-					$("#user_id").focus();
+					$("#userId").focus();
 				}
 			}else{
 				// ID 저장 처리 (로그인 성공 후에만 저장 → 잘못된 ID 입력은 보존하지 않음)
 				try {
 					if ($("#save_id").is(":checked")) {
-						localStorage.setItem(SAVED_USER_ID_KEY, $("#user_id").val());
+						localStorage.setItem(SAVED_USER_ID_KEY, $("#userId").val());
 					} else {
 						localStorage.removeItem(SAVED_USER_ID_KEY);
 					}
@@ -167,8 +167,8 @@ function fnPwdClear(){
         <h1>AI 기반 디지털 헬스케어 서비스 플랫폼 실증</h1>
         <div class="id-box w-100">
           <h2>병원 관리자</h2>
-          <input name="user_id" class="form-control" type="text" id="user_id" placeholder="사용자ID" aria-label="사용자ID">
-          <input type="password" class="form-control mt-3" id="user_pw" placeholder="비밀번호" onKeypress="hitEnterKey(event);">
+          <input name="userId" class="form-control" type="text" id="userId" placeholder="사용자ID" aria-label="사용자ID">
+          <input type="password" class="form-control mt-3" id="userPw" placeholder="비밀번호" onKeypress="hitEnterKey(event);">
         </div>
 
         <!-- ID 저장 체크박스 -->

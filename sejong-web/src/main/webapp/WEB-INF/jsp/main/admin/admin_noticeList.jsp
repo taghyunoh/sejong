@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>  
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c"      uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="form"   uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="ui"     uri="http://egovframework.gov/ctl/ui"%>
@@ -8,10 +8,10 @@
 
 <%@ page   import = "java.util.*" %>
 <html>
-<head>  
-<!-- 달력(일자, 월별) 사용시 추가 필요함 -->  
+<head>
+<!-- 달력(일자, 월별) 사용시 추가 필요함 -->
 <script src="/js/main.js"></script>
-<script type="text/javaScript"> 
+<script type="text/javaScript">
 $( document ).ready(
 		function() {
 			selectWeek();
@@ -20,29 +20,29 @@ var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
 var uidGubun = "" ;
 function fnSearch() {
 
-	$("#infoTable tr").attr("class", ""); 
-	
+	$("#infoTable tr").attr("class", "");
+
 	document.getElementById("regForm").reset();
-	 
+
 	$("#dataArea").empty();
 	$.ajax({
    	url : CommonUtil.getContextPath() + '/admin/noticeList.do',
     type : 'post',
-    data : {start_date : $("#start_date").val(),end_date:$("#end_date").val(),searchText:$("#searchText").val()},
+    data : {startDate : $("#startDate").val(), endDate : $("#endDate").val(), searchText : $("#searchText").val()},
 	dataType : "json",
    	success : function(data) {
    		if(data.error_code != "0") return;
    		if(data.resultCnt > 0 ){
     		var dataTxt = "";
     		for(var i=0 ; i < data.resultCnt; i++){
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].noti_seq+'\');" id="row_'+data.resultLst[i].noti_seq+'">';
- 				dataTxt += 	"<td>" + (i+1)  + "</td>" ; 
- 				dataTxt +=  "<td>" + data.resultLst[i].user_id_nm   + "</td>" ;
+    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].notiSeq+'\');" id="row_'+data.resultLst[i].notiSeq+'">';
+ 				dataTxt += 	"<td>" + (i+1)  + "</td>" ;
+ 				dataTxt +=  "<td>" + data.resultLst[i].userIdNm   + "</td>" ;
 				dataTxt +=  "<td>" + data.resultLst[i].title    + "</td>" ;
 				dataTxt +=  "<td class='txt-left ellips'>" + data.resultLst[i].expln    + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].post_str + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].post_end + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].reg_dtm.substring(0,10) + "</td>" ; 
+				dataTxt +=  "<td>" + data.resultLst[i].postStr + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].postEnd + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].regDtm.substring(0,10) + "</td>" ;
 				dataTxt +=  "</tr>";
 	            $("#dataArea").append(dataTxt);
         	 }
@@ -53,62 +53,62 @@ function fnSearch() {
    });
 }
 
-function fnDtlSearch(data){ 
+function fnDtlSearch(data){
 		if(data == '' || data == null) return;
-		 
-		document.regForm.noti_seq.value = data ; 
-		
-		//row 클릭시 바탕색 변경 처리 Start 
-		$("#infoTable tr").attr("class", ""); 
+
+		document.regForm.notiSeq.value = data ;
+
+		//row 클릭시 바탕색 변경 처리 Start
+		$("#infoTable tr").attr("class", "");
 		$("#infoTable #"+data).attr("checked", true);
 		$("#infoTable #row_"+data).attr("class", "tr-primary");
-		 
+
 	}
 function fnsave(iud){
-	$("#iud").val(iud);  // 입력(I), 수정(U), 삭제(D) 
+	$("#iud").val(iud);  // 입력(I), 수정(U), 삭제(D)
 	uidGubun = iud ;
-	
+
 	if(iud == "I"){
 		document.getElementById("regForm").reset();
-		setCurrDate("reg_dtm");
-		setCurrDate("post_str");
-		$("#post_end").val("2099-12-31");
-		
+		setCurrDate("regDtm");
+		setCurrDate("postStr");
+		$("#postEnd").val("2099-12-31");
+
 		modalOpen() ;
-	
+
 	}else if(iud == "U" || iud == "D" ){
-		if($("#noti_seq").val() == ""){
+		if($("#notiSeq").val() == ""){
 			alert("선택된  정보가 없습니다.!");
 			modalClose() ;
 			return;
 		}
-		$("#reg_dtm").prop("readonly","");
+		$("#regDtm").prop("readonly","");
 		$.ajax( {
 			type : "post",
 			url : CommonUtil.getContextPath() + "/admin/noticeInfo.do",
-			data : {noti_seq : $("#noti_seq").val()},
+			data : {notiSeq : $("#notiSeq").val()},
 			dataType : "json",
-			success : function(data) {    
+			success : function(data) {
 				if(data.error_code != "0") {
 					alert(data.error_msg);
 					return;
 				}
 				$("#title").val(data.result.title);
 				$("#expln").val(data.result.expln);
-				$("#post_str").val(data.result.post_str);
-				$("#post_end").val(data.result.post_end);
-				$("#reg_dtm").val(data.result.reg_dtm);
+				$("#postStr").val(data.result.postStr);
+				$("#postEnd").val(data.result.postEnd);
+				$("#regDtm").val(data.result.regDtm);
 			}
 		});
 	} else if(iud == "D"){
 		fnSaveProc();
-	}	
+	}
 	modalOpen() ;
 }
 function fnSaveProc(){
 	if(!fnRequired('title', '제목을 확인 하세요.'))   return;
 	if(!fnRequired('expln', '공지내용을  확인하세요.')) return;
-	if(!fnRequired('user_pw', '패스워드  확인하세요.')) return;
+	if(!fnRequired('userPw', '패스워드  확인하세요.')) return;
 	var formData = $("form[name='regForm']").serialize();
 	var msg = "" ;
 	if (uidGubun == "U"){
@@ -124,7 +124,7 @@ function fnSaveProc(){
 			url : CommonUtil.getContextPath() + "/admin/noticeSaveProc.do",
 			data : formData,
 			dataType : "json",
-			success : function(data) {    
+			success : function(data) {
 				if(data.error_code != "0") {
 					alert(data.error_msg);
 					return;
@@ -142,12 +142,12 @@ function modalOpen() {
 
     // adminModal 요소가 존재하고, condition이 true일 때만 모달을 열기
     var adminModal = document.getElementById('adminModal');
-    
+
     if (adminModal && condition) {
         if (window.adminModalInstance) {
             window.adminModalInstance.dispose(); // 기존 모달 인스턴스를 폐기
         }
-        
+
         window.adminModalInstance = new bootstrap.Modal(adminModal);
         window.adminModalInstance.show();  // 모달 열기
     } else {
@@ -159,12 +159,12 @@ function modalClose(){
  //   추가적인 인스턴스 호출이 필요하다면 확인 후 사용
      if (window.adminModalInstance) {
          window.adminModalInstance.hide();  // 모달 닫기
-     }	
+     }
 }
 
 function GetDate(sdt,edt){
-	$("#start_date").val(sdt);
-	$("#end_date").val(edt);
+	$("#startDate").val(sdt);
+	$("#endDate").val(edt);
 }
 function selectToday() {
 	var today = new Date();
@@ -179,41 +179,41 @@ function selectWeek() {
     var year = today.getFullYear();
     var month = ('0' + (today.getMonth() + 1)).slice(-2);
     var day = ('0' + today.getDate()).slice(-2);
-    var end_date = year + '-' + month  + '-' + day;
-    
+    var endDate = year + '-' + month  + '-' + day;
+
     // 7일 전의 날짜 계산
     var lastWeek = new Date(today);
     lastWeek.setDate(today.getDate() - 7);
-    var start_year = lastWeek.getFullYear();
-    var start_month = ('0' + (lastWeek.getMonth() + 1)).slice(-2);
-    var start_day = ('0' + lastWeek.getDate()).slice(-2);
-    var start_date = start_year + '-' + start_month + '-' + start_day;
-    
+    var startYear = lastWeek.getFullYear();
+    var startMonth = ('0' + (lastWeek.getMonth() + 1)).slice(-2);
+    var startDay = ('0' + lastWeek.getDate()).slice(-2);
+    var startDate = startYear + '-' + startMonth + '-' + startDay;
+
     // 날짜 설정
-    GetDate(start_date,end_date);
+    GetDate(startDate,endDate);
 }
 function selectMonth() {
 	var today = new Date();
     var year = today.getFullYear();
     var month = ('0' + (today.getMonth() + 1)).slice(-2);
     var day = ('0' + today.getDate()).slice(-2);
-    var end_date = year + '-' + month  + '-' + day;
+    var endDate = year + '-' + month  + '-' + day;
 
     // 한 달 전의 날짜 계산
     var lastMonth = new Date(today);
     lastMonth.setMonth(today.getMonth() - 1);
-    var start_year = lastMonth.getFullYear();
-    var start_month = ('0' + (lastMonth.getMonth() + 1)).slice(-2);
-    var start_day = ('0' + lastMonth.getDate()).slice(-2);
-    var start_date = start_year + '-' + start_month + '-' + start_day;
+    var startYear = lastMonth.getFullYear();
+    var startMonth = ('0' + (lastMonth.getMonth() + 1)).slice(-2);
+    var startDay = ('0' + lastMonth.getDate()).slice(-2);
+    var startDate = startYear + '-' + startMonth + '-' + startDay;
 
     // 날짜 설정
-    GetDate(start_date,end_date);
+    GetDate(startDate,endDate);
 }
 </script>
 </head>
-<body>  
-      <div class="tab-pane">  
+<body>
+      <div class="tab-pane">
       <div class="content-body">
 		<div class="tab-content">
 		<div class="content-wrap">
@@ -222,44 +222,31 @@ function selectMonth() {
 				<div class="info-name">공지 사항 목록</div>
 			</div>
 		</div>
-    <!--  
-      <header class="header">
-        <h1>
-         &nbsp | 공지사항
-        </h1>
-      </header>
-      <div class="tab-pane">  
-      <div class="content-body">
-    -->  
-        <section class="top-pannel">  
+        <section class="top-pannel">
           <div class="search-box">
             <label class="form-title">등록일</label>
-            <!-- 데이트피커 범위 -->
-            <!-- <input type="text" class="form-control" name="dates" value=" "> -->
-            <!-- 데이트피커 싱글 -->
-            <input type="date" class="form-control" name="start_date" id="start_date"  value="">
+            <input type="date" class="form-control" name="startDate" id="startDate"  value="">
             <span> ~ </span>
-            <input type="date" class="form-control" name="end_date" id="end_date"  value=""> 
+            <input type="date" class="form-control" name="endDate" id="endDate"  value="">
           <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectToday();">오늘</button>
           <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectWeek();">최근 일주일</button>
-          <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectMonth();">최근 한달</button>            
-          </div> 
+          <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectMonth();">최근 한달</button>
+          </div>
           <h2>&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp</h2>
           <div class="search-box">
             <label for="search" class="form-title" onclick="">검색구분</label>
            	  <select class="form-select w-10" name="searchGb" id="searchGb">
-                <option value="A">전체</option> 
+                <option value="A">전체</option>
        			<option value="T">제목</option>
                 <option value="C">내용</option>
-              </select> 
-            <input type="text" name="searchText" id="searchText" class="form-control search" placeholder="검색어를 입력하세요." onkeypress="if( event.keyCode == 13 ){fnSearch();}">
+              </select>
+            <input type="text" name="searchText" id="searchText" class="form-control search" placeholder="검색어를 입력하세요." onkeypress="if( event.keyCode == 13 ){fnSearch();}">
             <button class="buttcon" onclick="javascript:fnSearch();"><span class="icon icon-search" ></span></button>
-          </div> 
+          </div>
         </section>
         <section class="main-pannel">
           <div class="main-left w-100">
             <header class="main-hd">
-            <!--  <h2>&nbsp 공지 사항 목록</h2> --> 
               <h2></h2>
               <div class="btn-box">
                 <button class="btn btn-outline-dark btn-sm" onclick="fnsave('U');">수정</button>
@@ -290,7 +277,7 @@ function selectMonth() {
                       <th>등록일</th>
                     </tr>
                   </thead>
-                  <tbody id="dataArea"> 
+                  <tbody id="dataArea">
         			<tr>
         				<td colspan="8">&nbsp;</td>
         			</tr>
@@ -302,7 +289,7 @@ function selectMonth() {
         </section>
       </div>
     </div>
-  </div>  
+  </div>
   <!-- 모달 -->
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminlNoticeLabel" aria-hidden="true">
     <!-- 모달 class명으로 사이즈 조절 modal-320, 410, 520, 650, 820 -->
@@ -313,33 +300,33 @@ function selectMonth() {
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
          <form:form commandName="DTO"  id="regForm" name="regForm" method="post">
-           <input type="hidden" name="iud" id="iud"/> 
-           <input type="hidden" name="noti_seq" id="noti_seq"/> 
-           <input type="hidden" name="mod_id" id="mod_id" value="${sessionScope['q_user_id']}" /> 
+           <input type="hidden" name="iud" id="iud"/>
+           <input type="hidden" name="notiSeq" id="notiSeq"/>
+           <input type="hidden" name="modId" id="modId" value="${sessionScope['q_user_id']}" />
         <div class="modal-body">
-          <div class="form-container"> 
+          <div class="form-container">
             <div class="form-wrap w-100">
               <label for="" class="critical" style="left">제목</label>
               <input type="text" name="title" id="title" class="form-control" placeholder="제목을 입력하세요." >
             </div>
             <div class="form-wrap w-100">
               <label for="" class="critical" style="left">내용</label>
-              <textarea class="form-control" aria-label="With textarea" placeholder="공지내용을 입력하세요." name="expln" id="expln"></textarea>              
+              <textarea class="form-control" aria-label="With textarea" placeholder="공지내용을 입력하세요." name="expln" id="expln"></textarea>
             </div>
             <div class="form-wrap w-50">
               <label for="" class="critical" style="left">공지시작일</label>
-              <input type="date" name="post_str" id="post_str" class="form-control"> 
+              <input type="date" name="postStr" id="postStr" class="form-control">
             </div>
             <div class="form-wrap w-50">
               <label for="" class="critical" style="left">공지종료일</label>
-              <input type="date" name="post_end" id="post_end" class="form-control"> 
-      
+              <input type="date" name="postEnd" id="postEnd" class="form-control">
+
             </div>
-            <div class="form-wrap w-50">            
+            <div class="form-wrap w-50">
               <label for="" class="critical">비밀번호</label>
-              <input type="password" name="user_pw" id="user_pw" class="form-control" placeholder="비밀번호를 입력하세요.">
+              <input type="password" name="userPw" id="userPw" class="form-control" placeholder="비밀번호를 입력하세요.">
             </div>
-          </div> 
+          </div>
         </div>
 	  </form:form>
       </div>

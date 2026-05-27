@@ -27,8 +27,8 @@
 <script type="text/javaScript"> 
 
 window.onload = function() {
-    var userIdInput = document.getElementById("user_id");
-    // Check if the user_id field has a value
+    var userIdInput = document.getElementById("userId");
+    // Check if the userId field has a value
     if (userIdInput.value.trim() !== "") {
      // userIdInput.disabled = true;  // Disable the input field if it has a value
     } else {
@@ -37,20 +37,20 @@ window.onload = function() {
   };
   
 function fnsearch(){
-	if(!fnRequired('user_nm', '사용자성명을 입력하세요 .'))   return;
+	if(!fnRequired('userNm', '사용자성명을 입력하세요 .'))   return;
 	if(!fnRequired('email',   '사용자이메일를 입력하세요 .'))   return;
-	$("#user_id").val("") ;
+	$("#userId").val("") ;
 	$.ajax( {
 		type : "post",
 		url : CommonUtil.getContextPath() + "/popup/base_usersearch.do",
-		data : {user_nm : $("#user_nm").val() , email : $("#email").val() },
+		data : {userNm : $("#userNm").val() , email : $("#email").val() },
 		dataType : "json",
 		success : function(data) {
             if (data.error_code !== "0" || !data.result || data.result.length === 0 ) {
                 alert("해당 사용자정보가 존재하지 않습니다!");
                 return;
             }
-            $("#user_id").val(data.result.user_id);
+            $("#userId").val(data.result.userId);
         },
         error: function (xhr, status, error) {
             alert("서버 요청 중 오류가 발생했습니다.");
@@ -83,10 +83,10 @@ function fnPwdClear(){
 	       <form:form commandName="DTO" id="regForm" name="regForm" method="post">
 	        <h3>아이디찾기 비밀번호초기화</h3>
 	        <div class="pass-box w-100">    
-			  <input type="text" name="user_id" class="form-control mt-2" id="user_nm"  value="" placeholder="사용자성명"/>
+			  <input type="text" name="userNm" class="form-control mt-2" id="userNm"  value="" placeholder="사용자성명"/>
 			  <input type="text" name="email"   class="form-control mt-2" id="email"    value="" placeholder="사용자이메일"/>
 		      <h12 style="font-size: 12px; color: #555;">아이디를 찾기 위해서 사용자성명 및 이메일을 등록하고 아이디찾기를 실행하세요</h12>
-	          <input type="text" class="form-control mt-2" id="user_id" name="user_id" placeholder="사용자아이디">
+	          <input type="text" class="form-control mt-2" id="userId" name="userId" placeholder="사용자아이디">
 	        </div>
 			</form:form>
 	        <div class="set-btn-box w-100">

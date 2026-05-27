@@ -63,23 +63,23 @@ public class CommController {
 			
 			String iud = dto.getIud();  //입력,수정, 삭제 구분
 			if("MI".equals(iud)) {
-				dto.setUse_yn("Y");
+				dto.setUseYn("Y");
 				svc.insertCommMst(dto);
-			}else if("MU".equals(iud)) { 
-				dto.setUse_yn("Y");
+			}else if("MU".equals(iud)) {
+				dto.setUseYn("Y");
 				svc.updateCommMst(dto);
 			}else if("MD".equals(iud)) {
-				dto.setUse_yn("N");
-				svc.deleteCommMst(dto); 
-				
-			}else if("DI".equals(iud)) { 
-				dto.setUse_yn("Y");
+				dto.setUseYn("N");
+				svc.deleteCommMst(dto);
+
+			}else if("DI".equals(iud)) {
+				dto.setUseYn("Y");
 				svc.insertCommDetail(dto);
 			}else if("DU".equals(iud)) {
-				dto.setUse_yn("Y");
-				svc.updateCommDetail(dto);				
+				dto.setUseYn("Y");
+				svc.updateCommDetail(dto);
 			}else if("DD".equals(iud)) {
-				dto.setUse_yn("N");
+				dto.setUseYn("N");
 				svc.deleteCommDetail(dto);
 				 
 			}

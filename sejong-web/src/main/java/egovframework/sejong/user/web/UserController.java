@@ -73,33 +73,33 @@ public class UserController {
 			try {  
 //				HashMap<String, Object> reqMap = new HashMap<String, Object>();
 
-				dto.setUser_id(EgovFileScrty.encryptPassword(dto.getUser_id(), dto.getUser_id()));
+				dto.setUserId(EgovFileScrty.encryptPassword(dto.getUserId(), dto.getUserId()));
 				
 				UserDTO result = svc.userLoginCheck(dto);
 
-				if("".equals(result.getUser_id()) && result.getUser_id() == null ) {
+				if("".equals(result.getUserId()) && result.getUserId() == null ) {
 						model.addAttribute("error_code", "20000");
 						model.addAttribute("error_msg", "사용자 ID 정보가 존재하지 않습니다."); 
 					return "jsonView";
 				}else {	
 					byte[] salt = {};
-					//String chkpwd = EgovFileScrty.encryptPassword(dto.getUser_pw(), dto.getUser_id());
-					String chkpwd = EgovFileScrty.encryptPassword(dto.getUser_pw(), "1234");
+					//String chkpwd = EgovFileScrty.encryptPassword(dto.getUserPw(), dto.getUserId());
+					String chkpwd = EgovFileScrty.encryptPassword(dto.getUserPw(), "1234");
 					//비밀번호 초기화 여부 체크
-					String resetpwd = EgovFileScrty.encryptPassword("1234", dto.getUser_id()); 
+					String resetpwd = EgovFileScrty.encryptPassword("1234", dto.getUserId()); 
 					HttpSession session = request.getSession(); 
 					
-					session.setAttribute("q_user_id"   , result.getUser_id());   //사용자 ID
-					session.setAttribute("q_user_nm"   , result.getUser_nm());   //사용자 명
-					session.setAttribute("q_admin_yn"  , result.getUser_gb()); 	// 관리자 구분 'A', 의사 : D
-					session.setAttribute("q_dept_nm"   , result.getDept_nm()); 	// 진료과명
+					session.setAttribute("q_user_id"   , result.getUserId());   //사용자 ID
+					session.setAttribute("q_user_nm"   , result.getUserNm());   //사용자 명
+					session.setAttribute("q_admin_yn"  , result.getUserGb()); 	// 관리자 구분 'A', 의사 : D
+					session.setAttribute("q_dept_nm"   , result.getDeptNm()); 	// 진료과명
 					session.setAttribute("q_user_ip"   , request.getRemoteAddr().toString()); 	// 접속IP 주소
 					session.setAttribute("q_screen_id" , "login");
-					session.setAttribute("admingu"     , result.getUser_gb());
+					session.setAttribute("admingu"     , result.getUserGb());
 					session.setAttribute("q_uuid"      , "8e17a341-a750-4bfb-9e6c-35d31a7308dd");
 					
 			
-					if(!result.getUser_pw().equals(chkpwd)) {
+					if(!result.getUserPw().equals(chkpwd)) {
 						model.addAttribute("error_code", "30000");
 						model.addAttribute("error_msg" , "비밀번호를 확인하세요.!");
 //					}else if(!"Y".equals(result.getUseyn())) {
@@ -166,16 +166,16 @@ public class UserController {
 			
 			try {
 				
-				dto.setUser_id(EgovFileScrty.encryptPassword(dto.getUser_id(), dto.getUser_id()));
+				dto.setUserId(EgovFileScrty.encryptPassword(dto.getUserId(), dto.getUserId()));
 				
 				UserDTO result = svc.userInfo(dto);
 				
-				if(result == null || ("".equals(result.getUser_id()) && result.getUser_id() == null )) {
+				if(result == null || ("".equals(result.getUserId()) && result.getUserId() == null )) {
 					model.addAttribute("error_code", "30000");
 					model.addAttribute("error_msg" , "사용자 정보가 존재하지 않습니다.");
 					return "jsonView";
 				}
-				dto.setEnc_user_pwd(EgovFileScrty.encryptPassword("1234", "1234"));
+				dto.setEncUserPwd(EgovFileScrty.encryptPassword("1234", "1234"));
 				//사용자 비밀번호 초기화 처리
 				boolean chk = svc.userPwdReset(dto);
 				if(chk) {
@@ -202,31 +202,31 @@ public class UserController {
 				throws Exception {  
 			
 			try {
-				System.out.println("기존 비밀번호 : "+ dto.getUser_pw() + "     변경 비밀번호 :  "+ dto.getBf_user_pwd());
+				System.out.println("기존 비밀번호 : "+ dto.getUserPw() + "     변경 비밀번호 :  "+ dto.getBfUserPwd());
 				
-				dto.setUser_id(EgovFileScrty.encryptPassword(dto.getUser_id(), dto.getUser_id()));
+				dto.setUserId(EgovFileScrty.encryptPassword(dto.getUserId(), dto.getUserId()));
 				
 				UserDTO result = svc.userInfo(dto);
 
-				if("".equals(result.getUser_id()) || result.getUser_id().toString() == null ){ 
+				if("".equals(result.getUserId()) || result.getUserId().toString() == null ){ 
 					model.addAttribute("error_code", "20000");
 					model.addAttribute("error_msg" , "비밀번호 변경할 사용자 정보가 존재하지 않습니다.");
 					return "jsonView";
 				}
-				String chkpwd = EgovFileScrty.encryptPassword(dto.getUser_pw(), "1234");
+				String chkpwd = EgovFileScrty.encryptPassword(dto.getUserPw(), "1234");
 				
-				if(!result.getUser_pw().equals(chkpwd)) {
+				if(!result.getUserPw().equals(chkpwd)) {
 					model.addAttribute("error_code", "30000");
 					model.addAttribute("error_msg" , "현재 비밀번호를 확인하세요.!");
 					return "jsonView";
 				}
 
-				if(dto.getBf_user_pwd() == "") {
+				if(dto.getBfUserPwd() == "") {
 					model.addAttribute("error_code", "30000");
 					model.addAttribute("error_msg" , "비밀번호 변경할 사용자 정보가 존재하지 않습니다.");
 					return "jsonView";
 				}
-				dto.setEnc_user_pwd(EgovFileScrty.encryptPassword(dto.getBf_user_pwd(), "1234"));
+				dto.setEncUserPwd(EgovFileScrty.encryptPassword(dto.getBfUserPwd(), "1234"));
 				//비밀번호 변경 처리			
 				boolean chk = svc.userPwdChange(dto);
 				

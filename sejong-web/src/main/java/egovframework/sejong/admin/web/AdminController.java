@@ -89,35 +89,35 @@ public class AdminController {
 		
 		try {
 			AuserDTO dvo = new AuserDTO() ;
-			String  user = dto.getMod_id();
-			dvo.setUser_id(user);
+			String  user = dto.getModId();
+			dvo.setUserId(user);
 			AuserDTO result  = svc.auserInfo(dvo) ;
-			
-			if ( result == null || ("".equals(result.getUser_id()) && result.getUser_id() == null)){
+
+			if ( result == null || ("".equals(result.getUserId()) && result.getUserId() == null)){
 				model.addAttribute("error_code", "30000");
 	            model.addAttribute("error_msg" , "사용자 정보가 존재하지 않습니다.");
 	            return "jsonView";
 	         }
-	         String chkpwd = EgovFileScrty.encryptPassword(dto.getUser_pw(), "1234"); //dvo.getUser_id()
+	         String chkpwd = EgovFileScrty.encryptPassword(dto.getUserPw(), "1234");
 
-	         if(!result.getUser_pw().equals(chkpwd)) {
+	         if(!result.getUserPw().equals(chkpwd)) {
 	            model.addAttribute("error_code", "30000");
 	            model.addAttribute("error_msg" , "현재 비밀번호를 확인하세요.!");
 	            return "jsonView";
 	         }
-			
-		
+
+
 			String iud = dto.getIud() ; //입력,수정, 삭제 구분
 			System.out.println(iud);
 			if("I".equals(iud)) {
-				dto.setUse_yn("Y");
+				dto.setUseYn("Y");
 				svc.insertNotice(dto);
-			}else if("U".equals(iud)) { 
-				dto.setUse_yn("Y");
+			}else if("U".equals(iud)) {
+				dto.setUseYn("Y");
 				svc.updateNotice(dto);
 			}else if("D".equals(iud)) {
-				dto.setUse_yn("N");
-				svc.deleteNotice(dto); 
+				dto.setUseYn("N");
+				svc.deleteNotice(dto);
 		 
 			}
 
@@ -135,9 +135,9 @@ public class AdminController {
     @RequestMapping(value = "/admin/admin_ptList.do")
 	public String ptList(Model model) throws Exception {
 		try { 
-			CommDTO cvo = new CommDTO(); 
+			CommDTO cvo = new CommDTO();
 			cvo.setCode("CD7");
-			cvo.setUse_yn("Y");
+			cvo.setUseYn("Y");
 
 			List <?> resultLst = codesvc.selectCommDetailList(cvo);	
 			model.addAttribute("cdtpList", resultLst);
@@ -255,20 +255,20 @@ public class AdminController {
 		try {
 			String iud = dto.getIud();  //입력,수정, 삭제 구분
 			if("I".equals(iud)) {
-				dto.setEnc_user_id(EgovFileScrty.encryptPassword(dto.getUser_id_nm(), dto.getUser_id_nm()));
-				
-				dto.setEnc_auser_pwd(EgovFileScrty.encryptPassword(dto.getUser_pw(), "1234"));
-				
-				String chkapwd = EgovFileScrty.encryptPassword(dto.getUser_pw(), "1234");
-			
-			
+				dto.setEncUserId(EgovFileScrty.encryptPassword(dto.getUserIdNm(), dto.getUserIdNm()));
+
+				dto.setEncAuserPwd(EgovFileScrty.encryptPassword(dto.getUserPw(), "1234"));
+
+				String chkapwd = EgovFileScrty.encryptPassword(dto.getUserPw(), "1234");
+
+
 				if(chkapwd == "") {
 					model.addAttribute("error_code", "30000");
 					model.addAttribute("error_msg" , "등록할 비밀번호를 입력하세요   .");
 					return "jsonView";
 				}
-				
-				String chkbpwd = EgovFileScrty.encryptPassword(dto.getAf_auser_pwd(), dto.getUser_id());
+
+				String chkbpwd = EgovFileScrty.encryptPassword(dto.getAfAuserPwd(), dto.getUserId());
 					
 				if ((chkbpwd == "") & (chkapwd != chkbpwd)) {
 					model.addAttribute("error_code", "30000");
@@ -337,14 +337,14 @@ public class AdminController {
 			String iud = dto.getIud() ; //입력,수정, 삭제 구분
 			System.out.println(iud);
 			if("I".equals(iud)) {
-				dto.setUse_yn("Y");
+				dto.setUseYn("Y");
 				svc.insertfaq(dto);
-			}else if("U".equals(iud)) { 
-				dto.setUse_yn("Y");
+			}else if("U".equals(iud)) {
+				dto.setUseYn("Y");
 				svc.updatefaq(dto);
 			}else if("D".equals(iud)) {
-				dto.setUse_yn("N");
-				svc.deletefaq(dto); 
+				dto.setUseYn("N");
+				svc.deletefaq(dto);
 		 
 			}
 
@@ -413,17 +413,17 @@ public class AdminController {
 			// JSON  파싱 
 			// 조회결과 return type을 egovMap 아닌 service에 선언된 VO 기준으로 return 되게 처리해야 됨.
 			//조회결과 처리 구분
-            dto.setUser_check("Y");
+            dto.setUserCheck("Y");
 	        List<?> result = svc.selectPatientList(dto); // 결과 타입 수정
 	        for (Object item : result) {
 	            if (item instanceof PatientDTO) { // assuming the items are of type PatientDTO
-		            PatientDTO vo = (PatientDTO) item;	        
+		            PatientDTO vo = (PatientDTO) item;
 					if (vo.getPhone() != null && !vo.getPhone().isEmpty()) {
 					    String phone = vo.getPhone();
 					    if (phone.length() == 10 || phone.length() == 11) {
-					        Locphone = String.format("%s-%s-%s", 
-					            phone.substring(0, 3), 
-					            phone.substring(3, phone.length() - 4), 
+					        Locphone = String.format("%s-%s-%s",
+					            phone.substring(0, 3),
+					            phone.substring(3, phone.length() - 4),
 					            phone.substring(phone.length() - 4));
 					    } else {
 					        // 유효하지 않은 길이 처리
@@ -435,24 +435,24 @@ public class AdminController {
 					if (Locphone == null || Locphone.isEmpty()) {
 					    continue;
 					}
-					if (!"1".equals(vo.getUser_gb())) { // 문자열 비교는 equals() 사용
+					if (!"1".equals(vo.getUserGb())) { // 문자열 비교는 equals() 사용
 					    continue;
 					}
-					
+
 					row = sheet.createRow(rowNo++);
-					
+
 					cell = row.createCell(0); cell.setCellStyle(bodyStyle); cell.setCellValue(rowNo - 2);
-					cell = row.createCell(1); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getUser_nm());
+					cell = row.createCell(1); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getUserNm());
 					cell = row.createCell(2); cell.setCellStyle(bodyStyle); cell.setCellValue(Locphone);
 					cell = row.createCell(3); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getGender());
 					cell = row.createCell(4); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getBirth());
-					cell = row.createCell(5); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getJoin_ymd());
+					cell = row.createCell(5); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getJoinYmd());
 					cell = row.createCell(6); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getEmail());
-					cell = row.createCell(7); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getCgm_dtm());
-					cell = row.createCell(8); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getCgm_gap());
-					cell = row.createCell(9); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getEat_dtm());
-					cell = row.createCell(10); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getEat_gap());
-					cell = row.createCell(11); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getReg_dtm());
+					cell = row.createCell(7); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getCgmDtm());
+					cell = row.createCell(8); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getCgmGap());
+					cell = row.createCell(9); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getEatDtm());
+					cell = row.createCell(10); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getEatGap());
+					cell = row.createCell(11); cell.setCellStyle(bodyStyle); cell.setCellValue(vo.getRegDtm());
 		         }                                                                                
 			}             
 	        

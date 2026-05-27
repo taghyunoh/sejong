@@ -61,14 +61,14 @@ public class DoctorController {
 			    float bmi = Math.round((weight / (height * height)*100)/100.0);
 				
 				HttpSession session = request.getSession(); 
-				session.setAttribute("t_user_uuid"   , doctor.getUser_uuid());   //사용자 UUID
-				session.setAttribute("t_user_nm"   , doctor.getUser_nm());   //사용자 이름
+				session.setAttribute("t_user_uuid"   , doctor.getUserUuid());   //사용자 UUID
+				session.setAttribute("t_user_nm"   , doctor.getUserNm());   //사용자 이름
 				session.setAttribute("t_gender"   , doctor.getGender());   //사용자 성별
 		        session.setAttribute("t_birth", doctor.getBirth());           // 사용자 생년월일
 		        session.setAttribute("t_bmi", bmi);
-		        session.setAttribute("t_end_date", blood.getCgm_dtm());
-		        session.setAttribute("t_bld_val", blood.getUpt_value());
-		        session.setAttribute("t_gap_val", blood.getGap_value());
+		        session.setAttribute("t_end_date", blood.getCgmDtm());
+		        session.setAttribute("t_bld_val", blood.getUptValue());
+		        session.setAttribute("t_gap_val", blood.getGapValue());
 	        
 			}catch(Exception ex) {
 				model.addAttribute("error_code", "10000"); 

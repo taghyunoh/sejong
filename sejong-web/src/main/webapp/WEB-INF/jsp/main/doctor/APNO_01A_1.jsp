@@ -22,7 +22,7 @@ $(document).ready(function () {
 var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
 
 function fnSearch() {
-	if ($("#start_date").val() > $("#end_date").val()){
+	if ($("#startDate").val() > $("#endDate").val()){
 		alert("조회시작일은 종료일보다 낮을 수 없습니다. 다시 선택해주세요.");
 		return;
 	}
@@ -35,9 +35,9 @@ function fnSearch() {
 	$.ajax({
    	url : CommonUtil.getContextPath() + '/doctor/noticeList.do',
     type : 'post',
-    data : {searchGb : $("#searchGb").val(), 
-    		start_date : $("#start_date").val(), 
-    		end_date:$("#end_date").val(),
+    data : {searchGb : $("#searchGb").val(),
+    		startDate : $("#startDate").val(),
+    		endDate:$("#endDate").val(),
     		searchText:$("#searchText").val()
     		},
 	dataType : "json",
@@ -46,25 +46,25 @@ function fnSearch() {
    		if(data.resultCnt > 0 ){
     		var dataTxt = "";
     		for(var i=0 ; i < data.resultCnt; i++){
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].noti_seq+'\');" id="row_'+data.resultLst[i].noti_seq+'">';
+    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].notiSeq+'\');" id="row_'+data.resultLst[i].notiSeq+'">';
  				dataTxt += 	"<td>" + (i+1)  + "</td>" ; 
 				dataTxt +=  "<td>" + data.resultLst[i].title  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].post_str.substring(0,4)+"년&nbsp" + 
-									 data.resultLst[i].post_str.substring(5,7)+"월&nbsp" + 
-									 data.resultLst[i].post_str.substring(8,10)+"일  ~   " +
-									 data.resultLst[i].post_end.substring(0,4)+"년&nbsp" + 
-									 data.resultLst[i].post_end.substring(5,7)+"월&nbsp" + 
-									 data.resultLst[i].post_end.substring(8,10)+"일" + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].reg_dtm.substring(0,4)+"년&nbsp" + 
-									 data.resultLst[i].reg_dtm.substring(5,7)+"월&nbsp" + 
-									 data.resultLst[i].reg_dtm.substring(8,10)+"일" + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].postStr.substring(0,4)+"년&nbsp" + 
+									 data.resultLst[i].postStr.substring(5,7)+"월&nbsp" + 
+									 data.resultLst[i].postStr.substring(8,10)+"일  ~   " +
+									 data.resultLst[i].postEnd.substring(0,4)+"년&nbsp" + 
+									 data.resultLst[i].postEnd.substring(5,7)+"월&nbsp" + 
+									 data.resultLst[i].postEnd.substring(8,10)+"일" + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].regDtm.substring(0,4)+"년&nbsp" + 
+									 data.resultLst[i].regDtm.substring(5,7)+"월&nbsp" + 
+									 data.resultLst[i].regDtm.substring(8,10)+"일" + "</td>" ;
 				dataTxt +=  "</tr>";
 	            $("#dataArea").append(dataTxt);
         	 }
             // 각 행 클릭 시 모달에 데이터 전달
             $("#dataArea tr").on('click', function() {
-              var noti_seq = $(this).attr('id').replace('row_', ''); // 행 ID에서 noti_seq 추출
-              var noticeData = data.resultLst.find(function(item) { return item.noti_seq === noti_seq; });
+              var notiSeq = $(this).attr('id').replace('row_', '');
+              var noticeData = data.resultLst.find(function(item) { return item.notiSeq === notiSeq; });
 
               // 모달에 데이터 채우기
               openModalWithData(noticeData);  // 공지사항 데이터를 모달로 전달
@@ -83,15 +83,15 @@ function openModalWithData(noticeData) {
 
     // 모달에 데이터 채우기
     $('#modalTitle').text(noticeData.title);
-    $('#modalPostStart').text(noticeData.post_str.substring(0, 4) + "년 " +
-                             noticeData.post_str.substring(5, 7) + "월 " +
-                             noticeData.post_str.substring(8, 10) + "일");
-    $('#modalPostEnd').text(noticeData.post_end.substring(0, 4) + "년 " +
-                           noticeData.post_end.substring(5, 7) + "월 " +
-                           noticeData.post_end.substring(8, 10) + "일");
-    $('#modalRegDate').text(noticeData.reg_dtm.substring(0, 4) + "년 " +
-                            noticeData.reg_dtm.substring(5, 7) + "월 " +
-                            noticeData.reg_dtm.substring(8, 10) + "일");
+    $('#modalPostStart').text(noticeData.postStr.substring(0, 4) + "년 " +
+                             noticeData.postStr.substring(5, 7) + "월 " +
+                             noticeData.postStr.substring(8, 10) + "일");
+    $('#modalPostEnd').text(noticeData.postEnd.substring(0, 4) + "년 " +
+                           noticeData.postEnd.substring(5, 7) + "월 " +
+                           noticeData.postEnd.substring(8, 10) + "일");
+    $('#modalRegDate').text(noticeData.regDtm.substring(0, 4) + "년 " +
+                            noticeData.regDtm.substring(5, 7) + "월 " +
+                            noticeData.regDtm.substring(8, 10) + "일");
     
     // 필요한 다른 데이터도 채울 수 있음
     $('#modalContent').text(noticeData.content); // 예: 공지 내용
@@ -104,7 +104,7 @@ function openModalWithData(noticeData) {
 function fnDtlSearch(data){ 
 	if(data == '' || data == null) return;
 	 
-	document.regForm.noti_seq.value = data ; 
+	document.regForm.notiSeq.value = data ;
 	
 	//row 클릭시 바탕색 변경 처리 Start 
 	$("#infoTable tr").attr("class", ""); 
@@ -119,18 +119,18 @@ function fnSave(){
 	$.ajax( {
 		type : "post",
 		url : CommonUtil.getContextPath() + "/doctor/noticeInfo.do",
-		data : {noti_seq : $("#noti_seq").val()},
+		data : {notiSeq : $("#notiSeq").val()},
 		dataType : "json",
-		success : function(data) {    
+		success : function(data) {
 			if(data.error_code != "0") {
 				alert(data.error_msg);
 				return;
 			}
 			$("#title").val(data.result.title);
 			$("#expln").val(data.result.expln);
-			$("#post_str").val(data.result.post_str);
-			$("#post_end").val(data.result.post_end);
-			$("#reg_dtm").val(data.result.reg_dtm);
+			$("#postStr").val(data.result.postStr);
+			$("#postEnd").val(data.result.postEnd);
+			$("#regDtm").val(data.result.regDtm);
 			}
 		});
 	$("#adminModal").modal("show");
@@ -150,8 +150,8 @@ function selectToday() {
 	var day = ('0' + today.getDate()).slice(-2);
 	var dateString = year + '-' + month  + '-' + day;
 
-	$("#start_date").val(dateString);
-	$("#end_date").val(dateString);
+	$("#startDate").val(dateString);
+	$("#endDate").val(dateString);
 }
 function selectWeek() {
 	var today = new Date();
@@ -169,8 +169,8 @@ function selectWeek() {
     var start_date = start_year + '-' + start_month + '-' + start_day;
     
     // 날짜 설정
-    $("#start_date").val(start_date);
-    $("#end_date").val(end_date);
+    $("#startDate").val(start_date);
+    $("#endDate").val(end_date);
 }
 function selectMonth() {
 	var today = new Date();
@@ -188,8 +188,8 @@ function selectMonth() {
     var start_date = start_year + '-' + start_month + '-' + start_day;
 
     // 날짜 설정
-    $("#start_date").val(start_date);
-    $("#end_date").val(end_date);
+    $("#startDate").val(start_date);
+    $("#endDate").val(end_date);
 }
 	
 </script>
@@ -212,9 +212,9 @@ function selectMonth() {
             <!-- 데이트피커 범위 -->
             <!-- <input type="text" class="form-control" name="dates" value=" "> -->
             <!-- 데이트피커 싱글 -->
-            <input type="date" class="form-control w-30" name="start_date" id="start_date"  value="">
+            <input type="date" class="form-control w-30" name="startDate" id="startDate"  value="">
             <span> ~ </span>
-            <input type="date" class="form-control w-30" name="end_date" id="end_date"  value=""> 
+            <input type="date" class="form-control w-30" name="endDate" id="endDate"  value="">
           <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectToday();">오늘</button>
           <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectWeek();">최근 일주일</button>
           <button type="button" class="btn btn-outline-dark btn-md" onclick="javascript:selectMonth();">최근 한달</button>
@@ -276,7 +276,7 @@ function selectMonth() {
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
         <form:form commandName="DTO" id="regForm" name="regForm" method="post"> 
-          <input type="hidden" name="noti_seq" id="noti_seq"/>
+          <input type="hidden" name="notiSeq" id="notiSeq"/>
         <div class="modal-body">
           <div class="form-container"> 
             <div class="form-wrap w-100">
@@ -289,15 +289,15 @@ function selectMonth() {
             </div>
             <div class="form-wrap w-50">
               <label for="" class="critical" style="left">공지시작일</label>
-              <input type="date" name="post_str" id="post_str" class="form-control" readonly> 
+              <input type="date" name="postStr" id="postStr" class="form-control" readonly>
             </div>
             <div class="form-wrap w-50">
               <label for="" class="critical" style="left">공지종료일</label>
-              <input type="date" name="post_end" id="post_end" class="form-control" readonly> 
+              <input type="date" name="postEnd" id="postEnd" class="form-control" readonly>
 	        </div>
             <div class="form-wrap w-50">
               <label for="" class="critical">등록일</label>
-              <input type="date" name="reg_dtm" id="reg_dtm" class="form-control" readonly>
+              <input type="date" name="regDtm" id="regDtm" class="form-control" readonly>
             </div>
           </div> 
         </div>

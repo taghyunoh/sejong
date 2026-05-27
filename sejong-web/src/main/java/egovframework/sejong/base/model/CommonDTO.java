@@ -5,14 +5,9 @@ public class CommonDTO {
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
-	//private String iud   = "";    
-	private String   err_msg ;
 
-	public String getErr_msg() {
-		return err_msg;
-	}
-	public void setErr_msg(String err_msg) {
-		this.err_msg = err_msg;
-	}
-  
+	private String errMsg;
+
+	public String getErrMsg() { return errMsg; }
+	public void setErrMsg(String errMsg) { this.errMsg = errMsg; }
 }

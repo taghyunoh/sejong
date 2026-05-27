@@ -2,43 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
   비밀번호 관련 매퍼. 2026-05-27 미사용 쿼리 제거.
-  보존: UserPasswdInfo, UserPasswdChange, UsernmInfo (+ UsermMap)
+  보존: UserPasswdInfo, UserPasswdChange, UsernmInfo
 -->
 <mapper namespace="egovframework.sejong.base.mapper.BaseMapper">
 
-	<resultMap id="UsermMap" type="egovframework.sejong.base.model.UsermDTO">
-		<result property="hosp_cd"   column="HOSP_CD" />
-		<result property="user_id"   column="USER_ID" />
-		<result property="start_dt"  column="START_DT" />
-		<result property="user_nm"   column="USER_NM" />
-		<result property="end_dt"    column="END_DT" />
-		<result property="main_gu"   column="MAIN_GU" />
-		<result property="pass_wd"   column="PASS_WD" />
-		<result property="pass_cdt"  column="PASS_CDT" />
-		<result property="bigo"      column="BIGO" />
-		<result property="email"     column="EMAIL" />
-		<result property="user_tel"  column="USER_TEL" />
-		<result property="hosp_uuid" column="HOSP_UUID" />
-		<result property="winner_yn" column="WINNER_YN" />
-		<result property="use_yn"    column="USE_YN" />
-		<result property="reg_dttm"  column="REG_DTTM" />
-		<result property="reg_user"  column="REG_USER" />
-		<result property="reg_ip"    column="REG_IP" />
-		<result property="upd_dttm"  column="UPD_DTTM" />
-		<result property="upd_user"  column="UPD_USER" />
-		<result property="upd_ip"    column="UPD_IP" />
-	</resultMap>
-
 	<!-- 사용자 비밀번호 조회 (변경 전 현재 비밀번호 검증용) -->
-	<select id="UserPasswdInfo" parameterType="UsermDTO" resultMap="UsermMap">
+	<select id="UserPasswdInfo" parameterType="UsermDTO" resultType="UsermDTO">
 		<![CDATA[
 		SELECT   HOSP_CD,
-		         TRIM(USER_ID) USER_ID,
+		         TRIM(USER_ID) AS USER_ID,
 		         PASS_WD
 		    FROM TBL_USER_MST
 		   WHERE 1=1
-		     AND HOSP_UUID = #{hosp_uuid}
-		     AND USER_ID   = #{user_id}
+		     AND HOSP_UUID = #{hospUuid}
+		     AND USER_ID   = #{userId}
 		   ORDER BY START_DT DESC
 		   LIMIT 1
 		]]>
@@ -48,23 +25,23 @@
 	<update id="UserPasswdChange" parameterType="UsermDTO">
 		<![CDATA[
 		UPDATE TBL_USER_MST
-		   SET PASS_WD = #{enc_pass_wd}
+		   SET PASS_WD = #{encPassWd}
 		 WHERE 1=1
-		   AND HOSP_UUID = #{hosp_uuid}
-		   AND USER_ID   = #{user_id}
+		   AND HOSP_UUID = #{hospUuid}
+		   AND USER_ID   = #{userId}
 		 ORDER BY START_DT DESC
 		 LIMIT 1
 		]]>
 	</update>
 
 	<!-- 이름+이메일로 사용자 ID/비번 찾기 -->
-	<select id="UsernmInfo" parameterType="UsermDTO" resultMap="UsermMap">
+	<select id="UsernmInfo" parameterType="UsermDTO" resultType="UsermDTO">
 		<![CDATA[
 		SELECT PASS_WD,
 		       USER_ID
 		  FROM TBL_USER_MST
 		 WHERE 1=1
-		   AND USER_NM = #{user_nm}
+		   AND USER_NM = #{userNm}
 		   AND EMAIL   = #{email}
 		]]>
 	</select>

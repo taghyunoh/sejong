@@ -1,66 +1,52 @@
 package egovframework.sejong.food.model;
 
-import java.util.List;
-
 public class FoodDTO {
-	private int foodhisSeq;
+	private int foodSeq;
 	private String userUuid;
 	private String eatDate;
-	private int eatType;
-	private String mealType;
-	private String predictedImagePath;
-	private String version;
-	private List<FoodPositionDTO> foodPositionList;
-	public int getFoodhisSeq() {
-		return foodhisSeq;
-	}
-	public void setFoodhisSeq(int foodhisSeq) {
-		this.foodhisSeq = foodhisSeq;
-	}
-	public String getUserUuid() {
-		return userUuid;
-	}
-	public void setUserUuid(String userUuid) {
-		this.userUuid = userUuid;
-	}
-	public String getEatDate() {
-		return eatDate;
-	}
-	public void setEatDate(String eatDate) {
-		this.eatDate = eatDate;
-	}
-	public int getEatType() {
-		return eatType;
-	}
-	public void setEatType(int eatType) {
-		this.eatType = eatType;
-	}
-	public String getMealType() {
-		return mealType;
-	}
-	public void setMealType(String mealType) {
-		this.mealType = mealType;
-	}
-	public String getPredictedImagePath() {
-		return predictedImagePath;
-	}
-	public void setPredictedImagePath(String predictedImagePath) {
-		this.predictedImagePath = predictedImagePath;
-	}
-	public String getVersion() {
-		return version;
-	}
-	public void setVersion(String version) {
-		this.version = version;
-	}
-	public List<FoodPositionDTO> getFoodPositionList() {
-		return foodPositionList;
-	}
-	public void setFoodPositionList(List<FoodPositionDTO> foodPositionList) {
-		this.foodPositionList = foodPositionList;
-	}
-	
-	
-	
-	
+	private String eatStime;
+	private String eatEtime;
+	private String foodName;
+	private String foodDanwi;
+	private Integer foodCnt;
+	private String foodAcnt;
+	private Integer foodMseq;
+	private String regDttm;
+	private String modDttm;
+
+	public int getFoodSeq() { return foodSeq; }
+	public void setFoodSeq(int foodSeq) { this.foodSeq = foodSeq; }
+
+	public String getUserUuid() { return userUuid; }
+	public void setUserUuid(String userUuid) { this.userUuid = userUuid; }
+
+	public String getEatDate() { return eatDate; }
+	public void setEatDate(String eatDate) { this.eatDate = eatDate; }
+
+	public String getEatStime() { return eatStime; }
+	public void setEatStime(String eatStime) { this.eatStime = eatStime; }
+
+	public String getEatEtime() { return eatEtime; }
+	public void setEatEtime(String eatEtime) { this.eatEtime = eatEtime; }
+
+	public String getFoodName() { return foodName; }
+	public void setFoodName(String foodName) { this.foodName = foodName; }
+
+	public String getFoodDanwi() { return foodDanwi; }
+	public void setFoodDanwi(String foodDanwi) { this.foodDanwi = foodDanwi; }
+
+	public Integer getFoodCnt() { return foodCnt; }
+	public void setFoodCnt(Integer foodCnt) { this.foodCnt = foodCnt; }
+
+	public String getFoodAcnt() { return foodAcnt; }
+	public void setFoodAcnt(String foodAcnt) { this.foodAcnt = foodAcnt; }
+
+	public Integer getFoodMseq() { return foodMseq; }
+	public void setFoodMseq(Integer foodMseq) { this.foodMseq = foodMseq; }
+
+	public String getRegDttm() { return regDttm; }
+	public void setRegDttm(String regDttm) { this.regDttm = regDttm; }
+
+	public String getModDttm() { return modDttm; }
+	public void setModDttm(String modDttm) { this.modDttm = modDttm; }
 }

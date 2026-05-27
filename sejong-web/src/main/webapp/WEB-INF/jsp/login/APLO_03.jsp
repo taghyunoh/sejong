@@ -25,17 +25,17 @@
 	
 	function fnSave(){
 		 
-		if( $("#user_id").val() == ""){
+		if( $("#userId").val() == ""){
 			alert("사용자 ID를 입력하세요.!");
-			$("#user_id").focus();
+			$("#userId").focus();
 			return;
-		}else if( $("#user_pw").val() == "") {
+		}else if( $("#userPw").val() == "") {
 			alert("비밀번호를 입력하세요.!");
-			$("#user_pw").focus();
+			$("#userPw").focus();
 			return;
-		}else if( $("#bf_user_pwd").val() != $("#af_user_pwd").val()) {
+		}else if( $("#bfUserPwd").val() != $("#afUserPwd").val()) {
 			alert("변경할 비밀번호를 확인하세요.!");
-			$("#bf_user_pwd").focus();
+			$("#bfUserPwd").focus();
 			return;
 		}
 
@@ -51,11 +51,11 @@
 				if(data.error_code != "0"){
 					if(data.error_code == "20000"){ 
 						alert(data.error_msg);
-						$("#user_id").focus();
+						$("#userId").focus();
 					}	
 					else{ 
 						alert(data.error_msg);
-						$("#user_id").focus();
+						$("#userId").focus();
 					}
 				}else{
 					alert("비밀번호가 변경되었습니다.");
@@ -79,10 +79,10 @@
        <form:form commandName="DTO" id="regForm" name="regForm" method="post">
         <h3>비밀번호 변경</h3>
         <div class="pass-box w-100">
-          <input name="user_id" class="form-control" type="text" id="user_id" placeholder="사용자ID">
-          <input type="password" class="form-control mt-2" id="user_pw" name="user_pw" placeholder="현재 비밀번호">
-          <input type="password" class="form-control mt-2" id="bf_user_pwd" name="bf_user_pwd"  placeholder="변경 비밀번호">
-          <input type="password" class="form-control mt-2" id="af_user_pwd" name="af_user_pwd"  placeholder="변경 비밀번호 확인">
+          <input name="userId" class="form-control" type="text" id="userId" placeholder="사용자ID">
+          <input type="password" class="form-control mt-2" id="userPw" name="userPw" placeholder="현재 비밀번호">
+          <input type="password" class="form-control mt-2" id="bfUserPwd" name="bfUserPwd"  placeholder="변경 비밀번호">
+          <input type="password" class="form-control mt-2" id="afUserPwd" name="afUserPwd"  placeholder="변경 비밀번호 확인">
         </div>
 		</form:form>
         <div class="set-btn-box w-100">

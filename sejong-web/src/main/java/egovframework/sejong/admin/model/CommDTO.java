@@ -6,15 +6,15 @@ public class CommDTO {
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
-	private String iud            = "";    // 
-	private String code           = "";    // 공통코드
-	private String code_name      = "";    // 공통코드명
-	private String start_date     = "";    // 적용시작일
-	private String end_date       = "";    // 적용종료일
-	private String use_yn         = "";    // 사용여부
-	private String dtl_code       = "";    // 상세코드
-	private String dtl_code_nm    = "";    // 상세코드명
-	private String sort           = "";    // 정렬순서
+	private String iud        = "";    //
+	private String code       = "";    // 공통코드
+	private String codeName   = "";    // 공통코드명
+	private String startDate  = "";    // 적용시작일
+	private String endDate    = "";    // 적용종료일
+	private String useYn      = "";    // 사용여부
+	private String dtlCode    = "";    // 상세코드
+	private String dtlCodeNm  = "";    // 상세코드명
+	private String sort       = "";    // 정렬순서
 
 	public String getIud() {
 		return iud;
@@ -28,41 +28,41 @@ public class CommDTO {
 	public void setCode(String code) {
 		this.code = code;
 	}
-	public String getCode_name() {
-		return code_name;
+	public String getCodeName() {
+		return codeName;
 	}
-	public void setCode_name(String code_name) {
-		this.code_name = code_name;
+	public void setCodeName(String codeName) {
+		this.codeName = codeName;
 	}
-	public String getStart_date() {
-		return start_date;
+	public String getStartDate() {
+		return startDate;
 	}
-	public void setStart_date(String start_date) {
-		this.start_date = start_date;
+	public void setStartDate(String startDate) {
+		this.startDate = startDate;
 	}
-	public String getEnd_date() {
-		return end_date;
+	public String getEndDate() {
+		return endDate;
 	}
-	public void setEnd_date(String end_date) {
-		this.end_date = end_date;
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
 	}
-	public String getUse_yn() {
-		return use_yn;
+	public String getUseYn() {
+		return useYn;
 	}
-	public void setUse_yn(String use_yn) {
-		this.use_yn = use_yn;
+	public void setUseYn(String useYn) {
+		this.useYn = useYn;
 	}
-	public String getDtl_code() {
-		return dtl_code;
+	public String getDtlCode() {
+		return dtlCode;
 	}
-	public void setDtl_code(String dtl_code) {
-		this.dtl_code = dtl_code;
+	public void setDtlCode(String dtlCode) {
+		this.dtlCode = dtlCode;
 	}
-	public String getDtl_code_nm() {
-		return dtl_code_nm;
+	public String getDtlCodeNm() {
+		return dtlCodeNm;
 	}
-	public void setDtl_code_nm(String dtl_code_nm) {
-		this.dtl_code_nm = dtl_code_nm;
+	public void setDtlCodeNm(String dtlCodeNm) {
+		this.dtlCodeNm = dtlCodeNm;
 	}
 	public String getSort() {
 		return sort;
@@ -70,5 +70,5 @@ public class CommDTO {
 	public void setSort(String sort) {
 		this.sort = sort;
 	}
-	
+
 }

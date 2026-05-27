@@ -87,8 +87,8 @@ function fnSearch() {
     $.ajax({
    	url : CommonUtil.getContextPath() + '/doctor/selectPatientList.do',
     type : 'post',
-    data : {user_nm : $("#searchText").val(),
-	        user_gb : user_gubun,
+    data : {userNm : $("#searchText").val(),
+	        userGb : user_gubun,
     	    },
     	    beforeSend: function() {
                 // 송신 시간 기록
@@ -156,16 +156,16 @@ function fnSearch() {
 					  }
 				  
 	             var userText = "";
-	             if (data.resultLst[i].user_gb == "1"){
+	             if (data.resultLst[i].userGb == "1"){
 	            	 userText = "실증환자";
-	             } else if(data.resultLst[i].user_gb == "2") {
+	             } else if(data.resultLst[i].userGb == "2") {
 	            	 userText = "테스트";
 	             } 	  
 	    		  
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].user_uuid+'\');" id="row_'+data.resultLst[i].user_uuid+'">'; 
+    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].userUuid+'\');" id="row_'+data.resultLst[i].userUuid+'">'; 
 				dataTxt += 	"<td>" + (i+1)  + "</td>" ; 
-				dataTxt +=  "<td>" + data.resultLst[i].user_nm.substring(0,1)  + "*" +
-				                     data.resultLst[i].user_nm.substring(2,3)  + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].userNm.substring(0,1)  + "*" +
+				                     data.resultLst[i].userNm.substring(2,3)  + "</td>" ;
 				                     
 				dataTxt +=  "<td>" + data.resultLst[i].phone.substring(0,3)+"-****-" + 
 									 data.resultLst[i].phone.substring(7,11)+"</td>" ;
@@ -175,19 +175,19 @@ function fnSearch() {
 									 data.resultLst[i].birth.substring(6,8)+"일" + "</td>" ;
 				dataTxt +=  "<td>" + age   + "</td>" ;
 	            
-				dataTxt +=  "<td>" + data.resultLst[i].dtl_code_nm   + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].dtlCodeNm   + "</td>" ;
 	            dataTxt +=  "<td>" + data.resultLst[i].height        + "</td>" ;
 	            dataTxt +=  "<td>" + data.resultLst[i].weight        + "</td>" ;
 	            
 				dataTxt +=  "<td>" + data.resultLst[i].joinYmd.substring(0,4)+"년&nbsp" + 
 									 data.resultLst[i].joinYmd.substring(4,6)+"월&nbsp" + 
 									 data.resultLst[i].joinYmd.substring(6,8)+"일" + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].reg_dtm        + "</td>" ;					 
+				dataTxt +=  "<td>" + data.resultLst[i].regDtm        + "</td>" ;					 
 			    dataTxt +=  "<td>" + userText   + "</td>" ;					 
 				dataTxt +=  "</tr>";
 	            $("#dataArea").append(dataTxt);
 	            
-				$("#user_uuid").val(data.resultLst[i].user_uuid);
+				$("#userUuid").val(data.resultLst[i].userUuid);
         	 }
 	 	  }else{
 				 $("#dataArea").append("<tr><td colspan='12'>검색된 정보가 없습니다.</td></tr>");
@@ -204,7 +204,7 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
 	function fnDtlSearch(data){ 
 		if(data == '' || data == null) return;
 		
-		 document.regForm.user_uuid.value = data ; 
+		 document.regForm.userUuid.value = data ;
 		//row 클릭시 바탕색 변경 처리 Start 
 		$("#infoTable tr").attr("class", ""); 
 		$("#infoTable #"+data).attr("checked", true);
@@ -213,7 +213,7 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
 		$.ajax( {
 			type : "post",
 			url : CommonUtil.getContextPath() + "/tab/tabInfo.do",
-			data : {user_uuid : data},
+			data : {userUuid : data},
 			dataType : "json",
 			success : function(data) {    
 			//	 window.location.href = CommonUtil.getContextPath() +  "/tab/tab.do";
@@ -329,7 +329,7 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
         </div>
       </div>
   <form:form commandName="DTO" id="regForm" name="regForm" method="post"> 
-   <input type="hidden" name="user_uuid" id="user_uuid" value="${sessionScope['t_user_uuid']}"/>
+   <input type="hidden" name="userUuid" id="userUuid" value="${sessionScope['t_user_uuid']}"/>
   </form:form>
   </div>
 <!-- Modal -->

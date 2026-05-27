@@ -50,28 +50,28 @@ public class BaseController {
 			String q_uuid = (String) session.getAttribute("q_uuid");
 
 			if (q_uuid != null) {
-				dto.setHosp_uuid(q_uuid);
+				dto.setHospUuid(q_uuid);
 			}
 			UsermDTO result = svc.UserPasswdInfo(dto);
-			if (result.getUser_id() == null || result.getUser_id().toString().isEmpty()) {
+			if (result.getUserId() == null || result.getUserId().toString().isEmpty()) {
 				model.addAttribute("error_code", "20000");
 				model.addAttribute("error_msg", "비밀번호 변경할 사용자 정보가 존재하지 않습니다.");
 				return "jsonView";
 			}
 			// 현재 비밀번호가 맞는지
-			String chkpwd = EgovFileScrty.encryptPassword(dto.getPass_wd(), dto.getUser_id());
+			String chkpwd = EgovFileScrty.encryptPassword(dto.getPassWd(), dto.getUserId());
 
-			if (!result.getPass_wd().equals(chkpwd)) {
+			if (!result.getPassWd().equals(chkpwd)) {
 				model.addAttribute("error_code", "30000");
 				model.addAttribute("error_msg", "현재 비밀번호를 확인하세요.!");
 				return "jsonView";
 			}
-			if (dto.getBf_pass_wd() == "") {
+			if (dto.getBfPassWd() == "") {
 				model.addAttribute("error_code", "30000");
 				model.addAttribute("error_msg", "비밀번호 변경 정보가 존재하지 않습니다.");
 				return "jsonView";
 			}
-			dto.setEnc_pass_wd(EgovFileScrty.encryptPassword(dto.getBf_pass_wd(), dto.getUser_id()));
+			dto.setEncPassWd(EgovFileScrty.encryptPassword(dto.getBfPassWd(), dto.getUserId()));
 			// 비밀번호 변경 처리
 			boolean chk = svc.UserPasswdChange(dto);
 
@@ -103,16 +103,16 @@ public class BaseController {
 			String q_uuid = (String) session.getAttribute("q_uuid");
 
 			if (q_uuid != null) {
-				dto.setHosp_uuid(q_uuid);
+				dto.setHospUuid(q_uuid);
 			}
 
 			UsermDTO result = svc.UserPasswdInfo(dto);
-			if (result.getUser_id() == null || result.getUser_id().toString().isEmpty()) {
+			if (result.getUserId() == null || result.getUserId().toString().isEmpty()) {
 				model.addAttribute("error_code", "20000");
 				model.addAttribute("error_msg", "비밀번호 변경할 사용자 정보가 존재하지 않습니다.");
 				return "jsonView";
 			}
-			dto.setEnc_pass_wd(EgovFileScrty.encryptPassword("1234", dto.getUser_id()));
+			dto.setEncPassWd(EgovFileScrty.encryptPassword("1234", dto.getUserId()));
 			// 비밀번호 변경 처리
 			boolean chk = svc.UserPasswdChange(dto);
 

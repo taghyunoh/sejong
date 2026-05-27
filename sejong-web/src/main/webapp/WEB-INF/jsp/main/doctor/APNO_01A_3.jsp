@@ -36,19 +36,19 @@ function fnSearch() {
     		var dataTxt = "";
     		for(var i=0 ; i < data.resultCnt; i++){
     			var gubunText = "";
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].faq_seq+'\');" id="row_'+data.resultLst[i].faq_seq+'">';
+    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].faqSeq+'\');" id="row_'+data.resultLst[i].faqSeq+'">';
  				dataTxt += 	"<td>" + (i+1)  + "</td>" ;
- 				dataTxt +=  "<td>" + data.resultLst[i].qstn_conts    + "</td>" ;
-				dataTxt +=  "<td class='txt-left ellips'>" + data.resultLst[i].ansr_conts    + "</td>" ;
+ 				dataTxt +=  "<td>" + data.resultLst[i].qstnConts    + "</td>" ;
+				dataTxt +=  "<td class='txt-left ellips'>" + data.resultLst[i].ansrConts    + "</td>" ;
 				dataTxt +=  "<td>" + '관리자'        + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].mod_dtm + "</td>" ;
+				dataTxt +=  "<td>" + data.resultLst[i].modDtm + "</td>" ;
 				dataTxt +=  "</tr>";
 	            $("#dataArea").append(dataTxt);
         	 }
     		// 각 행 클릭 시 모달에 데이터 전달
             $("#dataArea tr").on('click', function() {
-              var faq_seq = $(this).attr('id').replace('row_', ''); // 행 ID에서 faq_seq 추출
-              var faqData = data.resultLst.find(function(item) { return item.faq_seq === faq_seq; });
+              var faqSeq = $(this).attr('id').replace('row_', '');
+              var faqData = data.resultLst.find(function(item) { return item.faqSeq === faqSeq; });
 
               // 모달에 데이터 채우기
               openModalWithData(faqData); // FAQ 데이터를 모달로 전달
@@ -66,10 +66,10 @@ function openModalWithData(faqData) {
     var adminModal = new bootstrap.Modal(modalElement);
 
     // 모달에 데이터 채우기
-    $('#modalQstnConts').text(faqData.qstn_conts); // 질문 내용
-    $('#modalAnsrConts').text(faqData.ansr_conts); // 답변 내용
+    $('#modalQstnConts').text(faqData.qstnConts); // 질문 내용
+    $('#modalAnsrConts').text(faqData.ansrConts); // 답변 내용
     $('#modalAdmin').text('관리자'); // 관리자
-    $('#modalModDtm').text(faqData.mod_dtm); // 수정 일시
+    $('#modalModDtm').text(faqData.modDtm); // 수정 일시
 
     // 모달 열기
     adminModal.show();
@@ -78,7 +78,7 @@ function openModalWithData(faqData) {
 function fnDtlSearch(data){ 
 		if(data == '' || data == null) return;
 		 
-		document.regForm.faq_seq.value = data; 
+		document.regForm.faqSeq.value = data;
 		
 		//row 클릭시 바탕색 변경 처리 Start 
 		$("#infoTable tr").attr("class", ""); 
@@ -92,17 +92,17 @@ function fnSave(){
 	$.ajax( {
 		type : "post",
 		url : CommonUtil.getContextPath() + "/doctor/faqInfo.do",
-		data : {faq_seq : $("#faq_seq").val()},
+		data : {faqSeq : $("#faqSeq").val()},
 		dataType : "json",
-		success : function(data) {    
+		success : function(data) {
 			if(data.error_code != "0") {
 				alert(data.error_msg);
 				return;
 			}
-			$("#qstn_conts").val(data.result.qstn_conts);
-			$("#ansr_conts").val(data.result.ansr_conts);
-			$("#mod_dtm").val(data.result.mod_dtm);
-			$("#mod_id").val('관리자');
+			$("#qstnConts").val(data.result.qstnConts);
+			$("#ansrConts").val(data.result.ansrConts);
+			$("#modDtm").val(data.result.modDtm);
+			$("#modId").val('관리자');
 		}
 	});
 	$("#adminModal").modal("show");
@@ -188,24 +188,24 @@ function modalClose(){
         </div>
          <form:form commandName="DTO"  id="regForm" name="regForm" method="post">
            <input type="hidden" name="iud" id="iud"/> 
-           <input type="hidden" name="faq_seq" id="faq_seq"/> 
+           <input type="hidden" name="faqSeq" id="faqSeq"/>
         <div class="modal-body">
           <div class="form-container">        
             <div class="form-wrap w-100">
               <label for="" style="left">FAQ 제목</label>
-              <input type="text" name="qstn_conts" id="qstn_conts" class="form-control" readonly>
+              <input type="text" name="qstnConts" id="qstnConts" class="form-control" readonly>
             </div>
             <div class="form-wrap w-100">
               <label for="" style="left">내용</label>
-              <textarea class="form-control" aria-label="With textarea" name="ansr_conts" id="ansr_conts" readonly></textarea>              
+              <textarea class="form-control" aria-label="With textarea" name="ansrConts" id="ansrConts" readonly></textarea>
             </div>
             <div class="form-wrap w-50">
               <label for="">등록일</label>
-              <input type="date" name="mod_dtm" id="mod_dtm" class="form-control" readonly>
+              <input type="date" name="modDtm" id="modDtm" class="form-control" readonly>
             </div>
             <div class="form-wrap w-50">
               <label for="">등록자</label>
-              <input type="text" class="form-control" name="mod_id" id="mod_id" value="관리자" readonly>
+              <input type="text" class="form-control" name="modId" id="modId" value="관리자" readonly>
             </div>
           </div> 
         </div>

@@ -25,13 +25,13 @@
 	
 	function fnSave(){
 		 
-		if( $("#user_pw").val() == "") {
+		if( $("#userPw").val() == "") {
 			alert("비밀번호를 입력하세요.!");
-			$("#user_pw").focus();
+			$("#userPw").focus();
 			return;
-		}else if( $("#bf_user_pwd").val() != $("#af_user_pwd").val()) {
+		}else if( $("#bfUserPwd").val() != $("#afUserPwd").val()) {
 			alert("변경할 비밀번호를 확인하세요.!");
-			$("#bf_user_pwd").focus();
+			$("#bfUserPwd").focus();
 			return;
 		}
 
@@ -77,10 +77,10 @@ console.log(formData);
        <form:form commandName="DTO" id="regForm" name="regForm" method="post">
         <h3>비밀번호 변경</h3>
         <div class="pass-box w-100">
-		  <input type="hidden" name="user_id" id="user_id" value="${sessionScope['q_user_id']}"/>
-          <input type="password" class="form-control mt-2" id="user_pw" name="user_pw" placeholder="현재 비밀번호">
-          <input type="password" class="form-control mt-2" id="bf_user_pwd" name="bf_user_pwd"  placeholder="변경 비밀번호">
-          <input type="password" class="form-control mt-2" id="af_user_pwd" name="af_user_pwd"  placeholder="변경 비밀번호 확인">
+		  <input type="hidden" name="userId" id="userId" value="${sessionScope['q_user_id']}"/>
+          <input type="password" class="form-control mt-2" id="userPw" name="userPw" placeholder="현재 비밀번호">
+          <input type="password" class="form-control mt-2" id="bfUserPwd" name="bfUserPwd"  placeholder="변경 비밀번호">
+          <input type="password" class="form-control mt-2" id="afUserPwd" name="afUserPwd"  placeholder="변경 비밀번호 확인">
         </div>
 		</form:form>
         <div class="set-btn-box w-100">
