@@ -5,6 +5,7 @@
 	<insert id="insertToken">
 		INSERT INTO T_BLDCON_MST (
 			 USER_UUID
+			,ISENS_ID
 			,ACC_TOKEN
 			,REF_TOKEN
 			,EXPRE_TIME
@@ -14,7 +15,8 @@
 			,REG_DTM
 			,MOD_DTM
 		)VALUES (
-			#{user_id}
+			#{userUuid}
+			,#{user_id}
         	,#{accessToken}
         	,#{refresh_token}
         	,#{expires_in}
@@ -24,11 +26,46 @@
         	,NOW()
         	,NOW()
 		)ON DUPLICATE KEY UPDATE
+			ISENS_ID  = VALUES(ISENS_ID),
 			ACC_TOKEN = VALUES(ACC_TOKEN),
 			REF_TOKEN = VALUES(REF_TOKEN),
 			EXPRE_TIME = VALUES(EXPRE_TIME),
 			MOD_DTM = NOW()
 	</insert>
+
+	<!-- 환자 동기화 컨텍스트 (토큰 + 마지막 측정시각) -->
+	<select id="getSyncContext" parameterType="String" resultType="map"><![CDATA[
+		SELECT  M.USER_UUID                                                     AS userUuid
+		       ,M.ACC_TOKEN                                                     AS accToken
+		       ,M.REF_TOKEN                                                     AS refToken
+		       ,M.EXPRE_TIME                                                    AS expreTime
+		       ,(SELECT MAX(CGM_DTM) FROM T_BLDINF_TRAN
+		           WHERE USER_UUID = M.USER_UUID)                              AS lastCgmDtm
+		  FROM T_BLDCON_MST M
+		 WHERE M.USER_UUID = #{userUuid}
+		   AND IFNULL(M.TOKEN_YN,'Y') = 'Y'
+	]]>
+	</select>
+
+	<!-- 환자별 마지막 CGM 측정시각 (없으면 NULL) -->
+	<select id="getLastCgmDtm" parameterType="String" resultType="String"><![CDATA[
+		SELECT DATE_FORMAT(MAX(CGM_DTM), '%Y-%m-%dT%H:%i:%s')
+		  FROM T_BLDINF_TRAN
+		 WHERE USER_UUID = #{userUuid}
+	]]>
+	</select>
+
+	<!-- refresh 후 토큰만 갱신 -->
+	<update id="updateToken" parameterType="map"><![CDATA[
+		UPDATE T_BLDCON_MST
+		   SET ACC_TOKEN  = #{accessToken}
+		      ,REF_TOKEN  = #{refresh_token}
+		      ,EXPRE_TIME = #{expires_in}
+		      ,TOKEN_YN   = 'Y'
+		      ,MOD_DTM    = NOW()
+		 WHERE USER_UUID = #{userUuid}
+	]]>
+	</update>
 
 	<!-- insertBloodData -->
 	<insert id="insertBloodData" parameterType="java.util.List">

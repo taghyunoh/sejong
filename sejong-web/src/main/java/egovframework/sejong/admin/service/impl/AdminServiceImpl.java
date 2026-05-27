@@ -73,6 +73,21 @@ public class AdminServiceImpl implements AdminService {
 		// TODO Auto-generated method stub
 		return mapper.deletePatient(dto);
 	}
+
+	// 환자 로그인/가입 (T_USER_TRAN)
+	@Override
+	public PatientDTO patientLoginCheck(PatientDTO dto) throws Exception {
+		return mapper.patientLoginCheck(dto);
+	}
+	@Override
+	public boolean patientRegister(PatientDTO dto) throws Exception {
+		return mapper.patientRegister(dto);
+	}
+	@Override
+	public int patientExistsByPhone(PatientDTO dto) throws Exception {
+		return mapper.patientExistsByPhone(dto);
+	}
+
 	//사용자(의사)
 	@Override
 	public List<?> selectAuserList(AuserDTO dto) throws Exception {

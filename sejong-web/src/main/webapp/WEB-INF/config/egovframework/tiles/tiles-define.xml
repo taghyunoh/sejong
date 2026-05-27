@@ -42,4 +42,13 @@
 		<put-attribute name="content" value="/WEB-INF/jsp/main/{1}/{2}/{3}.jsp" />
 	</definition>
 
+	<!-- ─────────────────────────────────────────────────────────────────
+	  자체완결 페이지 (tiles wrap 없음, 환자용 페이지 등)
+	  template 자체가 JSP를 직접 가리키므로 header/footer 등 wrap 없음.
+	  컨트롤러: ".raw/login/X" → /WEB-INF/jsp/login/X.jsp 단독 출력
+	         : ".raw/main/X/Y" → /WEB-INF/jsp/main/X/Y.jsp 단독 출력
+	 ───────────────────────────────────────────────────────────────── -->
+	<definition name=".raw/*/*"   template="/WEB-INF/jsp/{1}/{2}.jsp" />
+	<definition name=".raw/*/*/*" template="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+
 </tiles-definitions>

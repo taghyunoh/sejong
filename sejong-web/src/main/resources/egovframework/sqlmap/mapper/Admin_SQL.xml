@@ -208,6 +208,69 @@
 		]]>
 	</insert>
 
+	<!-- 환자 로그인 (전화번호 + 해시 비밀번호) -->
+	<select id="patientLoginCheck" parameterType="PatientDTO" resultType="PatientDTO"><![CDATA[
+		SELECT  USER_UUID, USER_ID, USER_NM, USER_PW, USER_GB,
+		        PHONE, EMAIL, BIRTH, GENDER, HEIGHT, WEIGHT, BLOD_GB,
+		        DATE_FORMAT(JOIN_YMD, '%Y-%m-%d') AS JOIN_YMD,
+		        LOCK_YN, USEYN
+		  FROM T_USER_TRAN
+		 WHERE PHONE = #{phone}
+		   AND IFNULL(USEYN,'Y') = 'Y'
+		   AND IFNULL(LOCK_YN,'N') = 'N'
+		 LIMIT 1
+	]]>
+	</select>
+
+	<!-- 전화번호 중복 체크 -->
+	<select id="patientExistsByPhone" parameterType="PatientDTO" resultType="int"><![CDATA[
+		SELECT COUNT(*) FROM T_USER_TRAN WHERE PHONE = #{phone}
+	]]>
+	</select>
+
+	<!-- 환자 회원가입 -->
+	<insert id="patientRegister" parameterType="PatientDTO"><![CDATA[
+		INSERT INTO T_USER_TRAN
+		(   USER_UUID
+		  , USER_NM
+		  , USER_ID
+		  , USER_PW
+		  , USER_GB
+		  , PHONE
+		  , BIRTH
+		  , GENDER
+		  , EMAIL
+		  , HEIGHT
+		  , WEIGHT
+		  , BLOD_GB
+		  , JOIN_YMD
+		  , LOCK_YN
+		  , USEYN
+		  , REG_DTM
+		  , MOD_DTM
+		)
+		VALUES
+		(   UUID()
+		  , #{userNm}
+		  , #{phone}
+		  , #{userPw}
+		  , 'P'
+		  , #{phone}
+		  , #{birth}
+		  , #{gender}
+		  , #{email}
+		  , #{height}
+		  , #{weight}
+		  , #{blodGb}
+		  , NOW()
+		  , 'N'
+		  , 'Y'
+		  , NOW()
+		  , NOW()
+		)
+	]]>
+	</insert>
+
 	<!-- 환자 코드 수정 -->
 	<update id="updatePatient" parameterType="PatientDTO"><![CDATA[
 		update T_USER_TRAN

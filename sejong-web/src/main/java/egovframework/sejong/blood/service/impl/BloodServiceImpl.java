@@ -37,6 +37,36 @@ public class BloodServiceImpl implements BloodService {
 	}
 
 	@Override
+	public Map<String, Object> getSyncContext(String userUuid) {
+		return bloodMapper.getSyncContext(userUuid);
+	}
+
+	@Override
+	public String getLastCgmDtm(String userUuid) {
+		return bloodMapper.getLastCgmDtm(userUuid);
+	}
+
+	@Override
+	public int updateToken(Map<String, Object> map) {
+		return bloodMapper.updateToken(map);
+	}
+
+	@Override
+	public int tokenYn(String userUuid) {
+		return bloodMapper.tokenYn(userUuid);
+	}
+
+	@Override
+	public List<Map<String, Object>> getTodayBlood(String userUuid) {
+		return bloodMapper.getTodayBlood(userUuid);
+	}
+
+	@Override
+	public Map<String, Object> getTodayMealBlood(String userId) {
+		return bloodMapper.getTodayMealBlood(userId);
+	}
+
+	@Override
 	public List<Map<String, Object>> showBloodData(Map<String, Object> map) {
 		return bloodMapper.showBloodData(map);
 	}

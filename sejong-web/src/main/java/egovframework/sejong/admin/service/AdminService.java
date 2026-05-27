@@ -19,9 +19,14 @@ public interface AdminService {
 	List<?> selectPatientList(PatientDTO dto) throws Exception;
 	
 	PatientDTO patientInfo(PatientDTO dto) throws Exception;
-	boolean insertPatient(PatientDTO dto) throws Exception; 
-	boolean updatePatient(PatientDTO dto) throws Exception; 
-	boolean deletePatient(PatientDTO dto) throws Exception; 
+	boolean insertPatient(PatientDTO dto) throws Exception;
+	boolean updatePatient(PatientDTO dto) throws Exception;
+	boolean deletePatient(PatientDTO dto) throws Exception;
+
+	// 환자 로그인/가입 (T_USER_TRAN)
+	PatientDTO patientLoginCheck(PatientDTO dto) throws Exception;
+	boolean    patientRegister(PatientDTO dto) throws Exception;
+	int        patientExistsByPhone(PatientDTO dto) throws Exception;
 		
 	//관리자(의사)
 	List<?> selectAuserList(AuserDTO dto) throws Exception;

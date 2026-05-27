@@ -14,6 +14,16 @@ public interface BloodService {
 
 	List<Map<String, Object>> getBloodUserData(String userId);
 
+	Map<String, Object> getSyncContext(String userUuid);
+
+	String getLastCgmDtm(String userUuid);
+
+	int updateToken(Map<String, Object> map);
+
+	int tokenYn(String userUuid);
+	List<Map<String, Object>> getTodayBlood(String userUuid);
+	Map<String, Object> getTodayMealBlood(String userId);
+
 	List<Map<String, Object>> showBloodData(Map<String, Object> map);
 
 	String getAvgFastingBlood(Map<String, Object> map);

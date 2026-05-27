@@ -223,6 +223,35 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
 			}
 		});
 	}
+    // 선택 환자의 i-Sens 혈당 데이터 수동 동기화
+	function fnSyncBlood() {
+		var uuid = $("#userUuid").val();
+		if (!uuid) {
+			alert("먼저 환자 행을 클릭하여 선택하세요.");
+			return;
+		}
+		if (!confirm("선택한 환자의 i-Sens 혈당 데이터를 동기화하시겠습니까?")) return;
+
+		$.ajax({
+			type: "post",
+			url: CommonUtil.getContextPath() + "/syncPatientBlood.do",
+			data: JSON.stringify({ userUuid: uuid }),
+			contentType: "application/json",
+			dataType: "json",
+			success: function(data) {
+				if (data.IsSucceed) {
+					alert(data.Message || ("동기화 완료: " + data.Data + " 건"));
+				} else {
+					alert("동기화 실패: " + (data.Message || ""));
+				}
+			},
+			error: function(xhr, status, error) {
+				alert("동기화 요청 중 오류가 발생했습니다.");
+				console.error(status, error);
+			}
+		});
+	}
+
     // 버튼 클릭 시 특정 JSP를 불러오는 함수
 	function loadAdminResp() {
 	    $.ajax({
@@ -276,10 +305,9 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
           <div class="main-left w-100">
             <header class="main-hd">
               <h2></h2>
-              <div class="btn-box"> 
-               <!--   <button class="btn btn-outline-dark btn-sm" onclick="fnSave('U');">수정</button>
-                <button class="btn btn-primary btn-sm" onclick="fnSave('I');" >입력</button>-->
-              </div> 
+              <div class="btn-box">
+                <button class="btn btn-outline-dark btn-sm" onclick="fnSyncBlood();">혈당 동기화</button>
+              </div>
             </header>
             <div class="main-content">
               <!-- 테이블 샘플 -->

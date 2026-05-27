@@ -18,29 +18,41 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import egovframework.sejong.admin.model.PatientDTO;
+import egovframework.sejong.admin.service.AdminService;
 import egovframework.sejong.user.model.UserDTO;
 import egovframework.sejong.user.service.UserService;
 import egovframework.util.EgovFileScrty;
 
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RequestBody;
+import egovframework.sejong.util.ResponseObject;
 
 @Controller
 public class UserController {
 
 	private static final Logger log = LoggerFactory.getLogger(UserController.class);
-	
-	
+
+
 	@Resource(name = "UserService") // 서비스 선언
 	private UserService svc;
+
+	@Resource(name = "AdminService") // 환자(T_USER_TRAN) 처리용
+	private AdminService adminSvc;
 
 	    @GetMapping("/")
 	    public String redirectToLogin() {
 	    	return "redirect:https://allcare24.kr/login.do";
 	    }
-	    //메인화면 호출
+	    //메인화면 호출 (권한 분기: 환자 P → raw 단독 JSP, 의사/관리자 → 기존 tiles main)
 		@RequestMapping(value = "/main.do")
 		public String MainPage(HttpServletRequest request, ModelMap model) throws Exception {
-			
+			HttpSession session = request.getSession();
+			String userGb = (String) session.getAttribute("q_admin_yn");
+			if ("P".equals(userGb)) {
+				return "raw/main/patient/patient_main";
+			}
 			return ".main/main";
 		}
 
@@ -124,13 +136,212 @@ public class UserController {
 		
 		/* 사용자 로그아웃 처리 */
 		@RequestMapping(value="/user/loginOutAct.do")
-		 public String UserLogOutProcess(@ModelAttribute("DTO") UserDTO dto, HttpServletRequest request, ModelMap model) throws Exception { 
-		
-			HttpSession session = request.getSession(); 
-			//세션 초기화 
+		 public String UserLogOutProcess(@ModelAttribute("DTO") UserDTO dto, HttpServletRequest request, ModelMap model) throws Exception {
+
+			HttpSession session = request.getSession();
+			//세션 초기화
 			session.invalidate();
-			 
+
 			return "forward:/login.do";
+		}
+
+		// =====================================================================
+		// 환자(T_USER_TRAN, USER_GB='P') 로그인 / 회원가입
+		// =====================================================================
+
+		/** 환자 로그인 페이지 — 통합 로그인으로 리다이렉트 (호환 유지) */
+		@RequestMapping(value = "/patient/login.do")
+		public String patientLoginPage() {
+			return "redirect:/login.do";
+		}
+
+		/** 환자 회원가입 페이지 — raw 단독 JSP (tiles wrap 없음, InternalResourceViewResolver 처리) */
+		@RequestMapping(value = "/patient/register.do")
+		public String patientRegisterPage() {
+			return "raw/login/patient_register";
+		}
+
+		/** 환자 로그인 처리 (전화번호 + 비밀번호) */
+		@RequestMapping(value = "/patient/loginAct.do", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseObject patientLoginAct(@RequestBody PatientDTO dto, HttpServletRequest request) throws Exception {
+			ResponseObject res = new ResponseObject();
+			try {
+				PatientDTO result = adminSvc.patientLoginCheck(dto);
+				if (result == null || result.getUserUuid() == null) {
+					res.IsSucceed = false;
+					res.Message = "등록되지 않은 전화번호입니다.";
+					return res;
+				}
+				String chkpwd = EgovFileScrty.encryptPassword(dto.getUserPw(), result.getPhone());
+				if (result.getUserPw() == null || !result.getUserPw().equals(chkpwd)) {
+					res.IsSucceed = false;
+					res.Message = "비밀번호를 확인하세요.";
+					return res;
+				}
+				HttpSession session = request.getSession();
+				session.setAttribute("user", result);
+				session.setAttribute("userNm", result.getUserNm());
+				session.setAttribute("userUuid", result.getUserUuid());
+				session.setAttribute("q_user_id", result.getUserUuid());
+				session.setAttribute("q_user_nm", result.getUserNm());
+				session.setAttribute("q_admin_yn", "P");
+				session.setAttribute("q_user_ip", request.getRemoteAddr());
+				session.setAttribute("q_screen_id", "patient");
+				res.IsSucceed = true;
+				res.Data = result.getUserUuid();
+				return res;
+			} catch (Exception ex) {
+				log.error("patientLoginAct ERROR: " + ex.getMessage(), ex);
+				res.IsSucceed = false;
+				res.Message = "로그인 처리 중 오류";
+				return res;
+			}
+		}
+
+		/** 환자 회원가입 처리 */
+		@RequestMapping(value = "/patient/registerAct.do", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseObject patientRegisterAct(@RequestBody PatientDTO dto, HttpServletRequest request) throws Exception {
+			ResponseObject res = new ResponseObject();
+			try {
+				if (dto.getPhone() == null || dto.getPhone().trim().isEmpty()) {
+					res.IsSucceed = false; res.Message = "전화번호는 필수입니다."; return res;
+				}
+				if (dto.getUserPw() == null || dto.getUserPw().length() < 4) {
+					res.IsSucceed = false; res.Message = "비밀번호는 4자 이상이어야 합니다."; return res;
+				}
+				int exists = adminSvc.patientExistsByPhone(dto);
+				if (exists > 0) {
+					res.IsSucceed = false; res.Message = "이미 등록된 전화번호입니다."; return res;
+				}
+				// 비밀번호 해시: salt = phone
+				String encPw = EgovFileScrty.encryptPassword(dto.getUserPw(), dto.getPhone());
+				dto.setUserPw(encPw);
+				adminSvc.patientRegister(dto);
+				res.IsSucceed = true;
+				res.Message = "회원가입이 완료되었습니다. 로그인 해주세요.";
+				return res;
+			} catch (Exception ex) {
+				log.error("patientRegisterAct ERROR: " + ex.getMessage(), ex);
+				res.IsSucceed = false;
+				res.Message = "회원가입 처리 중 오류: " + ex.getMessage();
+				return res;
+			}
+		}
+
+		/** 환자 전화번호 중복 체크 */
+		@RequestMapping(value = "/patient/checkPhone.do", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseObject checkPhone(@RequestBody PatientDTO dto) throws Exception {
+			ResponseObject res = new ResponseObject();
+			int n = adminSvc.patientExistsByPhone(dto);
+			res.IsSucceed = (n == 0);
+			res.Data = n;
+			return res;
+		}
+
+		/**
+		 * 통합 로그인 — 단일 폼에서 의료진(T_ADMIN_MST) + 환자(T_USER_TRAN) 자동 구분
+		 *
+		 * 입력: { idOrPhone: "kim123 또는 01012345678", password: "1234" }
+		 *
+		 * 알고리즘
+		 *   1) T_ADMIN_MST 시도: USER_ID = SHA256(idOrPhone || idOrPhone) Base64 매칭
+		 *      → 매칭되면 USER_PW = SHA256("1234" || password) 비교 → 성공 시 의사/관리자 세션
+		 *   2) 1)이 실패하면 T_USER_TRAN(USER_GB='P') 시도: PHONE = idOrPhone
+		 *      → 매칭되면 USER_PW = SHA256(phone || password) 비교 → 성공 시 환자 세션
+		 *   3) 둘 다 실패하면 거부
+		 *
+		 * 세션 q_admin_yn = 'A'/'D' (의료진) 또는 'P' (환자)
+		 */
+		@RequestMapping(value = "/user/unifiedLoginAct.do", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseObject unifiedLogin(@RequestBody Map<String,String> map, HttpServletRequest request) throws Exception {
+			ResponseObject res = new ResponseObject();
+			String idOrPhone = map != null ? map.get("idOrPhone") : null;
+			String password  = map != null ? map.get("password")  : null;
+			if (idOrPhone == null || idOrPhone.trim().isEmpty() || password == null || password.isEmpty()) {
+				res.IsSucceed = false; res.Message = "아이디(전화번호)와 비밀번호를 입력하세요.";
+				return res;
+			}
+			idOrPhone = idOrPhone.trim();
+			HttpSession session = request.getSession();
+
+			try {
+				// ─── 1) 의료진(T_ADMIN_MST) 시도 ─────────────────────────
+				UserDTO adminDto = new UserDTO();
+				adminDto.setUserId(EgovFileScrty.encryptPassword(idOrPhone, idOrPhone));
+				UserDTO admin = svc.userLoginCheck(adminDto);
+				if (admin != null && admin.getUserId() != null && !admin.getUserId().isEmpty()) {
+					String chkAdmin = EgovFileScrty.encryptPassword(password, "1234");
+					if (admin.getUserPw() != null && admin.getUserPw().equals(chkAdmin)) {
+						session.setAttribute("q_user_id", admin.getUserId());
+						session.setAttribute("q_user_nm", admin.getUserNm());
+						session.setAttribute("q_admin_yn", admin.getUserGb());   // A or D
+						session.setAttribute("q_dept_nm", admin.getDeptNm());
+						session.setAttribute("q_user_ip", request.getRemoteAddr());
+						session.setAttribute("q_screen_id", "login");
+						session.setAttribute("admingu", admin.getUserGb());
+						res.IsSucceed = true;
+						res.Data = "ADMIN";
+						res.Message = "의료진 로그인 성공";
+						return res;
+					}
+					// 의사 매칭이지만 비번 불일치 → 환자로는 시도하지 않고 즉시 거부 (보안 향상)
+					res.IsSucceed = false; res.Message = "비밀번호를 확인하세요.";
+					return res;
+				}
+
+				// ─── 2) 환자(T_USER_TRAN) 시도 ───────────────────────────
+				PatientDTO pDto = new PatientDTO();
+				pDto.setPhone(idOrPhone);
+				PatientDTO patient = adminSvc.patientLoginCheck(pDto);
+				if (patient != null && patient.getUserUuid() != null) {
+					String chkPatient = EgovFileScrty.encryptPassword(password, patient.getPhone());
+					if (patient.getUserPw() != null && patient.getUserPw().equals(chkPatient)) {
+						session.setAttribute("user", patient);
+						session.setAttribute("userNm", patient.getUserNm());
+						session.setAttribute("userUuid", patient.getUserUuid());
+						session.setAttribute("q_user_id", patient.getUserUuid());
+						session.setAttribute("q_user_nm", patient.getUserNm());
+						session.setAttribute("q_admin_yn", "P");
+						session.setAttribute("q_user_ip", request.getRemoteAddr());
+						session.setAttribute("q_screen_id", "patient");
+						res.IsSucceed = true;
+						res.Data = "PATIENT";
+						res.Message = "환자 로그인 성공";
+						return res;
+					}
+					res.IsSucceed = false; res.Message = "비밀번호를 확인하세요.";
+					return res;
+				}
+
+				// 둘 다 매칭 없음
+				res.IsSucceed = false;
+				res.Message = "등록된 사용자 정보가 없습니다.";
+				return res;
+
+			} catch (Exception ex) {
+				log.error("unifiedLogin ERROR: " + ex.getMessage(), ex);
+				res.IsSucceed = false;
+				res.Message = "로그인 처리 중 오류";
+				return res;
+			}
+		}
+
+		/** 환자 식사 기록 화면 — raw 단독 JSP */
+		@RequestMapping(value = "/patient/food.do")
+		public String patientFoodPage(HttpSession session) {
+			if (session.getAttribute("userUuid") == null) return "redirect:/login.do";
+			return "raw/main/patient/patient_food";
+		}
+
+		/** 환자 운동 기록 화면 — raw 단독 JSP */
+		@RequestMapping(value = "/patient/exer.do")
+		public String patientExerPage(HttpSession session) {
+			if (session.getAttribute("userUuid") == null) return "redirect:/login.do";
+			return "raw/main/patient/patient_exer";
 		}
 
 		/* 사용자 비밀번호변경 화면 */

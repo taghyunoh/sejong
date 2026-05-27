@@ -15,6 +15,86 @@
 <link href="/bootstrap/css/bootstrap.css" rel="stylesheet">
 <link href="/asset/css/common.css" rel="stylesheet"> 
 <link href="/css/login.css" rel="stylesheet">
+<style>
+  /* ───────────────────────────────────────────────────────
+     로그인 박스 — 모든 컨텐츠가 좌측 흰박스 안에 들어오게 강하게 압축
+  ─────────────────────────────────────────────────────── */
+  #login .login-box {
+    display: flex !important;
+    align-items: stretch !important;
+  }
+  #login .login-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;       /* 컨텐츠를 박스 세로 중앙에 위치 */
+    padding: 14px 24px !important; /* 좌우 32→24, 위아래 24→14 (약간 좁히고 압축) */
+    box-sizing: border-box;
+    overflow: hidden;               /* 박스 밖으로 절대 안 나가게 */
+  }
+  #login .img-wrap {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #login .img-wrap img {
+    max-height: 100%;
+    height: auto;
+  }
+
+  /* 모든 컨텐츠 강하게 압축 */
+  #login .login-wrap h1 {
+    font-size: 16px !important;
+    line-height: 1.25;
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    font-weight: 700;
+    text-align: center;
+  }
+  #login .login-wrap .mb-3 {         /* "처음 방문하셨나요?" 배너 */
+    margin-bottom: 8px !important;
+    padding: 5px !important;
+    font-size: 13px;
+  }
+  #login .login-wrap .id-box {
+    margin-top: 2px;
+  }
+  #login .login-wrap .id-box h2 {    /* "로그인" 소제목 */
+    font-size: 14px !important;
+    margin: 4px 0 6px 0;
+  }
+  #login .login-wrap input.form-control {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font-size: 13px;
+    margin-top: 4px !important;
+  }
+  #login .login-wrap .id-box > div[style*="font-size:12px"] {  /* 안내문구 (※ 당구장) */
+    margin-top: 6px !important;
+    font-size: 13px !important;
+    line-height: 1.4;
+  }
+  #login .login-wrap .form-check {   /* 아이디 저장 — 살짝 아래로 */
+    margin-top: 14px !important;
+    margin-bottom: 2px;
+    font-size: 13px;
+  }
+  #login .login-wrap .btn-primary.btn-lg {  /* 로그인 버튼 — 위로 당김 */
+    padding-top: 7px;
+    padding-bottom: 7px;
+    margin-top: 0 !important;
+    font-size: 14px;
+  }
+  #login .login-wrap .set-btn-box {  /* 비밀번호 초기화/변경 — 위로 당김 */
+    margin-top: 3px;
+  }
+  #login .login-wrap .set-btn-box .btn {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 12px;
+  }
+</style>
 <!-- 부트스트랩 js -->
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -54,55 +134,37 @@ function fnSaveIdToggle(){
 }
 
 function loginproc2(){
+	var id = $.trim($("#userId").val());
+	var pw = $("#userPw").val();
+	if (!id) { alert("아이디 또는 전화번호를 입력하세요."); $("#userId").focus(); return; }
+	if (!pw) { alert("비밀번호를 입력하세요."); $("#userPw").focus(); return; }
 
-	if( $("#userId").val() == ""){
-		alert("사용자 ID를 입력하세요.!");
-		$("#userId").focus();
-		return;
-	}else if( $("#userPw").val() == "") {
-		alert("비밀번호를 입력하세요.!");
-		$("#userPw").focus();
-		return;
-	}
-	//location.href="/com/main.do" ;
-
-	$.ajax( {
-		type : "post",
-	//	CommonUtil.callAjax(CommonUtil.getContextPath() + "/user/loginAct.do", "POST", formData, function(response) {
-		url : CommonUtil.getContextPath() + "/user/loginAct.do",
-		data : {userId : $("#userId").val(),
-			    userPw : $("#userPw").val()},
-		dataType : "json",
-		success : function(data) {
-
-			if(data.error_code != "00000"){
-				if(data.error_code == "20000"){
-					alert(data.error_msg);
-					$("#userId").focus();
-				}else if(data.error_code == "10000"){   //비밀번호 초기화
-					alert(data.error_msg);
-					fnPwdChange();
-				}
-				else{
-					alert(data.error_msg);
-					$("#userId").focus();
-				}
-			}else{
-				// ID 저장 처리 (로그인 성공 후에만 저장 → 잘못된 ID 입력은 보존하지 않음)
-				try {
-					if ($("#save_id").is(":checked")) {
-						localStorage.setItem(SAVED_USER_ID_KEY, $("#userId").val());
-					} else {
-						localStorage.removeItem(SAVED_USER_ID_KEY);
-					}
-				} catch (e) {}
-				//메인페이지로 이동
-				location.href= CommonUtil.getContextPath() + "/main.do"
+	// 통합 로그인: 의료진(T_ADMIN_MST) 우선 → 환자(T_USER_TRAN) 자동 분기
+	$.ajax({
+		type: "post",
+		url:  CommonUtil.getContextPath() + "/user/unifiedLoginAct.do",
+		data: JSON.stringify({ idOrPhone: id, password: pw }),
+		contentType: "application/json",
+		dataType: "json",
+		success: function(data) {
+			if (!data.IsSucceed) {
+				alert(data.Message || "로그인 실패");
+				$("#userId").focus();
+				return;
 			}
-		}
-	//  )};
+			// ID 저장 (성공 후에만)
+			try {
+				if ($("#save_id").is(":checked")) {
+					localStorage.setItem(SAVED_USER_ID_KEY, id);
+				} else {
+					localStorage.removeItem(SAVED_USER_ID_KEY);
+				}
+			} catch (e) {}
+			// /main.do 가 세션 q_admin_yn 으로 환자/의사 화면 자동 분기
+			location.href = CommonUtil.getContextPath() + "/main.do";
+		},
+		error: function(){ alert("로그인 요청 중 오류가 발생했습니다."); }
 	});
-
 }
 function logout(){
 	$.ajax( {
@@ -165,10 +227,20 @@ function fnPwdClear(){
     <div class="login-box">
       <div class="login-wrap">
         <h1>AI 기반 디지털 헬스케어 서비스 플랫폼 실증</h1>
+
+        <!-- 사용자 회원가입 안내 (상단 강조) -->
+        <div class="w-100 mb-3 p-2" style="background:#eef5ff; border:1px solid #cfe2ff; border-radius:6px; text-align:center;">
+          <span style="color:#333; font-size:14px;">처음 방문하셨나요?</span>
+          <a href="/patient/register.do" class="btn btn-link p-0 ms-2" style="font-weight:700; font-size:15px;">사용자 회원가입 →</a>
+        </div>
+
         <div class="id-box w-100">
-          <h2>병원 관리자</h2>
-          <input name="userId" class="form-control" type="text" id="userId" placeholder="사용자ID" aria-label="사용자ID">
+          <h2>로그인</h2>
+          <input name="userId" class="form-control" type="text" id="userId" placeholder="아이디 또는 전화번호" aria-label="아이디 또는 전화번호">
           <input type="password" class="form-control mt-3" id="userPw" placeholder="비밀번호" onKeypress="hitEnterKey(event);">
+          <div class="mt-2" style="color:#666; font-size:12px; text-align:left;">
+            ※ 의료진은 <b>아이디</b>, 사용자는 <b>전화번호</b>로 로그인하세요. 시스템이 자동으로 구분합니다.
+          </div>
         </div>
 
         <!-- ID 저장 체크박스 -->
@@ -178,10 +250,10 @@ function fnPwdClear(){
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg w-100 mt-2" onclick="javascript:loginproc2();">로그인</button>
-       
+
         <div class="set-btn-box  w-100">
-          	<button type="button" class="btn btn-outline-dark" onclick="javascript:fnPwdClear();">비밀번호 초기화</button> 
-          	<button type="button" class="btn btn-outline-dark" onclick="javascript:fnPwdChange();">비밀번호 변경</button> 
+          	<button type="button" class="btn btn-outline-dark" onclick="javascript:fnPwdClear();">비밀번호 초기화</button>
+          	<button type="button" class="btn btn-outline-dark" onclick="javascript:fnPwdChange();">비밀번호 변경</button>
         </div>
       </div>
       <div class="img-wrap">

@@ -138,6 +138,36 @@ function ExcelDownLoad() {
 	  location.href =  CommonUtil.getContextPath() +  "/admin/PrintExcel.do" ;
 }
 
+// 선택된 환자의 i-Sens 혈당 데이터 수동 동기화 (마지막 측정시각 ~ 현재)
+function fnSyncBlood() {
+	var userUuid = $("#userUuid").val();
+	if (!userUuid) {
+		alert("먼저 환자 행을 클릭하여 선택하세요.");
+		return;
+	}
+	if (!confirm("선택한 환자의 i-Sens 혈당 데이터를 동기화하시겠습니까?\n(마지막 측정시각 이후 ~ 현재까지)")) return;
+
+	$.ajax({
+		type: "post",
+		url: CommonUtil.getContextPath() + "/syncPatientBlood.do",
+		data: JSON.stringify({ userUuid: userUuid }),
+		contentType: "application/json",
+		dataType: "json",
+		success: function(data) {
+			if (data.IsSucceed) {
+				alert(data.Message || ("동기화 완료: " + data.Data + " 건"));
+				fnSearch();
+			} else {
+				alert("동기화 실패: " + (data.Message || ""));
+			}
+		},
+		error: function(xhr, status, error) {
+			alert("동기화 요청 중 오류가 발생했습니다.");
+			console.error(status, error);
+		}
+	});
+}
+
 function fnDtlSearch(data){
    if(data == '' || data == null) return;
 
@@ -286,6 +316,7 @@ function modalClose(){
 			<input type="hidden" name="userCheck" id="userCheck" />
           </div>
           <div class="align-right">
+                  <button type="button" class="btn btn-outline-dark" onclick="fnSyncBlood();">혈당 동기화</button>
                   <button type="button" class="btn btn-outline-dark" onclick="ExcelDownLoad();">모니터링대상자출력</button>
           </div>
         </section>
