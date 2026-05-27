@@ -33,14 +33,43 @@ var userUuid = "${sessionScope.userUuid}";
 var userNm   = "${sessionScope.userNm}";
 
 $(function(){
-	// 페이지 진입 시: 토큰 확인 → 토큰 있으면 자동 동기화(조용히) → 차트/평균 갱신
+	// 페이지 진입 시: 토큰 확인
+	//  · 토큰 있음 → 자동 동기화(조용히) → 차트/평균 갱신
+	//  · 토큰 없음 → (세션당 1회) i-Sens OAuth 자동 redirect (sejong_app과 동일 동작)
+	//                · ?code= 가 붙어 돌아온 경우엔 콜백 페이지(/patient/isensCallback.do) 가 처리하므로 스킵
+	//                · sessionStorage 플래그로 거부 후 무한루프 방지
+	var urlParams = new URLSearchParams(window.location.search);
 	loadTokenStatus(function(hasToken){
 		if (hasToken) {
 			syncMyBlood(true);   // ← 자동 1회 호출 (alert/confirm 없음)
-		} else {
+			return;
+		}
+		// 토큰 없음 — OAuth 콜백으로 돌아온 경우엔 별도 처리 안 함
+		if (urlParams.get('code') != null) {
 			loadTodayBlood();
 			drawChart();
+			return;
 		}
+		// 세션당 1회만 자동 redirect (사용자가 거부 시 다음부턴 버튼만 노출)
+		if (!sessionStorage.getItem("isensAskShown")) {
+			sessionStorage.setItem("isensAskShown", "1");
+			alert(
+				"혈당을 보려면 케어센스 로그인이 한 번 필요합니다.\n\n" +
+				"처음에만 아래 순서대로 해 주세요.\n\n" +
+				"1) 스마트폰에 \"케어센스 에어\" 앱 설치\n" +
+				"2) 앱에서 회원가입\n" +
+				"    (카카오·구글·이메일 중 편한 방법)\n" +
+				"3) 앱에서 혈당기 등록\n" +
+				"4) 다음 화면에서 가입한 방법으로 로그인\n\n" +
+				"다음부터는 자동으로 혈당이 보입니다.\n" +
+				"잘 모르시면 가족이나 병원에 문의해 주세요."
+			);
+			connectISens();
+			return;
+		}
+		// 두 번째 진입부터는 빈 화면 + 연동 버튼만 노출
+		loadTodayBlood();
+		drawChart();
 	});
 });
 
