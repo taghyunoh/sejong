@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import egovframework.sejong.exer.model.ExerDTO;
 import egovframework.sejong.exer.service.ExerService;
-import egovframework.sejong.user.model.UserDTO;
 import egovframework.sejong.util.ResponseObject;
 
 
@@ -39,9 +38,9 @@ public class ExerController {
 	@ResponseBody
 	public ResponseObject updateExer(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response, Model model, @ModelAttribute("DTO") ExerDTO dto) throws Exception {
-		UserDTO user = (UserDTO) session.getAttribute("user");
-		if (user != null) {
-			dto.setUserUuid(user.getUserUuid());
+		String userUuid = (String) session.getAttribute("userUuid");
+		if (userUuid != null && !userUuid.isEmpty()) {
+			dto.setUserUuid(userUuid);
 		}
 		exerService.updateExer(dto);
 		ResponseObject result = new ResponseObject();
@@ -67,9 +66,9 @@ public class ExerController {
 	@ResponseBody
 	public ResponseObject getExerInfo(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response, Model model, @RequestBody HashMap<String,Object> reqMap) throws Exception {
-		UserDTO user = (UserDTO) session.getAttribute("user");
-		if (user != null) {
-			reqMap.put("userUuid", user.getUserUuid());
+		String userUuid = (String) session.getAttribute("userUuid");
+		if (userUuid != null && !userUuid.isEmpty()) {
+			reqMap.put("userUuid", userUuid);
 		}
 		List<HashMap<String,Object>> list = exerService.getExerInfo(reqMap);
 		ResponseObject result = new ResponseObject();

@@ -55,7 +55,17 @@
       예외는 web.xml 의 error-page → /common/error.jsp 로 처리됨.
     -->
 	
-	  <!-- tiles 설정 -->   
+	  <!-- 자체완결 JSP 직접 forward (tiles 거치지 않음). order=0 으로 가장 먼저 매칭.
+	         viewNames="raw/*" 패턴만 처리. 예: "raw/login/patient_register" → /WEB-INF/jsp/login/patient_register.jsp -->
+	  <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	      <property name="order" value="0" />
+	      <property name="prefix" value="/WEB-INF/jsp/" />
+	      <property name="suffix" value=".jsp" />
+	      <property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+	      <property name="viewNames" value="raw/*" />
+	  </bean>
+
+	  <!-- tiles 설정 -->
     <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
         <property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView" />
         <property name="order" value="1" />

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import egovframework.sejong.food.model.FoodDTO;
 import egovframework.sejong.food.service.FoodService;
-import egovframework.sejong.user.model.UserDTO;
 import egovframework.sejong.util.ResponseObject;
 
 
@@ -39,9 +38,10 @@ public class FoodController {
 	@ResponseBody
 	public ResponseObject updateFood(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response, Model model, @ModelAttribute("DTO") FoodDTO dto) throws Exception {
-		UserDTO user = (UserDTO) session.getAttribute("user");
-		if (user != null) {
-			dto.setUserUuid(user.getUserUuid());
+		// 세션에 저장된 사용자 UUID 사용 (unifiedLogin 에서 setAttribute("userUuid", ...))
+		String userUuid = (String) session.getAttribute("userUuid");
+		if (userUuid != null && !userUuid.isEmpty()) {
+			dto.setUserUuid(userUuid);
 		}
 		foodService.updateFood(dto);
 		ResponseObject result = new ResponseObject();
@@ -67,9 +67,9 @@ public class FoodController {
 	@ResponseBody
 	public ResponseObject getFoodInfo(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response, Model model, @RequestBody HashMap<String,Object> reqMap) throws Exception {
-		UserDTO user = (UserDTO) session.getAttribute("user");
-		if (user != null) {
-			reqMap.put("userUuid", user.getUserUuid());
+		String userUuid = (String) session.getAttribute("userUuid");
+		if (userUuid != null && !userUuid.isEmpty()) {
+			reqMap.put("userUuid", userUuid);
 		}
 		List<HashMap<String,Object>> list = foodService.getFoodInfo(reqMap);
 		ResponseObject result = new ResponseObject();
