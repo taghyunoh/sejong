@@ -55,15 +55,14 @@
       예외는 web.xml 의 error-page → /common/error.jsp 로 처리됨.
     -->
 	
-	  <!-- 자체완결 JSP 직접 forward (tiles 거치지 않음). order=0 으로 가장 먼저 매칭.
-	         viewNames="raw/*" 패턴만 처리. 예: "raw/login/patient_register" → /WEB-INF/jsp/login/patient_register.jsp -->
-	  <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-	      <property name="order" value="0" />
-	      <property name="prefix" value="/WEB-INF/jsp/" />
-	      <property name="suffix" value=".jsp" />
-	      <property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
-	      <property name="viewNames" value="raw/*" />
-	  </bean>
+	  <!--
+	    2026-05-27 정리: InternalResourceViewResolver 제거.
+	    원래 의도는 viewName "raw/..." 를 /WEB-INF/jsp/... 로 직접 forward 하는 것이었으나,
+	    InternalResourceViewResolver 는 prefix 에 viewName 을 그대로 붙여서
+	    /WEB-INF/jsp/raw/... 를 찾아 빈 화면이 됨.
+	    대신 tiles 의 ".raw/*/*", ".raw/*/*/*" 정의(template 에서 {1}/{2}/{3} 으로 직접 경로 지정)
+	    를 사용. 컨트롤러는 ".raw/main/patient/patient_main" 처럼 앞에 점 붙여 리턴.
+	  -->
 
 	  <!-- tiles 설정 -->
     <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">

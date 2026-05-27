@@ -51,7 +51,7 @@ public class UserController {
 			HttpSession session = request.getSession();
 			String userGb = (String) session.getAttribute("q_admin_yn");
 			if ("P".equals(userGb)) {
-				return "raw/main/patient/patient_main";
+				return ".raw/main/patient/patient_main";
 			}
 			return ".main/main";
 		}
@@ -158,7 +158,7 @@ public class UserController {
 		/** 환자 회원가입 페이지 — raw 단독 JSP (tiles wrap 없음, InternalResourceViewResolver 처리) */
 		@RequestMapping(value = "/patient/register.do")
 		public String patientRegisterPage() {
-			return "raw/login/patient_register";
+			return ".raw/login/patient_register";
 		}
 
 		/** 환자 로그인 처리 (전화번호 + 비밀번호) */
@@ -334,14 +334,14 @@ public class UserController {
 		@RequestMapping(value = "/patient/food.do")
 		public String patientFoodPage(HttpSession session) {
 			if (session.getAttribute("userUuid") == null) return "redirect:/login.do";
-			return "raw/main/patient/patient_food";
+			return ".raw/main/patient/patient_food";
 		}
 
 		/** 환자 운동 기록 화면 — raw 단독 JSP */
 		@RequestMapping(value = "/patient/exer.do")
 		public String patientExerPage(HttpSession session) {
 			if (session.getAttribute("userUuid") == null) return "redirect:/login.do";
-			return "raw/main/patient/patient_exer";
+			return ".raw/main/patient/patient_exer";
 		}
 
 		/* 사용자 비밀번호변경 화면 */

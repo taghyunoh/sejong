@@ -228,7 +228,7 @@ public class BloodController {
 		Object uuidObj = session.getAttribute("userUuid");
 		model.addAttribute("code", code == null ? "" : code);
 		model.addAttribute("hasSession", uuidObj != null);
-		return "raw/main/patient/isens_callback";
+		return ".raw/main/patient/isens_callback";
 	}
 
 	/** i-Sens 인가코드 → access_token 교환 후 T_BLDCON_MST 저장 (환자 세션 기반) */
