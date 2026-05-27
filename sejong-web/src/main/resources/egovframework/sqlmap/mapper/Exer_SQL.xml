@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sejong.exer.mapper.ExerMapper">
+
+	<!-- 운동 행 Insert/Update (UNIQUE: USER_UUID + EXER_DATE + EXER_STIME + EXER_NAME) -->
+	<insert id="updateExer" parameterType="ExerDTO">
+	    INSERT INTO T_EXER_TRAN
+	      (  USER_UUID
+	       , EXER_DATE
+	       , EXER_STIME
+	       , EXER_ETIME
+	       , EXER_NAME
+	       , EXER_INT
+	       , EXER_CNT
+	       , REG_DTTM
+	       , MOD_DTTM
+	      )
+	    VALUES
+	        (
+	          #{userUuid},
+	          DATE_FORMAT(STR_TO_DATE(#{exerDate}, '%Y-%m-%d'), '%Y%m%d'),
+	          #{exerStime},
+	          #{exerEtime},
+	          #{exerName},
+	          #{exerInt},
+	          #{exerCnt},
+	          NOW(),
+	          NOW()
+	        )
+	    ON DUPLICATE KEY UPDATE
+	        USER_UUID   = #{userUuid},
+	        EXER_DATE   = DATE_FORMAT(STR_TO_DATE(#{exerDate}, '%Y-%m-%d'), '%Y%m%d'),
+	        EXER_STIME  = #{exerStime},
+	        EXER_ETIME  = #{exerEtime},
+	        EXER_NAME   = #{exerName},
+	        EXER_INT    = #{exerInt},
+	        EXER_CNT    = #{exerCnt},
+	        MOD_DTTM    = NOW()
+	</insert>
+
+	<!-- 운동(자연키) 의 운동 행 조회 -->
+	<select id="getExerDTO" parameterType="map" resultType="ExerDTO">
+		SELECT
+			EXER_SEQ      AS exerSeq,
+			USER_UUID     AS userUuid,
+			EXER_DATE     AS exerDate,
+			EXER_STIME    AS exerStime,
+			EXER_ETIME    AS exerEtime,
+			EXER_NAME     AS exerName,
+			EXER_INT      AS exerInt,
+			EXER_CNT      AS exerCnt
+		FROM T_EXER_TRAN
+		WHERE USER_UUID  = #{userUuid}
+		  AND EXER_DATE  = #{exerDate}
+		  AND EXER_STIME = #{exerStime}
+		ORDER BY EXER_SEQ
+	</select>
+
+	<!-- 일자별 운동 요약 (운동 단위 = USER_UUID+EXER_DATE+EXER_STIME) -->
+	<select id="getExerInfo" parameterType="hashmap" resultType="hashmap">
+		SELECT
+			MIN(EXER_SEQ)                                        AS exerSeq,
+			USER_UUID                                             AS userUuid,
+			EXER_DATE                                             AS exerDate,
+			EXER_STIME                                            AS exerStime,
+			CONCAT(CASE WHEN HOUR(MAX(REG_DTTM)) <![CDATA[<]]> 12 THEN '오전' ELSE '오후' END,
+			       ' ', DATE_FORMAT(MAX(REG_DTTM), '%h:%i'))       AS regDtm,
+			GROUP_CONCAT(EXER_NAME SEPARATOR ', ')                AS exerName,
+			SUM(IFNULL(EXER_CNT,0))                               AS totalCnt,
+			COUNT(*)                                              AS rowCnt
+		FROM T_EXER_TRAN
+		WHERE USER_UUID = #{userUuid}
+		  AND EXER_DATE = #{exerDate}
+		GROUP BY USER_UUID, EXER_DATE, EXER_STIME
+		ORDER BY EXER_STIME
+	</select>
+
+	<!-- 운동(자연키) 전체 행 삭제 -->
+	<delete id="deleteExerData" parameterType="map">
+		DELETE
+		FROM T_EXER_TRAN
+		WHERE USER_UUID = #{userUuid}
+		  AND EXER_DATE = #{exerDate}
+		  AND EXER_STIME = #{exerStime}
+	</delete>
+</mapper>

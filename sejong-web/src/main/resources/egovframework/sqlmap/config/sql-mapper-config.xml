@@ -20,6 +20,7 @@
 		<typeAlias alias="UsermDTO"   type="egovframework.sejong.base.model.UsermDTO"/>
 
 		<typeAlias alias="FoodDTO"    type="egovframework.sejong.food.model.FoodDTO"/>
+		<typeAlias alias="ExerDTO"    type="egovframework.sejong.exer.model.ExerDTO"/>
 	</typeAliases>
 
 </configuration>
