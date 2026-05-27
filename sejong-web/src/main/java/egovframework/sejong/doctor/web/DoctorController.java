@@ -82,30 +82,7 @@ public class DoctorController {
 		public String tab(HttpServletRequest request, Model model) throws Exception {
 			return ".main/doctor/APME_01A_2";
 		} 
-		@RequestMapping(value = "/tab/tab1.do")
-		public String tab11(Model model) throws Exception {
-
-			return ".main/doctor/tab1";
-
-		} 
-		@RequestMapping(value = "/tab/tab2.do")
-		public String tab2(Model model) throws Exception {
-
-			return ".main/doctor/tab2";
-
-		} 
-		@RequestMapping(value = "/tab/tab3.do")
-		public String tab3(Model model) throws Exception {
-			
-			return ".main/doctor/tab3";
-
-		} 
-		@RequestMapping(value = "/tab/tab4.do")
-		public String tab4(Model model) throws Exception {
-			
-			return ".main/doctor/tab4";
-
-		} 
+		// 2026-05-27 정리: /tab/tab1~4.do 제거 (대상 JSP 없음, 호출처도 없음)
 
 		/*
 		 * 의사 정보 조회
@@ -286,16 +263,5 @@ public class DoctorController {
 			return ".main/doctor/APNO_01A_4";
 
 		}  
-		@RequestMapping(value = "/doctor/FAHR_00.do")
-		public String FAHR_00(HttpServletRequest request, Model model) throws Exception {
-
-			return ".main/doctor/FAHR_00";
-
-		}  
-		@RequestMapping(value = "/doctor/FAHR_01F_1.do")
-		public String FAHR_01F_1(HttpServletRequest request, Model model) throws Exception {
-
-			return ".main/doctor/FAHR_01F_1";
- 
-		} 
+		// 2026-05-27 정리: /doctor/FAHR_00.do, /doctor/FAHR_01F_1.do 제거 (JSP 삭제됨)
 }

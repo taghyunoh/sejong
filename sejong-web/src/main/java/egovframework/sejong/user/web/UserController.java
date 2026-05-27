@@ -63,30 +63,9 @@ public class UserController {
 	
 			return ".login/APLO_01";
 
-		}  
-		// test 메뉴
-		@RequestMapping(value = "/test/test.do")  // 두 경로를 모두 처리
-		public String testlogin(@ModelAttribute("DTO") UserDTO dto, HttpServletRequest request,ModelMap model) throws Exception {
+		}
+		// 2026-05-27 정리: /test/test.do, /test/pagetest.do 제거 (대상 JSP 삭제됨)
 
-			try { 
-			}catch(Exception ex) {
-				model.addAttribute("error_code", "10000"); 
-			}
-		
-			return ".main/admin/admin_test";
-
-		} 
-		@RequestMapping(value = "/test/pagetest.do")  // 두 경로를 모두 처리
-		public String pagetestlogin(@ModelAttribute("DTO") UserDTO dto, HttpServletRequest request,ModelMap model) throws Exception {
-
-			try { 
-			}catch(Exception ex) {
-				model.addAttribute("error_code", "10000"); 
-			}
-		
-			return ".main/admin/admin_page_test";
-
-		} 		
 		/* 사용자 로그인 처리 */
 		@RequestMapping(value="/user/loginAct.do", method = RequestMethod.POST)
 		public String UserLoginProcess(@ModelAttribute("DTO") UserDTO dto, HttpServletRequest request, Model model) throws Exception {

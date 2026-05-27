@@ -54,15 +54,7 @@ public class BloodController {
 	@Resource(name = "BloodService") // 서비스 선언
 	BloodService bloodService;
 	
-	@RequestMapping("/goBloodPage.do")
-	public String goSamplePage(HttpSession session) {
-		return ".main/doctor/FAHR_00";
-	}
-	
-	@RequestMapping("/goBloodPage2.do")
-	public String goBloodPage2(HttpSession session) {
-		return ".main/doctor/FAHR_01F_1";
-	}
+	// 2026-05-27 정리: /goBloodPage.do, /goBloodPage2.do 제거 (FAHR JSP 삭제됨)
 	
 	@RequestMapping(value = "/getAuth.do", method = RequestMethod.POST)	
 	public @ResponseBody Map<String, String> authorize(@RequestBody HashMap<String, Object> params) {
@@ -188,158 +180,14 @@ public class BloodController {
 
 	
 	
-	//creSampleData
-	@RequestMapping(value = "/creSampleData.do", method = RequestMethod.POST)
-	public @ResponseBody ResponseEntity<String> creSampleData(HttpSession session, @RequestBody HashMap<String, Object> params) {
-		System.out.println("연속 혈당 샘플 데이터 생성 test");
-	    System.out.println(params.get("accessToken"));
-	    
-	    String tokenUrl = "https://api.i-sens.com/v1/public/samples";
-
-        try {
-        
-            URL url = new URL(tokenUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            connection.setRequestProperty("Authorization", "Bearer " + params.get("accessToken"));
-            connection.setDoOutput(true);
-
-            int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
-
-            
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-    
-            System.out.println("create sample Data Response: " + response);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response.toString());
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating sample data: " + e.getMessage());
-        } 
-        
-	}	
+	// 2026-05-27 정리: /creSampleData.do 제거 (FAHR JSP에서만 호출, JSP 삭제됨)
 	
 	
-	@RequestMapping(value = "/getData.do", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getData(HttpSession session,@RequestParam String start, @RequestParam String end,  @RequestParam String accessToken , @RequestParam String goTokenUrl) {
-		System.out.println();
-		System.out.println("토큰검증 + 센서 데이터 받아오기test");
-		System.out.println("Start: " + start + ", End: " + end + ", AccessToken: " + accessToken);
-		System.out.println();
-		
-	    String tokenUrl = goTokenUrl;
-	    System.out.println("tokenUrl :" + tokenUrl);
-	    String query = String.format("start=%s&end=%s",start, end);
-	    
-	    
-	    
-        try {
-        
-            URL url = new URL(tokenUrl + "?" + query);
-            System.out.println("URL :" + url);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "Bearer " + accessToken);
-            
-            
-            int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
-
-            
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-    
-            System.out.println("Data Response: " + response.toString());
-
-            return ResponseEntity.ok(response.toString());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error occurred while requesting sensor data: " + e.getMessage());
-        } 
-        
-	}	
+	// 2026-05-27 정리: /getData.do 제거 (FAHR JSP에서만 호출, JSP 삭제됨)
 	
 	
 	
-	@RequestMapping(value = "/getBloodData.do", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getBloodData(HttpSession session,@RequestParam String start, @RequestParam String end, @RequestParam String accessToken , @RequestParam String goTokenUrl, @RequestParam String user_uuid) {
-		System.out.println();
-		System.out.println(" 혈당 데이터 받아오기 test");
-		System.out.println("Start: " + start + ", End: " + end + ", AccessToken: " + accessToken);
-		System.out.println("user_uuid :" + user_uuid);
-		System.out.println();
-		
-	    String tokenUrl = goTokenUrl;
-	    String query = String.format("start=%s&end=%s",start, end);
-	    
-	 
-	    
-        try {
-        
-            URL url = new URL(tokenUrl + "?" + query);
-            System.out.println("URL : "+ url);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "Bearer " + accessToken);
-
-           
-            int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
-
-            
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-    
-            System.out.println("Blood Data Response: " + response.toString());
-            
-            
-            String jsonResponse = response.toString();
-            Gson gson = new Gson();
-            JsonArray jsonArray = gson.fromJson(jsonResponse, JsonArray.class);
-            
-            List<BloodDTO> bloodDataList = new ArrayList<>();
-            for (JsonElement element : jsonArray) {
-                BloodDTO bloodData = gson.fromJson(element, BloodDTO.class);
-                bloodData.setUser_uuid(user_uuid); 
-                bloodDataList.add(bloodData); 
-                
-            }
-            bloodService.insertBloodData(bloodDataList);
-            System.out.println(bloodDataList.toString());
-           
-
-            return ResponseEntity.ok(response.toString());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error occurred while requesting sensor data: " + e.getMessage());
-        } 
-        
-	}		
+	// 2026-05-27 정리: /getBloodData.do 제거 (FAHR JSP에서만 호출, JSP 삭제됨)
 	//findUserToken
 //	@RequestMapping(value = "/getBloodUserData.do", method = RequestMethod.POST)	
 //	public @ResponseBody Map<String, Object> getBloodUserData(HttpSession session,@RequestBody HashMap<String, Object> params) {
@@ -357,8 +205,9 @@ public class BloodController {
 //	    return result;
 //	}
 	
-	//showBloodData
-	@RequestMapping(value = "/showBloodData.do", method = RequestMethod.POST)	
+	// 2026-05-27 정리: /showBloodData.do 제거 (FAHR JSP 삭제됨)
+	/*
+	@RequestMapping(value = "/showBloodData.do", method = RequestMethod.POST)
 	public @ResponseBody  Map<String, Object> showBloodData(Model model, @RequestBody HashMap<String, Object> params) {
 	    
 	    Map<String, Object> map = new HashMap<>();
@@ -393,8 +242,10 @@ public class BloodController {
         return result;
 	}
 	
-	//getAvgFastingBlood
-	@RequestMapping(value = "/getAvgFastingBlood.do", method = RequestMethod.POST)	
+	*/
+	// 2026-05-27 정리: /getAvgFastingBlood.do 제거 (FAHR JSP 삭제됨)
+	/*
+	@RequestMapping(value = "/getAvgFastingBlood.do", method = RequestMethod.POST)
 	public @ResponseBody ResponseObject getAvgFastingBlood(@RequestBody HashMap<String, Object> params) {
 	    //System.out.println("공복 혈당 가져오기 ");
 	    ResponseObject json = new ResponseObject();
@@ -415,9 +266,8 @@ public class BloodController {
 	
 	    return json;
 	}
-	
-	
-	
+	*/
+
 	//getBloodChartData
 	@RequestMapping(value = "/getBloodChartData.do", method = RequestMethod.POST)	
 	public @ResponseBody List<Map<String, Object>> getBloodChartData(@RequestBody HashMap<String, Object> params) {

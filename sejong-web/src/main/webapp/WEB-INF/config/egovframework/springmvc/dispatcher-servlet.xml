@@ -49,21 +49,11 @@
         <property name="paramName" value="language" />
     </bean>
 
-    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
-        <property name="defaultErrorView" value="cmmn/egovError"/>
-        <property name="exceptionMappings">
-            <props>
-                <prop key="org.springframework.dao.DataAccessException">cmmn/dataAccessFailure</prop>
-                <prop key="org.springframework.transaction.TransactionException">cmmn/transactionFailure</prop>
-                <prop key="org.egovframe.rte.fdl.cmmn.exception.EgovBizException">cmmn/egovError</prop>
-                <prop key="org.springframework.security.AccessDeniedException">cmmn/egovError</prop>
-            </props>
-        </property>
-    </bean>
-
-    <!-- <bean class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="1"
-	    p:viewClass="org.springframework.web.servlet.view.JstlView"
-	    p:prefix="/WEB-INF/jsp/egovframework/example/" p:suffix=".jsp"/> -->
+    <!--
+      2026-05-27 정리: SimpleMappingExceptionResolver 제거.
+      매핑된 뷰(cmmn/egovError 등)가 실재하지 않아 동작하지 않았음.
+      예외는 web.xml 의 error-page → /common/error.jsp 로 처리됨.
+    -->
 	
 	  <!-- tiles 설정 -->   
     <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
@@ -79,5 +69,5 @@
     </bean>
     <!--/tiles  -->
 
-    <mvc:view-controller path="/cmmn/validator.do" view-name="cmmn/validator"/>
+    <!-- 2026-05-27 정리: /cmmn/validator.do view-controller 제거 (대상 뷰 없음) -->
 </beans>
