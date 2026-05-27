@@ -43,7 +43,6 @@
   font-size: 13px;
   line-height: 1.2;
 }
-
 /* 인풋(날짜/시간/텍스트/숫자) 크기 축소 */
 #foodForm input[type="date"],
 #foodForm input[type="time"],
