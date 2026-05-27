@@ -27,6 +27,33 @@
   .row-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .btn-link-tile { background:#0d6efd; color:#fff; text-align:center; padding:18px; border-radius:8px; cursor:pointer; }
   .btn-link-tile:hover { background:#0b5ed7; }
+
+  /* i-Sens 안내 모달 — native alert 의 스크롤 문제를 피하기 위한 커스텀 다이얼로그 */
+  .isens-guide-backdrop {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .isens-guide-box {
+    background:#fff; border-radius:12px;
+    padding: 28px 32px;
+    max-width: 560px; width: 92%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+  .isens-guide-box h4 { margin:0 0 14px 0; color:#0d6efd; font-weight:700; font-size:20px; }
+  .isens-guide-box p  { margin:0 0 10px 0; font-size:15px; line-height:1.5; color:#333; }
+  .isens-guide-box ol { margin:8px 0 14px 22px; padding:0; font-size:15px; line-height:1.8; color:#222; }
+  .isens-guide-box ol li { margin-bottom:2px; }
+  .isens-guide-note { font-size:14px; color:#666; margin-top:10px; }
+  .isens-guide-actions { text-align:right; margin-top:18px; }
+  .isens-guide-btn {
+    background:#0d6efd; color:#fff; border:0;
+    padding:10px 28px; border-radius:8px;
+    font-size:15px; cursor:pointer;
+  }
+  .isens-guide-btn:hover { background:#0b5ed7; }
 </style>
 <script type="text/javaScript">
 var userUuid = "${sessionScope.userUuid}";
@@ -53,18 +80,7 @@ $(function(){
 		// 세션당 1회만 자동 redirect (사용자가 거부 시 다음부턴 버튼만 노출)
 		if (!sessionStorage.getItem("isensAskShown")) {
 			sessionStorage.setItem("isensAskShown", "1");
-			alert(
-				"혈당을 보려면 케어센스 로그인이 한 번 필요합니다.\n\n" +
-				"처음에만 아래 순서대로 해 주세요.\n\n" +
-				"1) 스마트폰에 \"케어센스 에어\" 앱 설치\n" +
-				"2) 앱에서 회원가입\n" +
-				"    (카카오·구글·이메일 중 편한 방법)\n" +
-				"3) 앱에서 혈당기 등록\n" +
-				"4) 다음 화면에서 가입한 방법으로 로그인\n\n" +
-				"다음부터는 자동으로 혈당이 보입니다.\n" +
-				"잘 모르시면 가족이나 병원에 문의해 주세요."
-			);
-			connectISens();
+			showIsensGuide(function(){ connectISens(); });
 			return;
 		}
 		// 두 번째 진입부터는 빈 화면 + 연동 버튼만 노출
@@ -213,6 +229,16 @@ function logout(){
 }
 function goFood(){ location.href = CommonUtil.getContextPath() + "/patient/food.do"; }
 function goExer(){ location.href = CommonUtil.getContextPath() + "/patient/exer.do"; }
+
+// 케어센스 안내 모달 — native alert 의 스크롤 문제 회피용
+function showIsensGuide(onConfirm){
+	var $bd = $("#isensGuideBackdrop");
+	$bd.css("display","flex");
+	$("#isensGuideOk").off("click").one("click", function(){
+		$bd.css("display","none");
+		if (typeof onConfirm === "function") onConfirm();
+	});
+}
 </script>
 </head>
 <body>
@@ -255,6 +281,26 @@ function goExer(){ location.href = CommonUtil.getContextPath() + "/patient/exer.
 		<div class="btn-link-tile" onclick="goFood();">🍱 식사 기록</div>
 		<div class="btn-link-tile" onclick="goExer();">🏃 운동 기록</div>
 		<div class="btn-link-tile" onclick="syncMyBlood(false);">🔄 혈당 가져오기</div>
+	</div>
+</div>
+
+<!-- 케어센스 안내 모달 (native alert 대체) -->
+<div id="isensGuideBackdrop" class="isens-guide-backdrop">
+	<div class="isens-guide-box">
+		<h4>케어센스 로그인 안내</h4>
+		<p>혈당을 보려면 케어센스 로그인이 한 번 필요합니다.</p>
+		<p style="color:#555;">처음에만 아래 순서대로 해 주세요.</p>
+		<ol>
+			<li>스마트폰에 "케어센스 에어" 앱 설치</li>
+			<li>앱에서 회원가입 <span style="color:#888;font-size:13px;">(카카오·구글·이메일 중 편한 방법)</span></li>
+			<li>앱에서 혈당기 등록</li>
+			<li>다음 화면에서 가입한 방법으로 로그인</li>
+		</ol>
+		<p class="isens-guide-note">다음부터는 자동으로 혈당이 보입니다.</p>
+		<p class="isens-guide-note">잘 모르시면 가족이나 병원에 문의해 주세요.</p>
+		<div class="isens-guide-actions">
+			<button id="isensGuideOk" type="button" class="isens-guide-btn">확인</button>
+		</div>
 	</div>
 </div>
 </body>
