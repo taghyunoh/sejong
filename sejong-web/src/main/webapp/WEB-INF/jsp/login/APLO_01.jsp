@@ -21,14 +21,40 @@
 <script type="text/javascript" src='/js/jqgrid_common.js'></script> 
 <script type="text/javascript" src='/js/common.js'></script> 
 <title>로그인</title>
-<script type="text/javaScript"> 
+<script type="text/javaScript">
 /*  Main Grid  *//*서브그리드 필요*/
-$(document).ready(function(){ 
-	$("#user_id2").focus();
+
+// ID 저장 키 (localStorage)
+var SAVED_USER_ID_KEY = "sejong_saved_user_id";
+
+$(document).ready(function(){
+	// 저장된 ID 복원
+	try {
+		var savedId = localStorage.getItem(SAVED_USER_ID_KEY);
+		if (savedId) {
+			$("#user_id").val(savedId);
+			$("#save_id").prop("checked", true);
+			$("#user_pw").focus();   // ID 자동입력 → 비밀번호 포커스
+		} else {
+			$("#user_id").focus();
+		}
+	} catch (e) {
+		// localStorage 미지원/차단 시 무시
+		$("#user_id").focus();
+	}
 });
- 
+
+// ID 저장 체크박스 처리 (체크 해제 즉시 저장값 삭제)
+function fnSaveIdToggle(){
+	try {
+		if (!$("#save_id").is(":checked")) {
+			localStorage.removeItem(SAVED_USER_ID_KEY);
+		}
+	} catch (e) {}
+}
+
 function loginproc2(){
-	 
+
 	if( $("#user_id").val() == ""){
 		alert("사용자 ID를 입력하세요.!");
 		$("#user_id").focus();
@@ -39,36 +65,44 @@ function loginproc2(){
 		return;
 	}
 	//location.href="/com/main.do" ;
-	
+
 	$.ajax( {
 		type : "post",
 	//	CommonUtil.callAjax(CommonUtil.getContextPath() + "/user/loginAct.do", "POST", formData, function(response) {
 		url : CommonUtil.getContextPath() + "/user/loginAct.do",
-		data : {user_id : $("#user_id").val(), 
+		data : {user_id : $("#user_id").val(),
 			    user_pw : $("#user_pw").val()},
 		dataType : "json",
-		success : function(data) {   
-			
+		success : function(data) {
+
 			if(data.error_code != "00000"){
-				if(data.error_code == "20000"){ 
+				if(data.error_code == "20000"){
 					alert(data.error_msg);
 					$("#user_id").focus();
-				}else if(data.error_code == "10000"){   //비밀번호 초기화 
+				}else if(data.error_code == "10000"){   //비밀번호 초기화
 					alert(data.error_msg);
 					fnPwdChange();
-				}	
-				else{  
+				}
+				else{
 					alert(data.error_msg);
 					$("#user_id").focus();
 				}
 			}else{
+				// ID 저장 처리 (로그인 성공 후에만 저장 → 잘못된 ID 입력은 보존하지 않음)
+				try {
+					if ($("#save_id").is(":checked")) {
+						localStorage.setItem(SAVED_USER_ID_KEY, $("#user_id").val());
+					} else {
+						localStorage.removeItem(SAVED_USER_ID_KEY);
+					}
+				} catch (e) {}
 				//메인페이지로 이동
-				location.href= CommonUtil.getContextPath() + "/main.do" 
+				location.href= CommonUtil.getContextPath() + "/main.do"
 			}
-		} 
-	//  )};		    
+		}
+	//  )};
 	});
- 
+
 }
 function logout(){
 	$.ajax( {
@@ -136,7 +170,13 @@ function fnPwdClear(){
           <input name="user_id" class="form-control" type="text" id="user_id" placeholder="사용자ID" aria-label="사용자ID">
           <input type="password" class="form-control mt-3" id="user_pw" placeholder="비밀번호" onKeypress="hitEnterKey(event);">
         </div>
-        
+
+        <!-- ID 저장 체크박스 -->
+        <div class="form-check mt-2 w-100" style="text-align:left;">
+          <input class="form-check-input" type="checkbox" id="save_id" onchange="fnSaveIdToggle();">
+          <label class="form-check-label" for="save_id">아이디 저장</label>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-lg w-100 mt-2" onclick="javascript:loginproc2();">로그인</button>
        
         <div class="set-btn-box  w-100">
