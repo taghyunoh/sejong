@@ -23,11 +23,13 @@
 var userUuid = "${sessionScope.userUuid}";
 $(function(){
 	var t = new Date();
-	$("#eatDate").val(t.toISOString().substring(0,10));
+	$("#eatDate").val(localDate(t));   // ← UTC(toISOString) 대신 로컬 날짜 사용
 	$("#eatStime").val(pad(t.getHours())+pad(t.getMinutes())+"00");
 	loadFoodList();
 });
 function pad(n){ return (n<10?'0':'')+n; }
+// 로컬 타임존 기준 YYYY-MM-DD (toISOString 은 UTC 라 한국 오전 시간대에 전날로 밀림)
+function localDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 
 function saveFood(){
 	var dto = {
