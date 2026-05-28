@@ -22,13 +22,16 @@
   #login .login-box {
     display: flex !important;
     align-items: stretch !important;
+    height: 520px !important;       /* login.css 의 400 → 520 (전체 박스 살짝 더 크게) */
+    min-width: 880px;                /* 좌측 폼+우측 이미지가 여유있게 들어가도록 최소폭 확보 */
   }
   #login .login-wrap {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     justify-content: center;       /* 컨텐츠를 박스 세로 중앙에 위치 */
-    padding: 14px 24px !important; /* 좌우 32→24, 위아래 24→14 (약간 좁히고 압축) */
+    padding: 30px 22px !important; /* 좌우 18→22 (살짝 여유), 위아래 22→30 (상하 더 시원하게) */
+    margin: 0 !important;           /* login.css 의 margin:0 50px 좌우 50px 빈공간 제거 */
     box-sizing: border-box;
     overflow: hidden;               /* 박스 밖으로 절대 안 나가게 */
   }
@@ -37,62 +40,67 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 8px;                  /* 이미지 좌우 살짝 여유 — 박스 가장자리에 붙지 않게 */
   }
   #login .img-wrap img {
     max-height: 100%;
     height: auto;
+    max-width: 100%;                 /* 박스가 커져도 비율 유지하며 함께 커지도록 */
   }
 
-  /* 모든 컨텐츠 강하게 압축 */
+  /* 박스 520px 에 맞춰 내부 컨텐츠 균형 — 충분한 간격으로 안정감 있게 */
   #login .login-wrap h1 {
-    font-size: 16px !important;
-    line-height: 1.25;
-    margin: 0 0 8px 0;
+    font-size: 19px !important;
+    line-height: 1.3;
+    margin: 0 0 16px 0;
     color: #1976d2;
     font-weight: 700;
     text-align: center;
   }
   #login .login-wrap .mb-3 {         /* "처음 방문하셨나요?" 배너 */
-    margin-bottom: 8px !important;
-    padding: 5px !important;
-    font-size: 13px;
-  }
-  #login .login-wrap .id-box {
-    margin-top: 2px;
-  }
-  #login .login-wrap .id-box h2 {    /* "로그인" 소제목 */
-    font-size: 14px !important;
-    margin: 4px 0 6px 0;
-  }
-  #login .login-wrap input.form-control {
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font-size: 13px;
-    margin-top: 4px !important;
-  }
-  #login .login-wrap .id-box > div[style*="font-size:12px"] {  /* 안내문구 (※ 당구장) */
-    margin-top: 6px !important;
-    font-size: 13px !important;
-    line-height: 1.4;
-  }
-  #login .login-wrap .form-check {   /* 아이디 저장 — 살짝 아래로 */
-    margin-top: 14px !important;
-    margin-bottom: 2px;
-    font-size: 13px;
-  }
-  #login .login-wrap .btn-primary.btn-lg {  /* 로그인 버튼 — 위로 당김 */
-    padding-top: 7px;
-    padding-bottom: 7px;
-    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    padding: 9px !important;
     font-size: 14px;
   }
-  #login .login-wrap .set-btn-box {  /* 비밀번호 초기화/변경 — 위로 당김 */
-    margin-top: 3px;
+  #login .login-wrap .id-box {
+    margin-top: 4px;
+  }
+  #login .login-wrap .id-box h2 {    /* "로그인" 소제목 */
+    font-size: 16px !important;
+    margin: 6px 0 10px 0;
+  }
+  #login .login-wrap input.form-control {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 14px;
+    margin-top: 8px !important;
+  }
+  #login .login-wrap .id-box > div[style*="font-size:12px"] {  /* 안내문구 (※) */
+    margin-top: 10px !important;
+    font-size: 13px !important;
+    line-height: 1.5;
+  }
+  #login .login-wrap .form-check {   /* 아이디 저장 */
+    margin-top: 18px !important;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  #login .login-wrap .btn-primary.btn-lg {  /* 로그인 버튼 — 큼직하게 */
+    padding-top: 13px;
+    padding-bottom: 13px;
+    margin-top: 10px !important;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #login .login-wrap .set-btn-box {  /* 비밀번호 초기화/변경 — 두 버튼이 가로폭 꽉 채우게 */
+    margin-top: 14px;
+    gap: 12px;
   }
   #login .login-wrap .set-btn-box .btn {
-    padding-top: 4px;
-    padding-bottom: 4px;
-    font-size: 12px;
+    flex: 1 1 0;        /* 가용 공간 균등 분할 — 두 버튼이 함께 폭 확장 */
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 13px;
   }
 </style>
 <!-- 부트스트랩 js -->
