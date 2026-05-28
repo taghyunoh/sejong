@@ -145,6 +145,7 @@ $(function(){
 		$("#chk_all").prop("checked", all);
 	});
 });
+
 </script>
 </head>
 <body>
