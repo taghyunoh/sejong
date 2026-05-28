@@ -21,6 +21,8 @@
 
 		<typeAlias alias="FoodDTO"    type="egovframework.sejong.food.model.FoodDTO"/>
 		<typeAlias alias="ExerDTO"    type="egovframework.sejong.exer.model.ExerDTO"/>
+		<typeAlias alias="SjgnDTO"    type="egovframework.sejong.user.model.SjgnDTO"/>
+		<typeAlias alias="PersignDTO" type="egovframework.sejong.user.model.PersignDTO"/>
 	</typeAliases>
 
 </configuration>

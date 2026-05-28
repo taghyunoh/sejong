@@ -1,6 +1,7 @@
 package egovframework.sejong.user.web;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -10,7 +11,6 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import egovframework.sejong.admin.model.PatientDTO;
 import egovframework.sejong.admin.service.AdminService;
+import egovframework.sejong.user.model.SjgnDTO;
 import egovframework.sejong.user.model.UserDTO;
 import egovframework.sejong.user.service.UserService;
 import egovframework.util.EgovFileScrty;
@@ -199,7 +200,21 @@ public class UserController {
 			}
 		}
 
-		/** 환자 회원가입 처리 */
+		/**
+		 * 환자 회원가입 처리.
+		 *
+		 * 동작:
+		 *   1) 입력 검증 & 전화번호 중복 체크
+		 *   2) 비밀번호 해시 (salt = phone)
+		 *   3) T_USER_TRAN INSERT — USER_UUID 는 DB 의 UUID() 로 생성
+		 *   4) PHONE 으로 방금 만든 user 재조회 → USER_UUID 획득
+		 *   5) T_PERSIGN_TRAN 에 동의이력 3건 — best-effort
+		 *      ※ T_SIGN_MST/T_PERSIGN_TRAN 이 아직 없거나 비어있어도 가입 자체는 성공.
+		 *      ※ 향후 테이블/데이터가 준비되면 자동으로 INSERT 시작.
+		 *
+		 * @Transactional 을 의도적으로 붙이지 않음 — 가입(T_USER_TRAN) 과 동의이력(T_PERSIGN_TRAN) 을
+		 *                분리해서 약관 테이블 미설정 시에도 가입 자체는 막히지 않게 함.
+		 */
 		@RequestMapping(value = "/patient/registerAct.do", method = RequestMethod.POST)
 		@ResponseBody
 		public ResponseObject patientRegisterAct(@RequestBody PatientDTO dto, HttpServletRequest request) throws Exception {
@@ -219,6 +234,22 @@ public class UserController {
 				String encPw = EgovFileScrty.encryptPassword(dto.getUserPw(), dto.getPhone());
 				dto.setUserPw(encPw);
 				adminSvc.patientRegister(dto);
+
+				// 가입 직후 PHONE 으로 USER_UUID 재조회 (UUID() 는 DB 자동생성)
+				PatientDTO lookup = new PatientDTO();
+				lookup.setPhone(dto.getPhone());
+				PatientDTO joined = adminSvc.patientLoginCheck(lookup);
+
+				// 약관 동의이력 저장 — best-effort. 테이블 미설정/데이터 없음에 관대.
+				if (joined != null && joined.getUserUuid() != null) {
+					try {
+						svc.saveAllPatientAgreements(joined.getUserUuid(), joined.getUserUuid());
+					} catch (Exception consentEx) {
+						log.warn("동의이력 저장 실패 — 가입은 정상 진행 (T_SIGN_MST/T_PERSIGN_TRAN 미설정 가능): "
+								+ consentEx.getMessage());
+					}
+				}
+
 				res.IsSucceed = true;
 				res.Message = "회원가입이 완료되었습니다. 로그인 해주세요.";
 				return res;
@@ -238,6 +269,36 @@ public class UserController {
 			int n = adminSvc.patientExistsByPhone(dto);
 			res.IsSucceed = (n == 0);
 			res.Data = n;
+			return res;
+		}
+
+		/**
+		 * 약관(개인정보동의/이용약관/고유식별정보) 본문 조회 — T_SIGN_MST
+		 *
+		 * SEJONG_APP 의 /getSignList.do 와 동일한 시그니처/응답 구조.
+		 * 환자 회원가입 페이지(patient_register.jsp) 의 "약관 보기" 에서 호출.
+		 *
+		 * 요청  : { termsGb: 1|2|3 }
+		 *   - 1 = 개인정보 수집·이용동의
+		 *   - 2 = 고유식별정보 처리동의
+		 *   - 3 = 서비스 이용약관
+		 * 응답  : { IsSucceed: true, Data: List<SjgnDTO> }
+		 */
+		@RequestMapping(value = "/getSignList.do", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseObject getSignList(@RequestBody Map<String, Object> map) throws Exception {
+			ResponseObject res = new ResponseObject();
+			try {
+				List<SjgnDTO> list = svc.getSignList(map);
+				res.IsSucceed = true;
+				res.Data = list;
+			} catch (Exception ex) {
+				// T_SIGN_MST 가 아직 없거나 SQL 오류 시에도 폼을 막지 않도록 빈 목록으로 정상 응답.
+				// 클라이언트는 "약관이 준비 중입니다." 안내만 표시.
+				log.warn("getSignList — 약관 마스터 조회 실패 (테이블 미설정 가능): " + ex.getMessage());
+				res.IsSucceed = true;
+				res.Data = new java.util.ArrayList<SjgnDTO>();
+			}
 			return res;
 		}
 
