@@ -100,7 +100,7 @@
     flex: 1 1 0;        /* 가용 공간 균등 분할 — 두 버튼이 함께 폭 확장 */
     padding-top: 9px;
     padding-bottom: 9px;
-    font-size: 13px;
+    font-size: 16px;
   }
 </style>
 <!-- 부트스트랩 js -->
@@ -237,9 +237,9 @@ function fnPwdClear(){
         <h1>AI 기반 디지털 헬스케어 서비스 플랫폼 실증</h1>
 
         <!-- 사용자 회원가입 안내 (상단 강조) -->
-        <div class="w-100 mb-3 p-2" style="background:#eef5ff; border:1px solid #cfe2ff; border-radius:6px; text-align:center;">
-          <span style="color:#333; font-size:14px;">처음 방문하셨나요?</span>
-          <a href="/patient/register.do" class="btn btn-link p-0 ms-2" style="font-weight:700; font-size:15px;">사용자 회원가입 →</a>
+        <div class="w-100 mb-3 p-2" style="background:#eef5ff; border:1px solid #cfe2ff; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span style="color:#333; font-size:16px; line-height:1;">처음 방문하셨나요?</span>
+          <a href="/patient/register.do" class="btn btn-link p-0" style="font-weight:700; font-size:16px; line-height:1; vertical-align:baseline;">사용자 회원가입 →</a>
         </div>
 
         <div class="id-box w-100">

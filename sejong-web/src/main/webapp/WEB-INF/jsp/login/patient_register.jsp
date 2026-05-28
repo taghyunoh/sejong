@@ -27,8 +27,8 @@
   .agree-box h6 { margin:0 0 8px 0; font-size:14px; color:#495057; font-weight:600; }
   .agree-item { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #e9ecef; }
   .agree-item:last-child { border-bottom:0; }
-  .agree-item .agree-link { color:#0d6efd; text-decoration:underline; cursor:pointer; font-size:13px; flex:1; }
-  .agree-item .agree-link .req { color:#dc3545; margin-right:4px; font-weight:700; }
+  .agree-item .agree-link { color:#0d6efd; text-decoration:underline; cursor:pointer; font-size:15px; flex:1; }
+  .agree-item .agree-link .req { color:#dc3545; margin-right:4px; font-weight:700; font-size:15px; }
   .agree-item input[type=checkbox] { width:18px; height:18px; margin:0 0 0 8px; }
   .agree-all { padding:8px 0; margin-bottom:6px; border-bottom:1px solid #ced4da; }
   .agree-all label { font-weight:700; color:#212529; cursor:pointer; }
