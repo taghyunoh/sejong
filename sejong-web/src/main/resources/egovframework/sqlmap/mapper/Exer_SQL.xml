@@ -63,6 +63,7 @@
 			USER_UUID                                             AS userUuid,
 			EXER_DATE                                             AS exerDate,
 			EXER_STIME                                            AS exerStime,
+			MAX(EXER_ETIME)                                       AS exerEtime,
 			CONCAT(CASE WHEN HOUR(MAX(REG_DTTM)) <![CDATA[<]]> 12 THEN '오전' ELSE '오후' END,
 			       ' ', DATE_FORMAT(MAX(REG_DTTM), '%h:%i'))       AS regDtm,
 			GROUP_CONCAT(EXER_NAME SEPARATOR ', ')                AS exerName,
@@ -70,9 +71,11 @@
 			COUNT(*)                                              AS rowCnt
 		FROM T_EXER_TRAN
 		WHERE USER_UUID = #{userUuid}
+		<if test="exerDate != null and exerDate != ''">
 		  AND EXER_DATE = #{exerDate}
+		</if>
 		GROUP BY USER_UUID, EXER_DATE, EXER_STIME
-		ORDER BY EXER_STIME
+		ORDER BY EXER_DATE DESC, EXER_STIME DESC
 	</select>
 
 	<!-- 운동(자연키) 전체 행 삭제 -->

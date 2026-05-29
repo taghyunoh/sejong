@@ -71,15 +71,18 @@
 			USER_UUID                                            AS userUuid,
 			EAT_DATE                                             AS eatDate,
 			EAT_STIME                                            AS eatStime,
+			MAX(EAT_ETIME)                                       AS eatEtime,
 			CONCAT(CASE WHEN HOUR(MAX(REG_DTTM)) <![CDATA[<]]> 12 THEN '오전' ELSE '오후' END,
 			       ' ', DATE_FORMAT(MAX(REG_DTTM), '%h:%i'))      AS regDtm,
 			GROUP_CONCAT(FOOD_NAME SEPARATOR ', ')               AS foodName,
 			COUNT(*)                                             AS foodCnt
 		FROM T_FOOD_TRAN
 		WHERE USER_UUID = #{userUuid}
-		  AND EAT_DATE  = #{eatDate}
+		<if test="eatDate != null and eatDate != ''">
+		  AND EAT_DATE = #{eatDate}
+		</if>
 		GROUP BY USER_UUID, EAT_DATE, EAT_STIME
-		ORDER BY EAT_STIME
+		ORDER BY EAT_DATE DESC, EAT_STIME DESC
 	</select>
 
 	<!-- 식사(자연키) 전체 행 삭제 -->

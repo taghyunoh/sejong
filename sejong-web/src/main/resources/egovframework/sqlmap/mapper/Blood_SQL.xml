@@ -141,6 +141,7 @@
 	<select id="getBloodChartData" parameterType="String" resultType="map">
       SELECT UPT_VALUE as UPT
            , CGM_DTM as DTM
+           , DATE_FORMAT(CGM_DTM, '%H:%i') as HM
           FROM T_BLDINF_TRAN
        WHERE USER_UUID = #{userId}
        	 AND IFNULL(CAST(UPT_VALUE AS UNSIGNED),0) > 0
@@ -209,8 +210,8 @@
     			) AS FASTING
 		  FROM T_BLDINF_TRAN
 		 WHERE USER_UUID = #{userId}
-			AND CGM_DTM >= DATE(#{start})
-		    AND CGM_DTM < DATE(#{end})+'23:59:59'
+			AND CGM_DTM >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+		    AND CGM_DTM <= STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
 	]]>
 	</select>
 
@@ -340,8 +341,9 @@
 		WHERE a.USER_UUID = #{userId}
 		  AND DATE(a.CGM_DTM) = CURDATE()
 		  AND b.EAT_DATE = DATE_FORMAT(CURDATE(), '%Y%m%d')
-		  AND TIME(a.CGM_DTM) BETWEEN TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'))
-		      AND TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 2 HOUR));
+		  AND TIME(a.CGM_DTM) BETWEEN
+		      TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 90  MINUTE))
+		  AND TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 150 MINUTE));
 	]]>
 	</select>
 
@@ -426,8 +428,8 @@
 		    COALESCE(ROUND(AVG(a.UPT_VALUE), 1), 0) AS avgBlood
 		    FROM T_BLDINF_TRAN a
 		    WHERE a.USER_UUID = #{userId}
-		    AND a.CGM_DTM >= DATE(#{start})
-	        AND a.CGM_DTM < DATE(#{end})+'23:59:59'
+		    AND a.CGM_DTM >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+	        AND a.CGM_DTM <= STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
 	        and ifnull(a.UPT_VALUE,0) > 0
 			group by date , date2
 
