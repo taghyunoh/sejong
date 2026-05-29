@@ -196,13 +196,34 @@ public class BloodController {
 		Object uuidObj = session.getAttribute("userUuid");
 		if (uuidObj == null) { json.IsSucceed = false; return json; }
 		String uuid = uuidObj.toString();
+
+		// 오늘 전체 평균 (공복 시간대/식사 데이터 없을 때 공통 대체값)
+		Map<String,Object> avg = bloodService.getTodayAvgBlood(uuid);
+		Object avgVal = avg != null ? avg.get("avgBlood") : 0;
+
+		// 공복 평균: 새벽 03:00~06:00. 해당 시간 데이터 없으면(0) → 전체 평균
+		Map<String,Object> fast = bloodService.getTodayFastBlood(uuid);
+		Object fastVal = fast != null ? fast.get("avgBlood") : null;
+		if (toDouble(fastVal) <= 0) fastVal = avgVal;
+
+		// 식후 평균: 식후 90~150분. 식사 없거나 해당 CGM 없으면(0) → 전체 평균
 		Map<String,Object> meal = bloodService.getTodayMealBlood(uuid);
+		Object mealVal = meal != null ? meal.get("avgBlood") : null;
+		if (toDouble(mealVal) <= 0) mealVal = avgVal;
+
 		Map<String,Object> data = new HashMap<>();
-		data.put("mealBlod", meal != null ? meal.get("avgBlood") : 0);
-		data.put("fastBlod", 0); // 공복 평균은 별도 SQL 미구현시 0 반환
+		data.put("fastBlod", fastVal);
+		data.put("mealBlod", mealVal);
 		json.Data = data;
 		json.IsSucceed = true;
 		return json;
+	}
+
+	/** avgBlood(BigDecimal/String/Number) → double (파싱 실패 시 0) */
+	private double toDouble(Object o) {
+		if (o == null) return 0;
+		try { return Double.parseDouble(o.toString()); }
+		catch (Exception e) { return 0; }
 	}
 
 	/** 환자(본인) 자가 동기화 — 세션의 userUuid 사용 */

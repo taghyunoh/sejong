@@ -23,6 +23,8 @@ public interface BloodService {
 	int tokenYn(String userUuid);
 	List<Map<String, Object>> getTodayBlood(String userUuid);
 	Map<String, Object> getTodayMealBlood(String userId);
+	Map<String, Object> getTodayFastBlood(String userId);
+	Map<String, Object> getTodayAvgBlood(String userId);
 
 	List<Map<String, Object>> showBloodData(Map<String, Object> map);
 

@@ -17,6 +17,7 @@
 <script type="text/javascript" src='/js/jqgrid_common.js'></script>
 <script type="text/javascript" src='/js/jquery/common.js'></script>
 <script type="text/javascript" src='/asset/js/commonUtil.js'></script>
+<script type="text/javascript" src='/asset/js/ui-message.js'></script>
 <script type="text/javascript">
   sessionStorage.setItem("contextPath", '<c:out value="${pageContext.request.contextPath}"/>');
 </script>
@@ -41,6 +42,11 @@
 // 현재 펼쳐진 약관 (토글용)
 var __openedTermsGb = "";
 
+// ui-message.js 미로딩(404 등) 대비 안전망 — 로드되면 자동 스킵
+if (typeof window._toast !== 'function') { window._toast = function(m){ alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); }; }
+if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ o=o||{}; alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); if(o.onOk)o.onOk(); }; }
+if (typeof window._confirmBox !== 'function') { window._confirmBox = function(o){ o=o||{}; var m=String(o.msg||'진행할까요?').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,''); if(confirm(m)){ if(o.onOk)o.onOk(); } else { if(o.onCancel)o.onCancel(); } }; }
+
 function registerProc(){
 	var dto = {
 		userNm: $.trim($("#userNm").val()),
@@ -53,17 +59,17 @@ function registerProc(){
 		weight: $("#weight").val() ? parseInt($("#weight").val(),10) : 0,
 		blodGb: $("#blodGb").val() ? parseInt($("#blodGb").val(),10) : 0
 	};
-	if (!dto.userNm) { alert("이름을 입력하세요."); return; }
-	if (!dto.phone)  { alert("전화번호를 입력하세요."); return; }
-	if (!dto.userPw || dto.userPw.length < 4) { alert("비밀번호는 4자 이상."); return; }
-	if ($("#userPw").val() !== $("#userPw2").val()) { alert("비밀번호 확인이 일치하지 않습니다."); return; }
-	if (!/^\d{8}$/.test(dto.birth)) { alert("생년월일은 YYYYMMDD 8자리"); return; }
-	if (!dto.gender) { alert("성별을 선택하세요."); return; }
+	if (!dto.userNm) { _alertBox("이름을 입력하세요.", {icon:'⚠️'}); return; }
+	if (!dto.phone)  { _alertBox("전화번호를 입력하세요.", {icon:'⚠️'}); return; }
+	if (!dto.userPw || dto.userPw.length < 4) { _alertBox("비밀번호는 4자 이상 입력하세요.", {icon:'⚠️'}); return; }
+	if ($("#userPw").val() !== $("#userPw2").val()) { _alertBox("비밀번호 확인이 일치하지 않습니다.", {icon:'⚠️'}); return; }
+	if (!/^\d{8}$/.test(dto.birth)) { _alertBox("생년월일은 YYYYMMDD 8자리로 입력하세요.", {icon:'⚠️'}); return; }
+	if (!dto.gender) { _alertBox("성별을 선택하세요.", {icon:'⚠️'}); return; }
 
 	// 약관 동의 검증 (3개 모두 필수) — SEJONG_APP login.jsp goJoin3() 와 동일
-	if (!$("#chk_01").is(":checked")) { alert("서비스 이용약관에 동의해주세요."); return; }
-	if (!$("#chk_02").is(":checked")) { alert("개인정보 수집·이용동의 항목에 동의해주세요."); return; }
-	if (!$("#chk_03").is(":checked")) { alert("고유식별정보 처리동의 항목에 동의해주세요."); return; }
+	if (!$("#chk_01").is(":checked")) { _alertBox("서비스 이용약관에 동의해주세요.", {icon:'⚠️'}); return; }
+	if (!$("#chk_02").is(":checked")) { _alertBox("개인정보 수집·이용동의 항목에 동의해주세요.", {icon:'⚠️'}); return; }
+	if (!$("#chk_03").is(":checked")) { _alertBox("고유식별정보 처리동의 항목에 동의해주세요.", {icon:'⚠️'}); return; }
 
 	$.ajax({
 		type: "post",
@@ -72,12 +78,14 @@ function registerProc(){
 		contentType: "application/json",
 		dataType: "json",
 		success: function(data){
-			alert(data.Message || (data.IsSucceed ? "회원가입 완료" : "회원가입 실패"));
 			if (data.IsSucceed) {
-				location.href = CommonUtil.getContextPath() + "/patient/login.do";
+				_alertBox(data.Message || "회원가입이 완료되었습니다.", {icon:'✅', okText:'확인',
+					onOk:function(){ location.href = CommonUtil.getContextPath() + "/patient/login.do"; }});
+			} else {
+				_alertBox(data.Message || "회원가입 실패", {icon:'❌', okColor:'red'});
 			}
 		},
-		error: function(){ alert("회원가입 요청 중 오류"); }
+		error: function(){ _alertBox("회원가입 요청 중 오류가 발생했습니다.", {icon:'❌', okColor:'red'}); }
 	});
 }
 

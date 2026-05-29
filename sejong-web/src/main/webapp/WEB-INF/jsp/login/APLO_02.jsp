@@ -18,44 +18,41 @@
 <!-- 부트스트랩 js -->
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script type="text/javascript" src='/js/jqgrid_common.js'></script> 
-<script type="text/javascript" src='/js/jquery/common.js'></script> 
+<script type="text/javascript" src='/js/jqgrid_common.js'></script>
+<script type="text/javascript" src='/js/jquery/common.js'></script>
+<script type="text/javascript" src='/asset/js/ui-message.js'></script>
 <title>비밀번호 초기화</title>
-<script type="text/javaScript"> 
-	
-	function fnSave(){ 
-		 
+<script type="text/javaScript">
+	// ui-message.js 미로딩 대비 안전망 — 로드되면 자동 스킵
+	if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ o=o||{}; alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); if(o.onOk)o.onOk(); }; }
+	if (typeof window._confirmBox !== 'function') { window._confirmBox = function(o){ o=o||{}; var m=String(o.msg||'진행할까요?').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,''); if(confirm(m)){ if(o.onOk)o.onOk(); } else { if(o.onCancel)o.onCancel(); } }; }
+
+	function fnSave(){
+
 		if( $("#userId").val() == ""){
-			alert("사용자 ID를 입력하세요.!");
-			$("#userId").focus();
+			_alertBox("사용자 ID를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }});
 			return;
 		}
-		
-		if(!confirm("해당 사용자의 비밀번호를 초기화하시겠습니까?")) return;
-		
-		$.ajax( {
-			type : "post",
-			url : CommonUtil.getContextPath() + "/json/user/pwdresetAct.do",
-			data : {userId : $("#userId").val()},
-			dataType : "json",
-			success : function(data) {   
-				if(data.error_code != "0"){
-					if(data.error_code == "20000"){ 
-						alert(data.error_msg);
-						$("#userId").focus();
-					}	
-					else{ 
-						alert(data.error_msg);
-						$("#userId").focus();
+
+		_confirmBox({
+			icon:'🔑', okText:'초기화', okColor:'blue',
+			msg:'해당 사용자의 비밀번호를 초기화하시겠습니까?',
+			onOk:function(){
+				$.ajax( {
+					type : "post",
+					url : CommonUtil.getContextPath() + "/json/user/pwdresetAct.do",
+					data : {userId : $("#userId").val()},
+					dataType : "json",
+					success : function(data) {
+						if(data.error_code != "0"){
+							_alertBox(data.error_msg, {icon:'❌', okColor:'red', onOk:function(){ $("#userId").focus(); }});
+						}else{
+							_alertBox("비밀번호가 '1234'로 초기화되었습니다.<br>비밀번호를 변경 후 로그인 하세요.", {icon:'✅', onOk:function(){ fnPwdChange(); }});
+						}
 					}
-				}else{
-					alert("비밀번호가 '1234'로 초기화되었습니다.\n비밀번호를 변경 후 로그인 하세요.");
-					
-					fnPwdChange();
-				}
+				});
 			}
-		}); 
-		
+		});
 	}
 	function fnPwdChange(){ 
 		var popupwidth = '550';

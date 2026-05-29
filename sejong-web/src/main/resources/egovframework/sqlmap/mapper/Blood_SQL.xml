@@ -347,6 +347,28 @@
 	]]>
 	</select>
 
+	<!-- 오늘 공복 평균: 새벽 03:00~06:00 CGM 평균 (해당 시간 데이터 없으면 0 → 컨트롤러에서 전체평균 대체) -->
+	<select id="getTodayFastBlood" parameterType="String" resultType="map"><![CDATA[
+		SELECT COALESCE(ROUND(AVG(a.UPT_VALUE), 1), 0) AS avgBlood
+		  FROM T_BLDINF_TRAN a
+		 WHERE a.USER_UUID = #{userId}
+		   AND DATE(a.CGM_DTM) = CURDATE()
+		   AND TIME(a.CGM_DTM) >= '03:00:00'
+		   AND TIME(a.CGM_DTM) <  '06:00:00'
+		   AND IFNULL(a.UPT_VALUE,0) > 0
+	]]>
+	</select>
+
+	<!-- 오늘 전체 평균: 공복 시간대/식사 데이터 없을 때 대체값 -->
+	<select id="getTodayAvgBlood" parameterType="String" resultType="map"><![CDATA[
+		SELECT COALESCE(ROUND(AVG(a.UPT_VALUE), 1), 0) AS avgBlood
+		  FROM T_BLDINF_TRAN a
+		 WHERE a.USER_UUID = #{userId}
+		   AND DATE(a.CGM_DTM) = CURDATE()
+		   AND IFNULL(a.UPT_VALUE,0) > 0
+	]]>
+	</select>
+
 	<!-- 일별 전체 평균 -->
 	<select id="getWeeklyBloodData" parameterType="String" resultType="map"><![CDATA[
 	  	SELECT DATE_FORMAT(a.CGM_DTM, '%c/%e') AS date,

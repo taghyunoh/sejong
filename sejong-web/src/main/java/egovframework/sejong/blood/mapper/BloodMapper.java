@@ -36,6 +36,12 @@ public interface BloodMapper {
 	/** 오늘 식후 평균 혈당 */
 	Map<String, Object> getTodayMealBlood(String userId);
 
+	/** 오늘 공복 평균 혈당 (새벽 03:00~06:00) */
+	Map<String, Object> getTodayFastBlood(String userId);
+
+	/** 오늘 전체 평균 혈당 (식사 없을 때 식후평균 대체용) */
+	Map<String, Object> getTodayAvgBlood(String userId);
+
 	List<Map<String, Object>> showBloodData(Map<String, Object> map);
 
 	String getAvgFastingBlood(Map<String, Object> map);

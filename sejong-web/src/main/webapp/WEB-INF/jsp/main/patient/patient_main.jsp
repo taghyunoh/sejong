@@ -14,6 +14,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="/asset/js/commonUtil.js"></script>
+<script src="/asset/js/ui-message.js"></script>
+<script src="/asset/js/blood_qa.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
@@ -46,8 +48,15 @@
   .flatpickr-time .flatpickr-time-separator { font-size:20px !important; line-height:44px !important; }
   .numInputWrapper span { padding:0 2px !important; }
   /* 우측 평가/채팅 패널 */
-  .chat-user { background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
-  .chat-bot  { background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
+  .chat-user { position:relative; background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
+  .chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
+  /* 메시지 삭제 버튼 (× ) — 항상 보이되 흐리게, hover 시 진하게 (터치기기 대응) */
+  .chat-del { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
+  .chat-user:hover .chat-del, .chat-bot:hover .chat-del { opacity:1; }
+  /* 상단 인사말 — 우측까지 꽉 채워 2줄로 표시 */
+  .chat-intro { max-width:100% !important; align-self:stretch !important; font-size:13.5px !important; }
+
+  /* 토스트·확인모달 스타일은 공통 ui-message.js 가 자동 주입 */
   .eval-row  { display:flex; justify-content:space-between; margin-bottom:5px; font-size:15px; }
   .qbtn      { font-size:13px; padding:3px 10px; border-radius:10px; cursor:pointer; border:1px solid #ccc; background:#fff; color:#555; }
   .qbtn:hover{ background:#f0f4ff; color:#0d6efd; border-color:#0d6efd; }
@@ -82,6 +91,11 @@
 var userUuid = "${sessionScope.userUuid}";
 var userNm   = "${sessionScope.userNm}";
 
+/* ui-message.js 미로딩(404 등) 대비 안전망 — 로드되면 이 블록은 자동 스킵 */
+if (typeof window._toast !== 'function') { window._toast = function(m){ alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); }; }
+if (typeof window._confirmBox !== 'function') { window._confirmBox = function(o){ o=o||{}; var m=String(o.msg||'진행할까요?').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,''); if(confirm(m)){ if(o.onOk)o.onOk(); } else { if(o.onCancel)o.onCancel(); } }; }
+if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ o=o||{}; alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); if(o.onOk)o.onOk(); }; }
+
 $(function(){
 	// 페이지 진입 시: 토큰 확인
 	//  · 토큰 있음 → 자동 동기화(조용히) → 차트/평균 갱신
@@ -90,14 +104,17 @@ $(function(){
 	//                · sessionStorage 플래그로 거부 후 무한루프 방지
 	var urlParams = new URLSearchParams(window.location.search);
 	loadTokenStatus(function(hasToken){
+		// ① DB에 있는 데이터로 화면 즉시 렌더 (i-Sens 외부 동기화를 기다리지 않음 → 빠르게 표시)
+		loadTodayBlood();
+		drawChart();
+
+		// ② 토큰 있으면 i-Sens 동기화를 백그라운드로 실행 → 완료 시 내부에서 화면 재갱신
 		if (hasToken) {
-			syncMyBlood(true);   // ← 자동 1회 호출 (alert/confirm 없음)
+			syncMyBlood(true);   // alert/confirm 없음, 끝나면 loadTodayBlood+drawChart 재호출
 			return;
 		}
-		// 토큰 없음 — OAuth 콜백으로 돌아온 경우엔 별도 처리 안 함
+		// 토큰 없음 — OAuth 콜백으로 돌아온 경우엔 별도 처리 안 함 (이미 ①에서 렌더)
 		if (urlParams.get('code') != null) {
-			loadTodayBlood();
-			drawChart();
 			return;
 		}
 		// 세션당 1회만 자동 redirect (사용자가 거부 시 다음부턴 버튼만 노출)
@@ -106,9 +123,7 @@ $(function(){
 			showIsensGuide(function(){ connectISens(); });
 			return;
 		}
-		// 두 번째 진입부터는 빈 화면 + 연동 버튼만 노출
-		loadTodayBlood();
-		drawChart();
+		// 두 번째 진입부터는 ①에서 그린 화면 유지 + 연동 버튼만 노출
 	});
 
 	/* ── 자동 갱신: 5분마다 혈당 데이터 동기화 ── */
@@ -165,15 +180,22 @@ function connectISens(){
 			if (r && r.redirectUrl) {
 				window.location.href = r.redirectUrl;
 			} else {
-				alert("i-Sens 인증 URL 생성 실패");
+				_toast("i-Sens 인증 URL 생성 실패", 'err');
 			}
 		}
 	});
 }
 
 function syncMyBlood(silent){
-	// silent=true 면 confirm/alert 생략 (페이지 진입 시 자동 호출용)
-	if (!silent && !confirm("내 혈당 데이터를 i-Sens에서 가져올까요?")) return;
+	// silent=true 면 확인창 없이 바로 동기화 (페이지 진입 시 자동 호출용)
+	if (silent) { _doSyncMyBlood(true); return; }
+	_confirmBox({
+		icon:'🔄', okText:'가져오기', okColor:'blue',
+		msg:'내 혈당 데이터를 i-Sens에서 가져올까요?',
+		onOk:function(){ _doSyncMyBlood(false); }
+	});
+}
+function _doSyncMyBlood(silent){
 	$("#syncMsg").text("동기화 중...").show();
 	$.ajax({
 		url: CommonUtil.getContextPath() + "/syncMyBlood.do",
@@ -188,7 +210,7 @@ function syncMyBlood(silent){
 				);
 			} else {
 				$("#syncMsg").hide();
-				alert(r.Message || (r.IsSucceed ? "동기화 완료" : "동기화 실패"));
+				_toast(r.Message || (r.IsSucceed ? "동기화 완료" : "동기화 실패"), (r && r.IsSucceed) ? 'ok' : 'err');
 			}
 			// 성공/실패 무관하게 DB의 최신 상태로 화면 갱신
 			loadTodayBlood();
@@ -295,13 +317,33 @@ function drawDailyChart(rows){
 	} else {
 		var maxV = Math.max.apply(null, present);
 		var minV = Math.min.apply(null, present);
-		var data = vals.map(function(v){
-			if (v === null) return { value: null };
-			var color = '#0d6efd';
-			if (v === maxV) color = '#dc3545';      // 최고 = 빨강
-			else if (v === minV) color = '#f5c518'; // 최저 = 노랑
-			return { value: v, itemStyle: { color: color } };
-		});
+
+		// 선택 날짜 결정: 기존 선택 유지 > 데이터 있는 최근일
+		var selKey = null, selLabel = null;
+		if (_currentDayKey && dateKeys.indexOf(_currentDayKey) !== -1) {
+			selKey = _currentDayKey; selLabel = _currentDayLabel || _dayLabel(_currentDayKey);
+		} else {
+			for (var i = dateKeys.length - 1; i >= 0; i--) {
+				if (byDate.hasOwnProperty(dateKeys[i]) && byDate[dateKeys[i]] > 0) {
+					selKey = dateKeys[i]; selLabel = labels[i]; break;
+				}
+			}
+		}
+
+		// 막대 데이터 생성 — 선택된 날짜는 진한 테두리로 강조
+		function _buildBars(hlKey){
+			return vals.map(function(v, idx){
+				if (v === null) return { value:null };
+				var color = (v===maxV) ? '#dc3545' : (v===minV) ? '#f5c518' : '#0d6efd';
+				var st = { color:color };
+				if (dateKeys[idx] === hlKey) {
+					st.borderColor = '#1a237e'; st.borderWidth = 3;
+					st.shadowBlur = 6; st.shadowColor = 'rgba(26,35,126,0.45)';
+				}
+				return { value:v, itemStyle:st };
+			});
+		}
+
 		var dailyDom = document.getElementById('dailyChart');
 		var prevDaily = echarts.getInstanceByDom(dailyDom);
 		if (prevDaily) prevDaily.dispose();
@@ -311,21 +353,31 @@ function drawDailyChart(rows){
 			tooltip: { trigger:'axis', formatter:function(params){
 					var p=params[0];
 					if(!p||p.value==null) return '';
-					return p.axisValue+'<br/>혈당: <b>'+p.value+' mg/dL</b>';
+					var sel = (dateKeys[p.dataIndex]===_currentDayKey) ? ' <small style="color:#1a237e;">(선택됨)</small>' : '';
+					return p.axisValue+sel+'<br/>혈당: <b>'+p.value+' mg/dL</b>';
 				}},
 			grid: { left:34, right:6, top:20, bottom:30 },
 			xAxis: { type:'category', data:labels },
 			yAxis: { type:'value', min:0, max:300 },
-			series: [{ type:'bar', data:data, barMaxWidth:58,
+			series: [{ type:'bar', data:_buildBars(selKey), barMaxWidth:58,
 				label:{ show:true, position:'top', formatter:function(p){ return p.value!=null?p.value:''; } } }]
 		});
 		chart.off('click');
 		chart.on('click', function(params){
-			loadDayChart(dateKeys[params.dataIndex], labels[params.dataIndex]);
+			if (vals[params.dataIndex] == null) return;   // 데이터 없는 날 클릭 무시
+			var k = dateKeys[params.dataIndex], lbl = labels[params.dataIndex];
+			chart.setOption({ series: [{ data: _buildBars(k) }] });  // 상단 선택 막대 재강조
+			loadDayChart(k, lbl);
 		});
+
+		if (selKey) { loadDayChart(selKey, selLabel); return; }
 	}
 
-	// 진입 시 데이터 있는 가장 최근 날짜 자동 선택 (오늘 데이터 없으면 이전 날짜로)
+	// (차트 미표시: echarts 없음 / 데이터 없음) — 선택 날짜만 결정해 하단 로드
+	if (_currentDayKey && dateKeys.indexOf(_currentDayKey) !== -1) {
+		loadDayChart(_currentDayKey, _currentDayLabel || _dayLabel(_currentDayKey));
+		return;
+	}
 	var defaultKey = null, defaultLabel = null;
 	for (var i = 0; i < dateKeys.length; i++) {
 		var k = dateKeys[dateKeys.length - 1 - i]; // 최신 날짜부터 역순
@@ -368,9 +420,9 @@ function loadDayChart(dateKey, label){
 		var rows     = Array.isArray(bRes[0]) ? bRes[0] : [];
 		var foodRows = (fRes[0]&&fRes[0].Data) ? fRes[0].Data : [];
 		var exerRows = (eRes[0]&&eRes[0].Data) ? eRes[0].Data : [];
-		// 날짜 필터: 서버가 전체 데이터를 반환하더라도 선택 날짜(dc)만 표시
-		foodRows = foodRows.filter(function(r){ return (r.eatDate||'') === dc; });
-		exerRows = exerRows.filter(function(r){ return (r.exerDate||'') === dc; });
+		// 날짜 필터는 서버(getFoodInfo/getExerInfo 의 EAT_DATE/EXER_DATE 조건)에서 이미 적용됨.
+		// 클라이언트 재필터(r.eatDate === dc)는 DATE 컬럼이 "2026-05-29"/epoch 로 와서 형식 불일치로
+		// 식사·운동이 전부 사라지는 버그가 있어 제거함.
 
 		// 혈당 시간별 평균 버킷
 		var buckets = {};
@@ -394,13 +446,26 @@ function loadDayChart(dateKey, label){
 			if (hh) { if (!exerMap[hh]) exerMap[hh]=[]; exerMap[hh].push(r.exerName||'운동'); }
 		});
 
-		// 축은 혈당 데이터 있는 시간만 (식사·운동 전용 시간은 제외)
-		var hours = Object.keys(buckets).sort();
+		// x축 = 혈당 + 식사 + 운동 시간의 합집합 (식사·운동만 있는 시간도 표시)
+		var hourSet = {};
+		Object.keys(buckets).forEach(function(h){ hourSet[h]=1; });
+		Object.keys(foodMap).forEach(function(h){ hourSet[h]=1; });
+		Object.keys(exerMap).forEach(function(h){ hourSet[h]=1; });
+		var hours = Object.keys(hourSet).sort();
 		var xs = hours.map(function(h){ return h+'시'; });
-		var ys = hours.map(function(h){ return Math.round(buckets[h].sum/buckets[h].cnt); });
+		var ys = hours.map(function(h){ return buckets[h] ? Math.round(buckets[h].sum/buckets[h].cnt) : null; });
 
-		if (!rows.length) {
-			$("#lineChart").html('<div class="text-center text-muted p-3">'+label+' 혈당 데이터 없음</div>');
+		// 식사/운동 마커 — 상단 고정 레인(y)에 배치, 해당 시간에만 표시
+		// 같은 시간에 식사·운동이 겹쳐도 세로로 분리되도록 충분히 간격(FOOD 위 / EXER 아래)
+		var FOOD_Y = 290, EXER_Y = 258;
+		var foodPts = hours.map(function(h){ return foodMap[h] ? FOOD_Y : null; });
+		var exerPts = hours.map(function(h){ return exerMap[h] ? EXER_Y : null; });
+		// 식사·운동이 있는 시간에 세로 점선 표시 (마커를 타임라인에 연결)
+		var eventLines = hours.filter(function(h){ return foodMap[h] || exerMap[h]; })
+		                      .map(function(h){ return { xAxis: h+'시' }; });
+
+		if (!rows.length && !foodRows.length && !exerRows.length) {
+			$("#lineChart").html('<div class="text-center text-muted p-3">'+label+' 데이터 없음</div>');
 			return;
 		}
 		$("#lineChart").empty();
@@ -410,15 +475,17 @@ function loadDayChart(dateKey, label){
 			tooltip: {
 				trigger:'axis',
 				formatter: function(params){
-					var p=params[0];
-					if(!p||p.value==null) return '';
-					var hh=hours[p.dataIndex]||'';
-					var txt=p.axisValue+'<br/>혈당: <b>'+p.value+' mg/dL</b>';
+					if(!params||!params.length) return '';
+					var hh=hours[params[0].dataIndex]||'';
+					var bv=null;
+					params.forEach(function(p){ if(p.seriesName==='혈당'&&p.value!=null) bv=p.value; });
+					var txt=params[0].axisValue+'<br/>혈당: <b>'+(bv!=null?bv+' mg/dL':'기록 없음')+'</b>';
 					if(foodMap[hh]) txt+='<br/>🍚 식사: '+foodMap[hh].join(', ');
 					if(exerMap[hh]) txt+='<br/>🚴 운동: '+exerMap[hh].join(', ');
 					return txt;
 				}
 			},
+			legend: { show:false },
 			grid: { left:40, right:16, top:20, bottom:30 },
 			xAxis: { type:'category', data:xs, axisTick:{ alignWithLabel:true } },
 			yAxis: { type:'value', min:0, max:300 },
@@ -430,8 +497,18 @@ function loadDayChart(dateKey, label){
 					markPoint: { data:[
 						{ type:'max', name:'최고', itemStyle:{ color:'#dc3545' } },
 						{ type:'min', name:'최저', itemStyle:{ color:'#f5c518' } }
-					]}
-				}
+					]},
+					markLine: {
+						silent:true, symbol:'none',
+						lineStyle:{ type:'dashed', color:'#c0c4cc', width:1 },
+						label:{ show:false },
+						data: eventLines
+					}
+				},
+				{ name:'식사', type:'scatter', data:foodPts, symbolSize:1,
+				  label:{ show:true, formatter:'🍚', fontSize:20, position:'inside' } },
+				{ name:'운동', type:'scatter', data:exerPts, symbolSize:1,
+				  label:{ show:true, formatter:'🚴', fontSize:20, position:'inside' } }
 			]
 		});
 		// 혈당 평가 패널 업데이트
@@ -461,9 +538,14 @@ function toHM(v){
 function formatTime(s){ return s ? s.replace('T',' ').substring(0,16) : ''; }
 
 function logout(){
-	if (!confirm("로그아웃 하시겠습니까?")) return;
-	// 단순 GET: 서버에서 session.invalidate() 후 /login.do 로 forward
-	location.href = (sessionStorage.getItem("contextPath")||"") + "/user/loginOutAct.do";
+	_confirmBox({
+		icon:'🔓', okText:'로그아웃', okColor:'blue',
+		msg:'로그아웃 하시겠습니까?',
+		onOk:function(){
+			// 단순 GET: 서버에서 session.invalidate() 후 /login.do 로 forward
+			location.href = (sessionStorage.getItem("contextPath")||"") + "/user/loginOutAct.do";
+		}
+	});
 }
 /* ── 공통 헬퍼 ── */
 function pad(n){ return (n<10?'0':'')+n; }
@@ -502,8 +584,8 @@ function saveFood(){
 		foodDanwi:$.trim($('#mFoodDanwi').val()),
 		foodAcnt: $.trim($('#mFoodAcnt').val())
 	};
-	if (!dto.foodName){ alert('음식명을 입력하세요.'); return; }
-	if (!dto.eatStime||dto.eatStime.length!==6){ alert('시작시간을 선택하세요.'); return; }
+	if (!dto.foodName){ _toast('음식명을 입력하세요.', 'warn'); return; }
+	if (!dto.eatStime||dto.eatStime.length!==6){ _toast('시작시간을 선택하세요.', 'warn'); return; }
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/updateFood.do',
 		type:'post', data:$.param(dto), dataType:'json',
@@ -516,7 +598,8 @@ function saveFood(){
 				loadDayChart(k, lbl);
 				// 막대 차트도 갱신 (주간 평균 반영)
 				drawChart();
-			} else alert('저장 실패');
+				_toast('식사 기록을 저장했어요', 'ok');
+			} else _toast('저장 실패', 'err');
 		}
 	});
 }
@@ -546,17 +629,23 @@ function loadFoodList(){
 	});
 }
 function delFood(eatDate, eatStime){
-	if(!confirm(fmtD(eatDate)+' '+fmtT(eatStime)+' 식사 기록을 삭제할까요?')) return;
-	$.ajax({
-		url: CommonUtil.getContextPath()+'/deleteFoodData.do',
-		type:'post',
-		data: JSON.stringify({userUuid:userUuid, eatDate:eatDate, eatStime:eatStime}),
-		contentType:'application/json', dataType:'json',
-		success:function(r){
-			if(r.IsSucceed){
-				loadFoodList();
-				if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
-			} else alert('삭제 실패');
+	_confirmBox({
+		icon:'🍚', okText:'삭제',
+		msg:fmtD(eatDate)+' '+fmtT(eatStime)+'<br>식사 기록을 삭제할까요?',
+		onOk:function(){
+			$.ajax({
+				url: CommonUtil.getContextPath()+'/deleteFoodData.do',
+				type:'post',
+				data: JSON.stringify({userUuid:userUuid, eatDate:eatDate, eatStime:eatStime}),
+				contentType:'application/json', dataType:'json',
+				success:function(r){
+					if(r.IsSucceed){
+						loadFoodList();
+						if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
+						_toast('삭제했어요', 'ok');
+					} else _toast('삭제 실패', 'err');
+				}
+			});
 		}
 	});
 }
@@ -582,8 +671,8 @@ function saveExer(){
 		exerInt:  $('#mExerInt').val(),
 		exerCnt:  $('#mExerCnt').val() ? parseInt($('#mExerCnt').val(),10) : 0
 	};
-	if (!dto.exerName){ alert('운동명을 입력하세요.'); return; }
-	if (!dto.exerStime||dto.exerStime.length!==6){ alert('시작시간을 선택하세요.'); return; }
+	if (!dto.exerName){ _toast('운동명을 입력하세요.', 'warn'); return; }
+	if (!dto.exerStime||dto.exerStime.length!==6){ _toast('시작시간을 선택하세요.', 'warn'); return; }
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/updateExer.do',
 		type:'post', data:$.param(dto), dataType:'json',
@@ -595,7 +684,8 @@ function saveExer(){
 				var k=dto.exerDate, lbl=_dayLabel(k);
 				loadDayChart(k, lbl);
 				drawChart();
-			} else alert('저장 실패');
+				_toast('운동 기록을 저장했어요', 'ok');
+			} else _toast('저장 실패', 'err');
 		}
 	});
 }
@@ -625,17 +715,23 @@ function loadExerList(){
 	});
 }
 function delExer(exerDate, exerStime){
-	if(!confirm(fmtD(exerDate)+' '+fmtT(exerStime)+' 운동 기록을 삭제할까요?')) return;
-	$.ajax({
-		url: CommonUtil.getContextPath()+'/deleteExerData.do',
-		type:'post',
-		data: JSON.stringify({userUuid:userUuid, exerDate:exerDate, exerStime:exerStime}),
-		contentType:'application/json', dataType:'json',
-		success:function(r){
-			if(r.IsSucceed){
-				loadExerList();
-				if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
-			} else alert('삭제 실패');
+	_confirmBox({
+		icon:'🚴', okText:'삭제',
+		msg:fmtD(exerDate)+' '+fmtT(exerStime)+'<br>운동 기록을 삭제할까요?',
+		onOk:function(){
+			$.ajax({
+				url: CommonUtil.getContextPath()+'/deleteExerData.do',
+				type:'post',
+				data: JSON.stringify({userUuid:userUuid, exerDate:exerDate, exerStime:exerStime}),
+				contentType:'application/json', dataType:'json',
+				success:function(r){
+					if(r.IsSucceed){
+						loadExerList();
+						if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
+						_toast('삭제했어요', 'ok');
+					} else _toast('삭제 실패', 'err');
+				}
+			});
 		}
 	});
 }
@@ -714,10 +810,39 @@ function updateEvalPanel(hours, ys, foodMap, exerMap, label){
 ══════════════════════════════════════ */
 function _quickQ(q){ $('#chatInput').val(q); sendChat(); }
 
-function _addMsg(txt, isUser){
+function _addMsg(txt, isUser, extraCls){
 	var $box=$('#chatMessages');
-	$box.append('<div class="'+(isUser?'chat-user':'chat-bot')+'">'+txt+'</div>');
+	var cls = (isUser?'chat-user':'chat-bot') + (extraCls ? (' '+extraCls) : '');
+	var $msg=$('<div class="'+cls+'"></div>');
+	if (isUser) {
+		// 삭제 버튼은 질문(사용자 메시지)에만 — 삭제 시 바로 뒤 답변(.chat-bot)도 함께 제거
+		$msg.html('<span class="chat-text">'+txt+'</span>'
+		        + '<button type="button" class="chat-del" title="질문·답변 삭제">&times;</button>');
+		$msg.children('.chat-del').on('click', function(){
+			var $next = $msg.next('.chat-bot');   // 이 질문에 종속된 답변
+			$msg.remove();
+			if ($next.length) $next.remove();
+		});
+	} else {
+		// 답변은 질문에 종속 — 자체 삭제 버튼 없음
+		$msg.html('<span class="chat-text">'+txt+'</span>');
+	}
+	$box.append($msg);
 	$box[0].scrollTop=$box[0].scrollHeight;
+}
+// _toast / _confirmBox / _alertBox 는 공통 /asset/js/ui-message.js 에서 제공
+
+// 대화 전체 삭제 후 인사말만 다시 표시
+function _clearChat(){
+	_confirmBox({
+		icon:'🗑️',
+		msg:'대화 내용을 모두 지울까요?',
+		okText:'삭제',
+		onOk:function(){
+			$('#chatMessages').empty();
+			_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.<br>차트를 선택하면 우측 평가가 표시됩니다.', false, 'chat-intro');
+		}
+	});
 }
 function sendChat(){
 	var q=$.trim($('#chatInput').val()); if(!q) return;
@@ -757,84 +882,28 @@ function _chatResponse(q){
 		return lbl+' 혈당: '+first+'→'+last+' mg/dL '+(diff>0?'(+'+diff+' ↑ 상승)':'('+diff+' ↓ 하강)')+'<br>목표범위 내: <b>'+pct+'%</b>';
 	}
 
-	/* ── 식사 시간/타이밍 ── */
-	if(/(몇\s*시간|취침|자기\s*전|저녁\s*몇|밤\s*몇|언제\s*까지\s*먹|마지막\s*식사)/.test(q)){
-		return '취침 전 마지막 식사 권장 시간:<br>• 취침 <b>2~3시간 전</b>까지 식사 완료 권장<br>• 늦은 저녁 식사는 공복혈당·체중 증가 유발<br>• 야식은 인슐린 저항성을 높임<br><br>예시) 밤 11시 취침 → <b>8~9시 이전</b> 식사 완료';
-	}
-	if(/(몇\s*번|횟수|얼마나\s*자주)/.test(q)&&/(식사|먹)/.test(q)){
-		return '혈당 관리를 위한 식사 횟수:<br>• 하루 <b>3끼 규칙적</b>으로 섭취 권장<br>• 한 끼 과식보다 소량씩 자주 먹기<br>• 식사 간격 <b>4~5시간</b> 유지<br>• 간식은 견과류·채소 등 저GI 식품으로';
-	}
-	if(/(아침|아침밥|조식)/.test(q)&&/(먹|중요|필요|해야)/.test(q)){
-		return '아침 식사와 혈당:<br>• 아침을 먹으면 하루 혈당 변동 <b>안정화</b><br>• 공복 시간이 길면 점심 후 혈당 급등 위험<br>• 단백질·식이섬유 위주 아침 권장<br>(달걀, 두부, 잡곡밥, 채소)';
-	}
-
-	/* ── 음식/식이 ── */
-	if(/(식사|음식|밥|식이|뭐\s*먹|어떤\s*음식)/.test(q)){
-		return '혈당 관리 식사 원칙:<br>• 정제탄수화물(흰쌀·흰빵) 줄이기<br>• 채소·단백질 먼저 섭취 (혈당 급등 억제)<br>• 규칙적 식사, 과식 금물<br>• GI 낮은 식품 선택 (잡곡·콩·채소)<br>• 식사 속도 천천히 (20분 이상)';
-	}
-	if(/(과일|주스|음료|당분|설탕)/.test(q)){
-		return '과일·당분과 혈당:<br>• 과일은 <b>하루 1~2회, 소량</b> 권장<br>• 주스·음료는 혈당을 빠르게 올림 (주의)<br>• 저혈당 시에만 빠른 당분 섭취 유용<br>• 통과일이 주스보다 혈당 영향 적음';
-	}
-	if(/(술|알코올|음주)/.test(q)){
-		return '음주와 혈당:<br>• 술은 초기 혈당 상승 후 저혈당 유발 가능<br>• 공복 음주는 저혈당 위험 ↑<br>• 당뇨 환자는 <b>가급적 금주</b> 권장<br>• 음주 후 혈당 모니터링 필수';
-	}
-	if(/커피/.test(q)){
-		return '커피와 혈당:<br>• 블랙커피는 혈당에 큰 영향 없음<br>• 설탕·시럽 추가 시 혈당 급등<br>• 카페인이 일부 혈당 상승 유발 가능<br>• 하루 1~2잔 이내, 당분 없이 섭취 권장';
+	/* ── 일반 건강 지식: 데이터 파일(blood_qa.js)의 BLOOD_QA 에서 키워드 매칭 ──
+	   답변 추가/수정은 blood_qa.js 만 편집하면 됨 (이 코드 수정 불필요) */
+	if (typeof BLOOD_QA !== 'undefined' && BLOOD_QA.length) {
+		for (var i = 0; i < BLOOD_QA.length; i++) {
+			var item = BLOOD_QA[i];
+			if (!item || !item.kw) continue;
+			for (var j = 0; j < item.kw.length; j++) {
+				if (q.indexOf(String(item.kw[j]).toLowerCase()) !== -1) {
+					return item.a;
+				}
+			}
+		}
 	}
 
-	/* ── 혈당 기준/검사 ── */
-	if(/(정상|범위)/.test(q)){
-		return '혈당 정상 범위:<br>• 공복: <b>70~100 mg/dL</b><br>• 식후 2시간: <b>140 mg/dL 이하</b><br>• 하루 목표: <b>70~180 mg/dL</b><br>• 당화혈색소(HbA1c): <b>5.7% 미만</b>';
-	}
-	if(/(식후|식후혈당|2시간)/.test(q)){
-		return '식후 2시간 혈당:<br>• 식사 시작 후 <b>2시간 뒤</b> 측정<br>• 정상: <b>140 mg/dL 이하</b><br>• 당뇨 전단계: 140~199<br>• 당뇨 의심: <b>200 이상</b><br><br>식후 30분 걷기로 급격한 상승을 예방할 수 있습니다.';
-	}
-	if(/공복/.test(q)){
-		return '공복혈당:<br>• <b>8시간 이상 금식</b> 후 측정<br>• 정상: <b>100 미만</b><br>• 공복혈당장애: 100~125<br>• 당뇨: <b>126 이상</b><br><br>아침 기상 직후 측정이 가장 정확합니다.';
-	}
-	if(/(당화혈색소|hba1c|a1c)/.test(q)){
-		return '당화혈색소(HbA1c):<br>• 최근 <b>2~3개월</b> 평균 혈당을 반영<br>• 정상: <b>5.7% 미만</b><br>• 당뇨 전단계: 5.7~6.4%<br>• 당뇨: <b>6.5% 이상</b><br>• 치료 목표: <b>7% 미만</b> (개인차 있음)';
-	}
-
-	/* ── 운동 ── */
-	if(/운동/.test(q)){
-		return '운동과 혈당:<br>• 유산소(걷기·자전거·수영): 혈당 즉시 감소<br>• 근력운동: 장기 인슐린 감수성 개선<br>• <b>식후 30분~1시간</b> 후 걷기 특히 효과적<br>• 하루 <b>30분 이상</b>, 주 5회 권장<br>• 저혈당 주의: 운동 전 혈당 70 이하 시 간식 먹기';
-	}
-
-	/* ── 저혈당/고혈당 대처 ── */
-	if(/(저혈당|혈당이\s*낮|떨림|식은땀|현기증)/.test(q)){
-		return '저혈당 (70 mg/dL 미만) 대처:<br>① 즉시 <b>당분 15g</b> 섭취<br>&nbsp;&nbsp;(사탕 3~4개, 주스 150mL, 각설탕 3개)<br>② 15분 후 혈당 재측정<br>③ 여전히 낮으면 반복<br>④ 의식 잃으면 즉시 119 신고<br><br>⚠️ 식사 전 또는 운동 시 주의';
-	}
-	if(/(고혈당|혈당이\s*높|갈증|다뇨|피로)/.test(q)){
-		return '고혈당 (180 mg/dL 초과) 대처:<br>• 물을 충분히 마시기 (하루 2L 이상)<br>• 가벼운 걷기 운동<br>• 탄수화물·당분 섭취 제한<br>• 지속 시 처방약 확인 및 의사 상담<br><br>⚠️ 300 이상 지속 시 즉시 병원 방문';
-	}
-
-	/* ── 기타 건강 요인 ── */
-	if(/(스트레스|긴장|심리)/.test(q)){
-		return '스트레스와 혈당:<br>• 스트레스 시 코르티솔 분비 → 혈당 상승<br>• 만성 스트레스는 혈당 관리 방해<br>• 명상·심호흡·가벼운 산책으로 완화<br>• 충분한 수면(7~8시간)도 혈당 안정에 도움';
-	}
-	if(/(수면|잠|취침|기상)/.test(q)){
-		return '수면과 혈당:<br>• 수면 부족 → 인슐린 저항성 증가 → 혈당 상승<br>• 권장 수면: <b>7~8시간</b><br>• 수면 무호흡증은 혈당 악화 요인<br>• 취침 전 과식·야식은 공복혈당 올림<br>• 규칙적인 취침·기상 시간 유지 중요';
-	}
-	if(/(체중|살|비만|다이어트)/.test(q)){
-		return '체중과 혈당:<br>• 체중 5~10% 감량만으로도 혈당 크게 개선<br>• 복부 비만이 인슐린 저항성과 직결<br>• 급격한 다이어트보다 <b>꾸준한 식이+운동</b> 효과적<br>• 체중 감량은 혈당·혈압·콜레스테롤 동시 개선';
-	}
-	if(/(인슐린|주사)/.test(q)){
-		return '인슐린:<br>• 췌장에서 분비되어 혈당을 세포로 흡수시키는 호르몬<br>• 제1형 당뇨: 인슐린 분비 거의 없음 (주사 필수)<br>• 제2형 당뇨: 인슐린 저항성 또는 분비 감소<br>• 인슐린 치료 여부는 반드시 의사와 상담하세요';
-	}
-	if(/(약|약물|처방|복용)/.test(q)){
-		return '혈당약 복용 주의사항:<br>• 처방된 시간에 규칙적으로 복용<br>• 임의로 용량 변경·중단 금지<br>• 식사를 건너뛸 경우 의사 지시 따르기<br>• 부작용(저혈당·소화불량 등) 시 즉시 상담<br>• 다른 약과 상호작용 가능 → 의사에게 반드시 알릴 것';
-	}
-	if(/당뇨/.test(q)){
-		return '당뇨병 진단 기준:<br>• 공복혈당 ≥ <b>126 mg/dL</b><br>• 식후 2시간 ≥ <b>200 mg/dL</b><br>• HbA1c ≥ <b>6.5%</b><br><br>정확한 진단은 반드시 의사에게 문의하세요.';
-	}
-
+	/* ── 매칭 실패 시 ──
+	   TODO: 추후 여기서 AI(LLM) API 호출로 임의 질문 답변 (현재는 비용 없이 안내 문구) */
 	if(!hasData) return '현재 선택된 날짜의 데이터가 없습니다.<br>상단 막대 차트에서 날짜를 클릭해 주세요.';
-	return '죄송해요, 그 질문은 아직 학습되지 않았어요 😅<br><br>이런 질문을 해보세요:<br>• "자기 몇 시간 전까지 식사하는게 좋아요?"<br>• "오늘 혈당이 높은가요?"<br>• "저혈당 증상과 대처법은?"<br>• "운동이 혈당에 미치는 영향은?"<br>• "스트레스와 혈당의 관계는?"';
+	return '죄송해요, 그 질문은 아직 준비되지 않았어요 😅<br><br>이런 질문을 해보세요:<br>• "자기 몇 시간 전까지 식사하는게 좋아요?"<br>• "오늘 혈당이 높은가요?"<br>• "저혈당 증상과 대처법은?"<br>• "수영·자전거 운동이 혈당에 좋아요?"<br>• "스트레스와 혈당의 관계는?"';
 }
 $(function(){
 	// 초기 인사 메시지
-	_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.<br>차트를 선택하면 우측 평가가 표시됩니다.', false);
+	_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.<br>차트를 선택하면 우측 평가가 표시됩니다.', false, 'chat-intro');
 });
 
 /* ── 마커 팝업 바깥 클릭 시 닫기 ── */
@@ -932,6 +1001,12 @@ function showIsensGuide(onConfirm){
 			</div>
 			<div class="card-tile">
 				<h5 id="dayChartTitle">시간대별 혈당 추이</h5>
+				<div class="text-muted small mb-1" style="font-size:13px;">
+					<span style="color:#0d6efd;">━</span> 혈당
+					&nbsp;·&nbsp; 🍚 식사
+					&nbsp;·&nbsp; 🚴 운동
+					&nbsp;·&nbsp; <span style="color:#c0c4cc;">┊</span> 식사·운동 시각
+				</div>
 				<div id="lineChart" style="height:300px;"></div>
 			</div>
 		</div>
@@ -947,7 +1022,10 @@ function showIsensGuide(onConfirm){
 			</div>
 			<!-- Q&A (남은 공간 채우고, 채팅만 스크롤) -->
 			<div class="card-tile" style="padding:16px 18px;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;">
-				<h5 style="font-size:17px;margin-bottom:8px;flex-shrink:0;">💬 혈당 Q&A</h5>
+				<div class="d-flex justify-content-between align-items-center" style="flex-shrink:0;margin-bottom:8px;">
+					<h5 style="font-size:17px;margin:0;">💬 혈당 Q&A</h5>
+					<button type="button" class="btn btn-link btn-sm text-muted p-0" style="font-size:13px;text-decoration:none;" onclick="_clearChat();">🗑 전체 삭제</button>
+				</div>
 				<div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:8px;"></div>
 				<div class="d-flex gap-1 mb-2" style="flex-shrink:0;">
 					<input type="text" id="chatInput" class="form-control form-control-sm" placeholder="질문을 입력하세요…" onkeypress="if(event.key==='Enter')sendChat();">
@@ -958,6 +1036,7 @@ function showIsensGuide(onConfirm){
 					<button class="qbtn" onclick="_quickQ('혈당 정상범위는?')">정상범위</button>
 					<button class="qbtn" onclick="_quickQ('언제 제일 높았나요?')">최고시간</button>
 					<button class="qbtn" onclick="_quickQ('식후혈당이란?')">식후혈당</button>
+					<button class="qbtn" onclick="_quickQ('공복혈당이란?')">공복혈당</button>
 					<button class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
 					<button class="qbtn" onclick="_quickQ('오늘 혈당 추이는?')">오늘 추이</button>
 				</div>
@@ -1001,7 +1080,7 @@ function showIsensGuide(onConfirm){
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-semibold text-secondary">음식명</label>
-                <input type="text" id="mFoodName" class="form-control form-control-sm rounded-2" placeholder="예: 김치찌개">
+                <input type="text" id="mFoodName" class="form-control form-control-sm rounded-2" placeholder="예: 김치찌개" lang="ko" inputmode="text" style="ime-mode:active;">
               </div>
               <div class="col-md-3">
                 <label class="form-label small fw-semibold text-secondary">단위</label>
@@ -1076,7 +1155,7 @@ function showIsensGuide(onConfirm){
               </div>
               <div class="col-md-5">
                 <label class="form-label small fw-semibold text-secondary">운동명</label>
-                <input type="text" id="mExerName" class="form-control form-control-sm rounded-2" placeholder="예: 산책">
+                <input type="text" id="mExerName" class="form-control form-control-sm rounded-2" placeholder="예: 산책" lang="ko" inputmode="text" style="ime-mode:active;">
               </div>
               <div class="col-md-4">
                 <label class="form-label small fw-semibold text-secondary">강도</label>
@@ -1123,6 +1202,8 @@ function showIsensGuide(onConfirm){
 
 <!-- 식사/운동 마커 클릭 팝업 -->
 <!-- markerPopup 제거 (axis 툴팁에 통합) -->
+<!-- 확인 다이얼로그(#confirmBackdrop)는 공통 ui-message.js 가 자동 주입 -->
+
 <!-- 케어센스 안내 모달 (native alert 대체) -->
 <div id="isensGuideBackdrop" class="isens-guide-backdrop">
 	<div class="isens-guide-box">

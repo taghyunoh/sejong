@@ -18,24 +18,24 @@
 <!-- 부트스트랩 js -->
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script type="text/javascript" src='/js/jqgrid_common.js'></script> 
-<script type="text/javascript" src='/js/jquery/common.js'></script> 
+<script type="text/javascript" src='/js/jqgrid_common.js'></script>
+<script type="text/javascript" src='/js/jquery/common.js'></script>
+<script type="text/javascript" src='/asset/js/ui-message.js'></script>
 <title>비밀번호 변경</title>
-<script type="text/javaScript"> 
-	
+<script type="text/javaScript">
+	// ui-message.js 미로딩 대비 안전망 — 로드되면 자동 스킵
+	if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ o=o||{}; alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); if(o.onOk)o.onOk(); }; }
+
 	function fnSave(){
-		 
+
 		if( $("#userId").val() == ""){
-			alert("사용자 ID를 입력하세요.!");
-			$("#userId").focus();
+			_alertBox("사용자 ID를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }});
 			return;
 		}else if( $("#userPw").val() == "") {
-			alert("비밀번호를 입력하세요.!");
-			$("#userPw").focus();
+			_alertBox("현재 비밀번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userPw").focus(); }});
 			return;
 		}else if( $("#bfUserPwd").val() != $("#afUserPwd").val()) {
-			alert("변경할 비밀번호를 확인하세요.!");
-			$("#bfUserPwd").focus();
+			_alertBox("변경할 비밀번호가 서로 일치하지 않습니다.", {icon:'⚠️', onOk:function(){ $("#bfUserPwd").focus(); }});
 			return;
 		}
 
@@ -47,26 +47,18 @@
 			data : formData,
 			dataType : "json",
 			success : function(data) {
-				
+
 				if(data.error_code != "0"){
-					if(data.error_code == "20000"){ 
-						alert(data.error_msg);
-						$("#userId").focus();
-					}	
-					else{ 
-						alert(data.error_msg);
-						$("#userId").focus();
-					}
+					_alertBox(data.error_msg, {icon:'❌', okColor:'red', onOk:function(){ $("#userId").focus(); }});
 				}else{
-					alert("비밀번호가 변경되었습니다.");
-					window.close(); 
+					_alertBox("비밀번호가 변경되었습니다.", {icon:'✅', onOk:function(){ window.close(); }});
 				}
 			}
-		}); 
-		
+		});
+
 	}
 
-</script>    
+</script>
  
 </head>
 

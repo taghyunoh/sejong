@@ -102,12 +102,14 @@
     padding-bottom: 9px;
     font-size: 16px;
   }
+  /* 토스트·확인모달 스타일은 공통 ui-message.js 가 자동 주입 */
 </style>
 <!-- 부트스트랩 js -->
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script type="text/javascript" src='/js/jqgrid_common.js'></script> 
-<script type="text/javascript" src='/js/common.js'></script> 
+<script type="text/javascript" src='/js/jqgrid_common.js'></script>
+<script type="text/javascript" src='/js/common.js'></script>
+<script type="text/javascript" src='/asset/js/ui-message.js'></script>
 <title>로그인</title>
 <script type="text/javaScript">
 /*  Main Grid  *//*서브그리드 필요*/
@@ -141,11 +143,15 @@ function fnSaveIdToggle(){
 	} catch (e) {}
 }
 
+// _toast / _alertBox 는 공통 /asset/js/ui-message.js 에서 제공
+// ui-message.js 미로딩(404 등) 대비 안전망 — 로드되면 자동 스킵
+if (typeof window._toast !== 'function') { window._toast = function(m){ alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); }; }
+if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ o=o||{}; alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); if(o.onOk)o.onOk(); }; }
 function loginproc2(){
 	var id = $.trim($("#userId").val());
 	var pw = $("#userPw").val();
-	if (!id) { alert("아이디 또는 전화번호를 입력하세요."); $("#userId").focus(); return; }
-	if (!pw) { alert("비밀번호를 입력하세요."); $("#userPw").focus(); return; }
+	if (!id) { _alertBox("아이디 또는 전화번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }}); return; }
+	if (!pw) { _alertBox("비밀번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userPw").focus(); }}); return; }
 
 	// 통합 로그인: 의료진(T_ADMIN_MST) 우선 → 환자(T_USER_TRAN) 자동 분기
 	$.ajax({
@@ -156,8 +162,7 @@ function loginproc2(){
 		dataType: "json",
 		success: function(data) {
 			if (!data.IsSucceed) {
-				alert(data.Message || "로그인 실패");
-				$("#userId").focus();
+				_alertBox(data.Message || "로그인 실패", {icon:'❌', okColor:'red', onOk:function(){ $("#userId").focus(); }});
 				return;
 			}
 			// ID 저장 (성공 후에만)
@@ -171,7 +176,7 @@ function loginproc2(){
 			// /main.do 가 세션 q_admin_yn 으로 환자/의사 화면 자동 분기
 			location.href = CommonUtil.getContextPath() + "/main.do";
 		},
-		error: function(){ alert("로그인 요청 중 오류가 발생했습니다."); }
+		error: function(){ _alertBox("로그인 요청 중 오류가 발생했습니다.", {icon:'❌', okColor:'red'}); }
 	});
 }
 function logout(){
