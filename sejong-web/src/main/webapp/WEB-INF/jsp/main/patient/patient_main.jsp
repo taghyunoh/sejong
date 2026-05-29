@@ -110,6 +110,23 @@ $(function(){
 		loadTodayBlood();
 		drawChart();
 	});
+
+	/* ── 자동 갱신: 5분마다 혈당 데이터 동기화 ── */
+	function _autoRefresh(){
+		loadTokenStatus(function(hasToken){
+			if(hasToken) syncMyBlood(true);
+			else { loadTodayBlood(); drawChart(); }
+		});
+	}
+	// 5분 주기 자동 갱신
+	setInterval(_autoRefresh, 5 * 60 * 1000);
+
+	// 탭이 다시 활성화될 때 즉시 갱신 (다른 탭에 있다가 돌아올 때)
+	$(document).on('visibilitychange', function(){
+		if(document.visibilityState === 'visible'){
+			_autoRefresh();
+		}
+	});
 });
 
 function loadTokenStatus(cb){
@@ -327,6 +344,8 @@ function drawDailyChart(rows){
 }
 
 function loadDayChart(dateKey, label){
+	_currentDayKey = dateKey;
+	_currentDayLabel = label || _dayLabel(dateKey);
 	$("#dayChartTitle").text(label + " 시간대별 혈당 추이");
 	if (typeof echarts === 'undefined') {
 		$("#lineChart").html('<div class="text-center text-danger p-3">차트 라이브러리(echarts) 로드 실패</div>');
@@ -386,52 +405,18 @@ function loadDayChart(dateKey, label){
 		}
 		$("#lineChart").empty();
 
-		// 혈당 축 범위 내 시간만 마커 표시
-		var hMin = hours[0], hMax = hours[hours.length-1];
-
-		// 세로선 (라벨 없음) — 식사:파랑 실선 / 운동:초록 점선
-		var markLines = [];
-		Object.keys(foodMap).forEach(function(hh){
-			if (hh < hMin || hh > hMax) return;
-			markLines.push({ xAxis:hh+'시', lineStyle:{ color:'#0d6efd', width:1.5, type:'solid', opacity:0.4 } });
-		});
-		Object.keys(exerMap).forEach(function(hh){
-			if (hh < hMin || hh > hMax) return;
-			markLines.push({ xAxis:hh+'시', lineStyle:{ color:'#198754', width:1.5, type:'dashed', opacity:0.4 } });
-		});
-
-		// 식사 scatter — 차트 상단 흰 공간 (y=275, 파란 영역 위에 항상 선명하게)
-		var foodScatterData = [];
-		Object.keys(foodMap).forEach(function(hh){
-			if (hh < hMin || hh > hMax) return;
-			foodScatterData.push({ value:[hh+'시', 275], names:foodMap[hh] });
-		});
-
-		// 운동 scatter — 식사 바로 아래 (y=250, 식사와 구분)
-		var exerScatterData = [];
-		Object.keys(exerMap).forEach(function(hh){
-			if (hh < hMin || hh > hMax) return;
-			exerScatterData.push({ value:[hh+'시', 250], names:exerMap[hh] });
-		});
-
 		var chart = echarts.init(lineDom);
 		chart.setOption({
 			tooltip: {
 				trigger:'axis',
 				formatter: function(params){
-					var bloodParam=null, foodParam=null, exerParam=null;
-					for (var i=0; i<params.length; i++){
-						var p=params[i];
-						if (p.seriesName==='혈당') bloodParam=p;
-						else if (p.seriesName==='식사'&&p.data&&p.data.names) foodParam=p;
-						else if (p.seriesName==='운동'&&p.data&&p.data.names) exerParam=p;
-					}
-					// 혈당 항상 표시 + 식사/운동 이름 추가
-					var txt='';
-					if (bloodParam&&bloodParam.value!=null) txt=bloodParam.axisValue+'<br/>혈당: <b>'+bloodParam.value+' mg/dL</b>';
-					if (foodParam) txt+='<br/>🍚 식사: '+foodParam.data.names.join(', ');
-					if (exerParam) txt+='<br/>🚴 운동: '+exerParam.data.names.join(', ');
-					return txt||'';
+					var p=params[0];
+					if(!p||p.value==null) return '';
+					var hh=hours[p.dataIndex]||'';
+					var txt=p.axisValue+'<br/>혈당: <b>'+p.value+' mg/dL</b>';
+					if(foodMap[hh]) txt+='<br/>🍚 식사: '+foodMap[hh].join(', ');
+					if(exerMap[hh]) txt+='<br/>🚴 운동: '+exerMap[hh].join(', ');
+					return txt;
 				}
 			},
 			grid: { left:40, right:16, top:20, bottom:30 },
@@ -439,71 +424,18 @@ function loadDayChart(dateKey, label){
 			yAxis: { type:'value', min:0, max:300 },
 			series: [
 				{
-					// 혈당 라인
 					name:'혈당',
 					type:'line', data:ys, smooth:true, areaStyle:{}, connectNulls:true,
 					label:{ show:true, position:'top', formatter:function(p){ return p.value!=null ? p.value : ''; } },
 					markPoint: { data:[
 						{ type:'max', name:'최고', itemStyle:{ color:'#dc3545' } },
 						{ type:'min', name:'최저', itemStyle:{ color:'#f5c518' } }
-					]},
-					markLine: { silent:true, symbol:['none','none'], label:{ show:false }, data:markLines }
-				},
-				{
-					// 식사 마커 — 차트 상단 흰 공간에 노란 배지, 파랑 글씨
-					name:'식사',
-					type:'scatter', z:10, symbol:'circle', symbolSize:6,
-					itemStyle:{ color:'#0d6efd' },
-					label:{
-						show:true, formatter:'🍚 식사',
-						position:'top', distance:2,
-						color:'#003d99', fontSize:12,
-						backgroundColor:'#FFE234',
-						borderColor:'#0d6efd', borderWidth:1.5, borderRadius:4, padding:[3,8]
-					},
-					emphasis:{
-						itemStyle:{ color:'#0b5ed7' },
-						label:{ backgroundColor:'#ffd000', borderColor:'#0b5ed7' }
-					},
-					data: foodScatterData
-				},
-				{
-					// 운동 마커 — 식사 바로 아래 흰 공간에 노란 배지, 초록 글씨
-					name:'운동',
-					type:'scatter', z:10, symbol:'circle', symbolSize:6,
-					itemStyle:{ color:'#198754' },
-					label:{
-						show:true, formatter:'🚴 운동',
-						position:'top', distance:2,
-						color:'#0a5c35', fontSize:12,
-						backgroundColor:'#FFE234',
-						borderColor:'#198754', borderWidth:1.5, borderRadius:4, padding:[3,8]
-					},
-					emphasis:{
-						itemStyle:{ color:'#157347' },
-						label:{ backgroundColor:'#ffd000', borderColor:'#157347' }
-					},
-					data: exerScatterData
+					]}
 				}
 			]
 		});
 		// 혈당 평가 패널 업데이트
 		updateEvalPanel(hours, ys, foodMap, exerMap, label);
-		// 식사/운동 배지에 직접 마우스 올리면 상세 내용 팝업
-		chart.on('mouseover', function(params){
-			var isFood=params.seriesName==='식사', isExer=params.seriesName==='운동';
-			if (!isFood && !isExer) return;
-			var nm=(params.data&&params.data.names)||[];
-			var ttl=isFood?'🍚 <b>식사</b>':'🚴 <b>운동</b>';
-			var col=isFood?'#003d99':'#0a5c35';
-			$('#markerPopupTitle').html('<span style="color:'+col+';">'+ttl+'</span>');
-			$('#markerPopupBody').html(nm.length?nm.map(function(n){return '<div>'+n+'</div>';}).join(''):'');
-			var ev=params.event&&params.event.event;
-			if (ev) $('#markerPopup').css({left:ev.clientX+14, top:ev.clientY-10, display:'block'});
-		});
-		chart.on('mouseout', function(params){
-			if (params.seriesName==='식사'||params.seriesName==='운동') $('#markerPopup').hide();
-		});
 	}).fail(function(xhr){
 		$("#lineChart").html('<div class="text-center text-danger p-3">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+')</div>');
 	});
@@ -535,6 +467,13 @@ function logout(){
 }
 /* ── 공통 헬퍼 ── */
 function pad(n){ return (n<10?'0':'')+n; }
+// 현재 시간대별 차트에 표시된 날짜 추적
+var _currentDayKey = null, _currentDayLabel = null;
+// "2026-05-29" → "5/29" 레이블 변환
+function _dayLabel(dateKey){
+	var p=(dateKey||'').split('-');
+	return p.length===3 ? parseInt(p[1])+'/'+parseInt(p[2]) : dateKey;
+}
 function localDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function fmtT(s){ if(!s||s.length<4) return s||''; return s.substring(0,2)+':'+s.substring(2,4); }
 function fmtD(s){ if(!s||s.length<8) return s||''; return s.substring(0,4)+'-'+s.substring(4,6)+'-'+s.substring(6,8); }
@@ -569,8 +508,15 @@ function saveFood(){
 		url: CommonUtil.getContextPath()+'/updateFood.do',
 		type:'post', data:$.param(dto), dataType:'json',
 		success:function(r){
-			if(r.IsSucceed){ $('#mFoodName').val(''); loadFoodList(); }
-			else alert('저장 실패');
+			if(r.IsSucceed){
+				$('#mFoodName').val('');
+				loadFoodList();
+				// 저장한 날짜로 시간대별 차트 즉시 갱신
+				var k=dto.eatDate, lbl=_dayLabel(k);
+				loadDayChart(k, lbl);
+				// 막대 차트도 갱신 (주간 평균 반영)
+				drawChart();
+			} else alert('저장 실패');
 		}
 	});
 }
@@ -603,8 +549,15 @@ function delFood(eatDate, eatStime){
 	if(!confirm(fmtD(eatDate)+' '+fmtT(eatStime)+' 식사 기록을 삭제할까요?')) return;
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/deleteFoodData.do',
-		type:'post', data:$.param({userUuid:userUuid, eatDate:eatDate, eatStime:eatStime}), dataType:'json',
-		success:function(r){ if(r.IsSucceed) loadFoodList(); else alert('삭제 실패'); }
+		type:'post',
+		data: JSON.stringify({userUuid:userUuid, eatDate:eatDate, eatStime:eatStime}),
+		contentType:'application/json', dataType:'json',
+		success:function(r){
+			if(r.IsSucceed){
+				loadFoodList();
+				if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
+			} else alert('삭제 실패');
+		}
 	});
 }
 
@@ -635,8 +588,14 @@ function saveExer(){
 		url: CommonUtil.getContextPath()+'/updateExer.do',
 		type:'post', data:$.param(dto), dataType:'json',
 		success:function(r){
-			if(r.IsSucceed){ $('#mExerName').val(''); loadExerList(); }
-			else alert('저장 실패');
+			if(r.IsSucceed){
+				$('#mExerName').val('');
+				loadExerList();
+				// 저장한 날짜로 시간대별 차트 즉시 갱신
+				var k=dto.exerDate, lbl=_dayLabel(k);
+				loadDayChart(k, lbl);
+				drawChart();
+			} else alert('저장 실패');
 		}
 	});
 }
@@ -669,8 +628,15 @@ function delExer(exerDate, exerStime){
 	if(!confirm(fmtD(exerDate)+' '+fmtT(exerStime)+' 운동 기록을 삭제할까요?')) return;
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/deleteExerData.do',
-		type:'post', data:$.param({userUuid:userUuid, exerDate:exerDate, exerStime:exerStime}), dataType:'json',
-		success:function(r){ if(r.IsSucceed) loadExerList(); else alert('삭제 실패'); }
+		type:'post',
+		data: JSON.stringify({userUuid:userUuid, exerDate:exerDate, exerStime:exerStime}),
+		contentType:'application/json', dataType:'json',
+		success:function(r){
+			if(r.IsSucceed){
+				loadExerList();
+				if(_currentDayKey) loadDayChart(_currentDayKey, _currentDayLabel);
+			} else alert('삭제 실패');
+		}
 	});
 }
 
@@ -1058,7 +1024,7 @@ function showIsensGuide(onConfirm){
               <span style="width:6px;height:18px;background:#6610f2;border-radius:3px;display:inline-block;"></span>
               <h6 class="fw-semibold text-muted mb-0">전체 기록</h6>
             </div>
-            <div style="max-height:300px;overflow-y:auto;">
+            <div style="max-height:210px;overflow-y:auto;">
               <table class="table table-sm table-hover align-middle mb-0">
                 <thead class="table-light" style="position:sticky;top:0;z-index:1;">
                   <tr><th class="ps-4">날짜</th><th>시작</th><th>종료</th><th>음식</th><th class="text-end">개수</th><th class="text-center pe-2"></th></tr>
@@ -1138,7 +1104,7 @@ function showIsensGuide(onConfirm){
               <span style="width:6px;height:18px;background:#20c997;border-radius:3px;display:inline-block;"></span>
               <h6 class="fw-semibold text-muted mb-0">전체 기록</h6>
             </div>
-            <div style="max-height:300px;overflow-y:auto;">
+            <div style="max-height:210px;overflow-y:auto;">
               <table class="table table-sm table-hover align-middle mb-0">
                 <thead class="table-light" style="position:sticky;top:0;z-index:1;">
                   <tr><th class="ps-4">날짜</th><th>시작</th><th>종료</th><th>운동</th><th class="text-end">횟수</th><th class="text-center pe-2"></th></tr>
@@ -1156,10 +1122,7 @@ function showIsensGuide(onConfirm){
 </div>
 
 <!-- 식사/운동 마커 클릭 팝업 -->
-<div id="markerPopup" style="position:fixed;display:none;z-index:9999;background:#fff;border:1px solid #dee2e6;border-radius:10px;padding:10px 15px;box-shadow:0 6px 20px rgba(0,0,0,0.16);min-width:110px;max-width:230px;font-size:13px;line-height:1.6;">
-  <div id="markerPopupTitle" style="margin-bottom:5px;font-size:14px;border-bottom:1px solid #f0f0f0;padding-bottom:5px;"></div>
-  <div id="markerPopupBody" style="color:#333;"></div>
-</div>
+<!-- markerPopup 제거 (axis 툴팁에 통합) -->
 <!-- 케어센스 안내 모달 (native alert 대체) -->
 <div id="isensGuideBackdrop" class="isens-guide-backdrop">
 	<div class="isens-guide-box">
