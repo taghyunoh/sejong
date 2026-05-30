@@ -17,7 +17,6 @@ public interface BloodMapper {
 	int insertBloodData(List<BloodDTO> bloodDataList);
 
 	List<Map<String, Object>> getBloodUserData(String userId);
-
 	
 	/** 환자별 i-Sens 토큰 + 마지막 CGM_DTM 조회 (동기화 시 사용) */
 	Map<String, Object> getSyncContext(String userUuid);
