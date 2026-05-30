@@ -78,6 +78,13 @@ public class BloodController {
 	@Value("${blood.auth.url}")
 	private String authUrl;
 
+	// 챗봇 LLM (Google Gemini) 설정
+	@Value("${api.gemini.key:}")
+	private String geminiKey;
+
+	@Value("${api.gemini.url:}")
+	private String geminiUrl;
+
 	// =====================================================================
 	// i-Sens 수동 동기화 (의사용)
 	//   - 환자(USER_UUID) 의 T_BLDCON_MST 토큰으로 cgms-url 호출
@@ -744,10 +751,148 @@ public class BloodController {
 		
 		Map<String, Object> response = new HashMap<>();
 		response.put("result", result);
-		
+
 	    return response;
 	}
-	
-	
+
+	// =====================================================================
+	// 챗봇 자유질문 LLM(Gemini) fallback
+	//   - patient_main.jsp 의 _chatResponse() 키워드 매칭 실패 시 호출
+	//   - 클라이언트가 보내는 질문(q) + 선택한 날 혈당 컨텍스트(ctx)를 프롬프트로 구성
+	//   - API 키 미설정/오류 시 IsSucceed=false → 화면은 기존 안내문구로 폴백
+	//   - 의료 조언 책임 회피: "참고용, 진단 아님" 시스템 지시 포함
+	// =====================================================================
+	@RequestMapping(value = "/blood/chatAsk.do", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseObject chatAsk(@RequestBody HashMap<String, Object> params) {
+		ResponseObject json = new ResponseObject();
+
+		String q = params != null && params.get("q") != null ? params.get("q").toString().trim() : "";
+		if (q.isEmpty()) {
+			json.IsSucceed = false;
+			json.Message = "질문이 비어 있습니다.";
+			return json;
+		}
+		// 프롬프트 인젝션/과금 폭증 방지를 위한 길이 제한
+		if (q.length() > 500) q = q.substring(0, 500);
+
+		if (geminiKey == null || geminiKey.isEmpty() || geminiKey.startsWith("YOUR_")
+				|| geminiUrl == null || geminiUrl.isEmpty()) {
+			json.IsSucceed = false;
+			json.Message = "LLM 미설정";   // 클라이언트는 기존 안내문구로 폴백
+			return json;
+		}
+
+		// 선택한 날 혈당 요약 컨텍스트 (클라이언트 _evalCtx 에서 전달, 없으면 생략)
+		String ctx = params.get("ctx") != null ? params.get("ctx").toString() : "";
+		if (ctx.length() > 400) ctx = ctx.substring(0, 400);
+
+		String systemInstruction =
+			"너는 당뇨/혈당 관리를 돕는 친절한 한국어 건강 도우미야. "
+			+ "사용자는 연속혈당측정(CGM)을 사용하는 환자야. "
+			+ "답변은 의학적 진단이 아니라 일반적인 생활관리 참고용이며, 심한 고혈당·저혈당이나 이상 증상은 반드시 담당 의사와 상담하라고 안내해. "
+			+ "답변은 200자 내외로 간결하게, 줄바꿈은 <br> 태그로 표기해. "
+			+ (ctx.isEmpty() ? "" : "참고 — 사용자가 보고 있는 혈당 요약: " + ctx);
+
+		try {
+			String answer = callGemini(systemInstruction, q);
+			if (answer == null || answer.trim().isEmpty()) {
+				json.IsSucceed = false;
+				json.Message = "LLM 응답 없음";
+				return json;
+			}
+			json.IsSucceed = true;
+			json.Data = answer.trim();
+			return json;
+		} catch (Exception e) {
+			log.error("chatAsk ERROR: " + e.getMessage(), e);
+			json.IsSucceed = false;
+			json.Message = "LLM 호출 오류";
+			return json;
+		}
+	}
+
+	/** Gemini generateContent 호출 → 첫 후보 텍스트 반환 (실패 시 null) */
+	private String callGemini(String systemInstruction, String userText) {
+		try {
+			Gson gson = new Gson();
+
+			// 요청 바디 구성 (system_instruction + 단일 user turn)
+			JsonObject sysPart = new JsonObject();
+			sysPart.addProperty("text", systemInstruction);
+			JsonArray sysParts = new JsonArray();
+			sysParts.add(sysPart);
+			JsonObject sysInstr = new JsonObject();
+			sysInstr.add("parts", sysParts);
+
+			JsonObject userPart = new JsonObject();
+			userPart.addProperty("text", userText);
+			JsonArray userParts = new JsonArray();
+			userParts.add(userPart);
+			JsonObject content = new JsonObject();
+			content.addProperty("role", "user");
+			content.add("parts", userParts);
+			JsonArray contents = new JsonArray();
+			contents.add(content);
+
+			JsonObject genCfg = new JsonObject();
+			genCfg.addProperty("temperature", 0.4);
+			genCfg.addProperty("maxOutputTokens", 1024);
+			// thinking(추론) 비활성화 — 켜두면 추론 토큰이 maxOutputTokens 를 잠식해
+			// 답변이 중간에 잘림(finishReason=MAX_TOKENS). 단순 건강 Q&A 라 불필요.
+			JsonObject thinkingCfg = new JsonObject();
+			thinkingCfg.addProperty("thinkingBudget", 0);
+			genCfg.add("thinkingConfig", thinkingCfg);
+
+			JsonObject reqBody = new JsonObject();
+			reqBody.add("system_instruction", sysInstr);
+			reqBody.add("contents", contents);
+			reqBody.add("generationConfig", genCfg);
+
+			// API 키는 헤더(x-goog-api-key)로 전달 (URL 쿼리 노출 방지)
+			URL url = new URL(geminiUrl);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+			conn.setRequestProperty("x-goog-api-key", geminiKey);
+			conn.setDoOutput(true);
+			conn.setConnectTimeout(10000);
+			conn.setReadTimeout(30000);
+
+			try (OutputStream os = conn.getOutputStream()) {
+				os.write(gson.toJson(reqBody).getBytes("UTF-8"));
+				os.flush();
+			}
+
+			int code = conn.getResponseCode();
+			InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+			StringBuilder sb = new StringBuilder();
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+				String line;
+				while ((line = in.readLine()) != null) sb.append(line);
+			}
+			if (code < 200 || code >= 300) {
+				log.warn("Gemini HTTP {} : {}", code, sb.toString());
+				return null;
+			}
+
+			// 응답 파싱: candidates[0].content.parts[0].text
+			JsonObject root = gson.fromJson(sb.toString(), JsonObject.class);
+			JsonArray candidates = root.getAsJsonArray("candidates");
+			if (candidates == null || candidates.size() == 0) return null;
+			JsonObject cand = candidates.get(0).getAsJsonObject();
+			JsonObject candContent = cand.getAsJsonObject("content");
+			if (candContent == null) return null;
+			JsonArray parts = candContent.getAsJsonArray("parts");
+			if (parts == null || parts.size() == 0) return null;
+			JsonElement textEl = parts.get(0).getAsJsonObject().get("text");
+			return textEl != null ? textEl.getAsString() : null;
+
+		} catch (Exception e) {
+			log.error("callGemini error: " + e.getMessage(), e);
+			return null;
+		}
+	}
+
 }
 

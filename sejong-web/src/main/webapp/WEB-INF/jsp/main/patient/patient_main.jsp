@@ -848,7 +848,36 @@ function sendChat(){
 	var q=$.trim($('#chatInput').val()); if(!q) return;
 	$('#chatInput').val('');
 	_addMsg(q,true);
-	setTimeout(function(){ _addMsg(_chatResponse(q),false); },280);
+
+	// ① 로컬 키워드/데이터 즉답 (혈당 데이터 질문 + blood_qa.js 매칭)
+	var local = _chatResponse(q);
+	if (local != null) {
+		setTimeout(function(){ _addMsg(local,false); },280);
+		return;
+	}
+
+	// ② 매칭 실패 → 서버 LLM(Gemini) fallback. "입력 중…" 표시 후 응답으로 교체
+	var $typing = $('<div class="chat-bot"><span class="chat-text">…</span></div>');
+	$('#chatMessages').append($typing);
+	$('#chatMessages')[0].scrollTop = $('#chatMessages')[0].scrollHeight;
+
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/blood/chatAsk.do',
+		type:'post',
+		data: JSON.stringify({ q:q, ctx:_chatCtxText() }),
+		contentType:'application/json',
+		dataType:'json',
+		success:function(r){
+			$typing.remove();
+			if (r && r.IsSucceed && r.Data) _addMsg(String(r.Data), false);
+			else _addMsg(_chatFallbackMsg(), false);
+		},
+		error:function(){
+			$typing.remove();
+			_addMsg(_chatFallbackMsg(), false);
+		}
+	});
+	
 }
 function _chatResponse(q){
 	var ctx=_evalCtx;
@@ -897,9 +926,22 @@ function _chatResponse(q){
 	}
 
 	/* ── 매칭 실패 시 ──
-	   TODO: 추후 여기서 AI(LLM) API 호출로 임의 질문 답변 (현재는 비용 없이 안내 문구) */
-	if(!hasData) return '현재 선택된 날짜의 데이터가 없습니다.<br>상단 막대 차트에서 날짜를 클릭해 주세요.';
-	return '죄송해요, 그 질문은 아직 준비되지 않았어요 😅<br><br>이런 질문을 해보세요:<br>• "자기 몇 시간 전까지 식사하는게 좋아요?"<br>• "오늘 혈당이 높은가요?"<br>• "저혈당 증상과 대처법은?"<br>• "수영·자전거 운동이 혈당에 좋아요?"<br>• "스트레스와 혈당의 관계는?"';
+	   로컬(키워드/데이터) 답변이 없으면 null 반환 → sendChat() 이 서버 LLM(Gemini) 으로 fallback */
+	return null;
+}
+// LLM·매칭 모두 실패했을 때 보여줄 안내 문구
+function _chatFallbackMsg(){
+	return '죄송해요, 지금은 답변을 가져오지 못했어요 😅<br><br>이런 질문을 해보세요:<br>• "자기 몇 시간 전까지 식사하는게 좋아요?"<br>• "오늘 혈당이 높은가요?"<br>• "저혈당 증상과 대처법은?"<br>• "수영·자전거 운동이 혈당에 좋아요?"<br>• "스트레스와 혈당의 관계는?"';
+}
+// 현재 선택된 날 혈당 요약 — LLM 프롬프트 컨텍스트로 전달
+function _chatCtxText(){
+	var ctx=_evalCtx;
+	var vals=ctx.ys.filter(function(v){return v!=null&&!isNaN(v);});
+	if(!vals.length) return '';
+	var avg=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+	var max=Math.max.apply(null,vals), min=Math.min.apply(null,vals);
+	var pct=Math.round(vals.filter(function(v){return v>=70&&v<=180;}).length/vals.length*100);
+	return (ctx.label||'선택한 날')+' 평균 '+avg+' / 최고 '+max+' / 최저 '+min+' mg/dL, 목표범위(70~180) '+pct+'%';
 }
 $(function(){
 	// 초기 인사 메시지
