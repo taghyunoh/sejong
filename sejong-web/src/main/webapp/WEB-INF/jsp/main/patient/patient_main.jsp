@@ -91,6 +91,7 @@
 var userUuid = "${sessionScope.userUuid}";
 var userNm   = "${sessionScope.userNm}";
 
+
 /* ui-message.js 미로딩(404 등) 대비 안전망 — 로드되면 이 블록은 자동 스킵 */
 if (typeof window._toast !== 'function') { window._toast = function(m){ alert(String(m).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,'')); }; }
 if (typeof window._confirmBox !== 'function') { window._confirmBox = function(o){ o=o||{}; var m=String(o.msg||'진행할까요?').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,''); if(confirm(m)){ if(o.onOk)o.onOk(); } else { if(o.onCancel)o.onCancel(); } }; }
