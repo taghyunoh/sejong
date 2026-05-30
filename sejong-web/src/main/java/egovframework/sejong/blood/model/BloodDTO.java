@@ -9,6 +9,7 @@ public class BloodDTO {
 	 	@SerializedName("serial_number")
 	    private String serialNumber;
 
+	 	
 	    @SerializedName("seq_number")
 	    private Integer seqNumber;
 

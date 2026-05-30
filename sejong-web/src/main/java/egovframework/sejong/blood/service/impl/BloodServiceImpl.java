@@ -75,6 +75,7 @@ public class BloodServiceImpl implements BloodService {
 	public Map<String, Object> getTodayAvgBlood(String userId) {
 		return bloodMapper.getTodayAvgBlood(userId);
 	}
+	
 
 	@Override
 	public List<Map<String, Object>> showBloodData(Map<String, Object> map) {

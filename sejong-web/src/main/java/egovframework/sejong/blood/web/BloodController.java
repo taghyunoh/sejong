@@ -812,6 +812,7 @@ public class BloodController {
 		}
 	}
 
+	
 	/** Gemini generateContent 호출 → 첫 후보 텍스트 반환 (실패 시 null) */
 	private String callGemini(String systemInstruction, String userText) {
 		try {
