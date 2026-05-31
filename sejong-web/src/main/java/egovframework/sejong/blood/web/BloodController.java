@@ -123,19 +123,31 @@ public class BloodController {
 			String end = toIsoOffset(new Date());
 
 			// 1차 호출
-			String body = callCgms(start, end, accessToken);
+			int[] st1 = new int[]{0};
+			String body = callCgms(start, end, accessToken, st1);
+			boolean authFail = (st1[0] == 401 || st1[0] == 403);
 
 			// 401 / 토큰 만료로 추정되는 경우 refresh 후 1회 재시도
 			if (body == null && refreshTokenStr != null && !refreshTokenStr.isEmpty()) {
 				String newAccessToken = refreshAndSaveToken(userUuid, refreshTokenStr);
 				if (newAccessToken != null) {
-					body = callCgms(start, end, newAccessToken);
+					int[] st2 = new int[]{0};
+					body = callCgms(start, end, newAccessToken, st2);
+					authFail = (st2[0] == 401 || st2[0] == 403);   // 갱신 후에도 401이면 진짜 재연동 필요
+				} else {
+					authFail = true;   // refresh 자체 실패 = refresh 토큰도 만료 → 재연동 필요
 				}
 			}
 
 			if (body == null) {
 				json.IsSucceed = false;
-				json.Message = "i-Sens 호출 실패 (토큰 만료 또는 네트워크 오류).";
+				if (authFail) {
+					// 클라이언트가 이 신호로 "케어센스 재로그인" 버튼을 노출
+					json.Data = "REAUTH";
+					json.Message = "i-Sens(케어센스) 토큰이 만료되었습니다. 재로그인이 필요합니다.";
+				} else {
+					json.Message = "i-Sens 호출 실패 (네트워크 오류). 잠시 후 다시 시도해 주세요.";
+				}
 				return json;
 			}
 
@@ -322,7 +334,8 @@ public class BloodController {
 	}
 
 	/** cgms-url GET 호출. 성공 시 응답 본문, 실패 시 null */
-	private String callCgms(String start, String end, String accessToken) {
+	// outStatus[0] 에 HTTP 상태코드를 기록(예외/네트워크 오류면 -1) → 호출부가 만료(401/403)와 네트워크 오류를 구분
+	private String callCgms(String start, String end, String accessToken, int[] outStatus) {
 		try {
 			String query = String.format("start=%s&end=%s",
 					java.net.URLEncoder.encode(start, "UTF-8"),
@@ -335,6 +348,7 @@ public class BloodController {
 			conn.setReadTimeout(20000);
 
 			int code = conn.getResponseCode();
+			if (outStatus != null) outStatus[0] = code;
 			if (code == 401 || code == 403) {
 				log.warn("i-Sens cgms returned {}, will try refresh", code);
 				return null;
@@ -351,6 +365,7 @@ public class BloodController {
 			}
 			return sb.toString();
 		} catch (Exception e) {
+			if (outStatus != null) outStatus[0] = -1;   // 네트워크/예외
 			log.error("callCgms error: " + e.getMessage(), e);
 			return null;
 		}

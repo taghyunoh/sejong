@@ -21,10 +21,21 @@
   var previousStyle = {}; // 초기 상태 저장을 위한 전역 변수
 </script>
 <style>
-@media  print{ 
+@media  print{
+        /* 브라우저 인쇄 머리글/바닥글(상단 날짜·제목, 하단 URL·페이지번호) 제거 */
+        @page { margin: 0; }
+        html, body { margin: 0 !important; }
+        /* @page 여백 0 으로 사라진 가장자리 여백을 본문에 직접 부여 */
+        #printableArea { padding: 10mm 8mm !important; }
+        /* 기간 선택(날짜 입력칸)·우측 인쇄버튼 영역 숨김 */
+        .date-search-wrap,
+        .butcon-wrap,
+        .search-box {
+            display: none !important;
+        }
         .content-box {
-            margin: 10px 0; 
-            page-break-inside: avoid; 
+            margin: 10px 0;
+            page-break-inside: avoid;
         }
         .center-content {
             justify-content: center; /* 중복된 속성 수정 */
@@ -38,11 +49,18 @@
 	    .btn-primary,
 	    .btn-outline-primary,
 	    .stab-menu {
-	        display: none ;
+	        display: none !important;   /* 외부 CSS(flex !important) 보다 우선해 인쇄 시 확실히 숨김 */
 	    }
         .section {
-            page-break-after: always;
-        } 
+            /* 큰 섹션(혈당 그래프 등)은 avoid 하면 통째로 다음 페이지로 밀려 빈 화면이 생김.
+               자연스럽게 흐르도록 강제 페이지나눔 없음 */
+            page-break-inside: auto;
+            page-break-before: auto;
+            page-break-after: auto;
+        }
+        /* 개별 차트 박스만 페이지 중간에서 잘리지 않게 (각 차트는 한 페이지에 들어감) */
+        .chart-wrap { page-break-inside: avoid; }
+        /* 현재 선택된 탭(.active)만 출력 — 나머지 탭은 기존대로 숨김 유지 */
 	    .patient-info {
 	        margin: 0 !important;
 	        padding: 0 !important;
@@ -50,9 +68,46 @@
 	    }
         
         .btn-primary, .btn-outline-primary, .stab-menu {
-            display: none;
+            display: none !important;
         }
-     
+
+        /* 인쇄: 해당(선택된) 탭 내용만 가운데 정렬 + 조금 큰 폰트 */
+        #printableArea {
+            text-align: center;
+            font-size: 1.15em;        /* 화면보다 조금 큰 폰트 */
+        }
+        #printableArea .content-box,
+        #printableArea .chart-wrap,
+        #printableArea .steb-container,
+        #printableArea section {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;   /* 좌우 분할(flex-left/right) 해제하고 가운데로 */
+        }
+        /* 차트(echarts 캔버스)가 용지를 넘으면 폭에 맞춰 축소 + 가운데 */
+        #printableArea canvas {
+            max-width: 100% !important;
+            height: auto !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            display: block !important;
+        }
+        /* ── 하단 빈 페이지 방지 ──
+           래퍼의 min-height(100vh 등)·하단 여백이 내용보다 키를 키워 다음 페이지로 넘치는 것 차단 */
+        html, body,
+        #printableArea, .tab-pane, .content-body, .tab-content,
+        .content-wrap, .steb-container, .stab-content, .section {
+            min-height: 0 !important;
+            height: auto !important;
+        }
+        #printableArea { padding-bottom: 0 !important; }
+        .stab-content > .steb-container,
+        .stab-content .section,
+        .chart-wrap:last-child,
+        .content-box:last-child {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
 }
 </style>
 
@@ -184,13 +239,18 @@
         };
         
         // 출력후 재로드진행 제거 부분  
-        window.onafterprint = function() {
-            document.getElementById('print').style.display = 'none'; // 인쇄 후 숨기기
-            unhiderprint() ;
-            document.body.innerHTML = initBody; // 원래 내용으로 복원
-        };
-        window.print();
-        unhiderprint() ;
+        // ── 현재 보고 있는 탭만 출력 ──
+        // 깨진 body 교체 핸들러 무력화 (#print 요소가 없어 throw 되던 부분)
+        window.onbeforeprint = null;
+        window.onafterprint  = null;
+        // 활성 탭 차트만 컨테이너 크기에 맞춰 정렬 후 인쇄
+        var active = document.querySelector('.stab-content.active');
+        if (active) {
+            active.querySelectorAll('div').forEach(function (d) {
+                try { var inst = echarts.getInstanceByDom(d); if (inst) inst.resize(); } catch (e) {}
+            });
+        }
+        setTimeout(function () { window.print(); }, 80);
     }
     //스타일에서 않되서 여기다 처리했음 주메뉴에서 상속한 경우 이런문제가 있네요 
     function hiderprint(){

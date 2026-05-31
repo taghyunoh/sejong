@@ -203,7 +203,14 @@ function _doSyncMyBlood(silent){
 		type:"post",
 		dataType:"json",
 		success:function(r){
-			if (silent) {
+			// 토큰 만료(재연동 필요) → 안내 + "케어센스 재로그인" 버튼 노출
+			if (r && !r.IsSucceed && r.Data === 'REAUTH') {
+				$("#tokenStatus").text("✗ i-Sens 토큰 만료").removeClass("text-success").addClass("text-danger");
+				$("#btnSync").hide();
+				$("#syncMsg").html('⚠ 케어센스 토큰이 만료되었습니다. '
+					+ '<button type="button" class="btn btn-sm btn-danger ms-1" onclick="connectISens()">케어센스 재로그인</button>').show();
+				if (!silent) _toast('케어센스 재로그인이 필요합니다.', 'err');
+			} else if (silent) {
 				// 자동 호출: 결과를 상태 영역에만 표시
 				$("#syncMsg").text(r && r.IsSucceed
 					? "최근 동기화: " + (r.Message || "완료")
@@ -308,8 +315,11 @@ function drawDailyChart(rows){
 	if (present.length > 0) {
 		var wAvg = Math.round(present.reduce(function(a,b){return a+b;},0) / present.length);
 		$("#weekAvg").text(wAvg);
+		// 챗봇 "최근 1주일" 질문용 주간 통계 저장 (일별 평균 기준)
+		window._weekStats = { avg: wAvg, max: Math.max.apply(null, present), min: Math.min.apply(null, present), days: present.length };
 	} else {
 		$("#weekAvg").text("-");
+		window._weekStats = null;
 	}
 	if (typeof echarts === 'undefined') {
 		$("#dailyChart").html('<div class="text-center text-danger p-3">차트 라이브러리(echarts) 로드 실패 — 네트워크/CDN 차단 여부를 확인하세요.</div>');
@@ -845,6 +855,8 @@ function _clearChat(){
 		}
 	});
 }
+// 동일 질문 캐시: { '질문|혈당컨텍스트' : '성공답변' } — 같은 질문 반복 시 서버 재호출 방지
+var _chatCache = {};
 function sendChat(){
 	var q=$.trim($('#chatInput').val()); if(!q) return;
 	$('#chatInput').val('');
@@ -857,6 +869,15 @@ function sendChat(){
 		return;
 	}
 
+	// ②-0 동일 질문 캐시: 같은 질문 + 같은 혈당 컨텍스트면 서버 재호출 없이 이전 답 재사용
+	//      (반복 질문 시 LLM 한도/오류로 폴백 뜨던 문제 방지)
+	var _ctxText  = _chatCtxText();
+	var _cacheKey = q.toLowerCase() + '|' + _ctxText;
+	if (_chatCache[_cacheKey]) {
+		setTimeout(function(){ _addMsg(_chatCache[_cacheKey], false); }, 200);
+		return;
+	}
+
 	// ② 매칭 실패 → 서버 LLM(Gemini) fallback. "입력 중…" 표시 후 응답으로 교체
 	var $typing = $('<div class="chat-bot"><span class="chat-text">…</span></div>');
 	$('#chatMessages').append($typing);
@@ -865,13 +886,18 @@ function sendChat(){
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/blood/chatAsk.do',
 		type:'post',
-		data: JSON.stringify({ q:q, ctx:_chatCtxText() }),
+		data: JSON.stringify({ q:q, ctx:_ctxText }),
 		contentType:'application/json',
 		dataType:'json',
 		success:function(r){
 			$typing.remove();
-			if (r && r.IsSucceed && r.Data) _addMsg(String(r.Data), false);
-			else _addMsg(_chatFallbackMsg(), false);
+			if (r && r.IsSucceed && r.Data) {
+				var _ans = String(r.Data);
+				_chatCache[_cacheKey] = _ans;   // 성공 답변만 캐시 → 다음 동일 질문은 즉시 재사용
+				_addMsg(_ans, false);
+			} else {
+				_addMsg(_chatFallbackMsg(), false);
+			}
 		},
 		error:function(){
 			$typing.remove();
@@ -891,6 +917,94 @@ function _chatResponse(q){
 	var lbl =ctx.label?ctx.label+'':'선택한 날';
 	var hasData=vals.length>0;
 	var o=q; q=q.toLowerCase();
+
+	/* ── 최근 1주일(주간) 질문 — 선택일 평균보다 먼저 가로채 주간 데이터로 답 ── */
+	if(/(최근\s*1?\s*주|1주일|일주일|주간|이번\s*주|한\s*주|일주)/.test(q)){
+		var ws = window._weekStats;
+		if (ws && ws.avg != null) {
+			var wStat = ws.avg<=140 ? '양호한 상태입니다 👍'
+			          : ws.avg<=180 ? '관리가 필요합니다.'
+			          : '<span style="color:#dc3545;">고혈당 주의</span>가 필요합니다.';
+			return '최근 1주일 일별 평균 혈당: <b>'+ws.avg+' mg/dL</b><br>'
+			     + '최고 일평균 <b>'+ws.max+'</b> · 최저 일평균 <b>'+ws.min+'</b> mg/dL ('+ws.days+'일 기준)<br>'
+			     + wStat + '<br><small>※ 일반 참고용이며 진단이 아닙니다. 이상 증상은 담당 의사와 상담하세요.</small>';
+		}
+		return '최근 1주일 혈당 데이터가 아직 없어요.<br>상단 <b>혈당 가져오기</b>로 데이터를 동기화한 뒤 다시 물어봐 주세요.';
+	}
+
+	/* ── 식후(식사 후) 혈당 — 선택일 식사 시각 2시간 후 혈당을 데이터로 답 ── */
+	if(/(식후|식사\s*후|식사후|밥\s*먹고|먹은\s*후)/.test(q) && hasData){
+		var fm = ctx.foodMap || {};
+		var mealHours = Object.keys(fm).sort();
+		var gAt = function(h){ if(h<0||h>23) return null; var k=(h<10?'0':'')+h; var ix=ctx.hours.indexOf(k); return (ix>=0 && ctx.ys[ix]!=null)?ctx.ys[ix]:null; };
+		if (mealHours.length === 0) {
+			return lbl+'에 기록된 식사 시각이 없어 식후 혈당을 계산할 수 없어요.<br>식사를 기록하면 끼니별 식후 혈당을 분석해 드릴게요.';
+		}
+		var lines = [], peaks = [];
+		mealHours.forEach(function(mh){
+			var hN = parseInt(mh,10);
+			var post = gAt(hN+2); if(post==null) post=gAt(hN+1);
+			if (post!=null){
+				var meal=(fm[mh]||['식사']).join(',');
+				var tag = post>180?'<span style="color:#dc3545;">고혈당</span>':post>140?'약간 높음':'정상';
+				lines.push(mh+'시 '+meal+' → 2시간 후 약 <b>'+post+' mg/dL</b> ('+tag+')');
+				peaks.push(post);
+			}
+		});
+		if (lines.length === 0){
+			return lbl+' 식사 후 2시간 혈당 데이터가 부족해요. (식사 시각 전후 측정값 필요)';
+		}
+		var pk = Math.max.apply(null, peaks);
+		var tip = pk>180 ? '식후 고혈당이 보입니다. 정제 탄수화물을 줄이고 식후 30분 걷기를 권장합니다.'
+		        : pk>140 ? '식후 혈당이 다소 올라갑니다. 채소·단백질 먼저 먹기와 식후 걷기가 도움이 됩니다.'
+		        : '식후 혈당이 목표(식후 2시간 140 이하) 안에서 잘 관리되고 있습니다 👍';
+		return lbl+' 식후 혈당:<br>• '+lines.join('<br>• ')+'<br>'+tip+'<br><small>※ 일반 참고용이며 진단이 아닙니다.</small>';
+	}
+
+	/* ── 공복 / 끼니 시간대(아침·점심·저녁) 혈당 — '내 데이터' 의도일 때만 선택일 데이터로 답 ──
+	   (단순 지식 질문 "공복혈당 정상수치?" 등은 가드에 안 걸려 교과서 답으로 넘어감) */
+	var _dataIntent = /(어때|어땠|어떤|어떻|얼마|몇|상태|관리|괜찮|높|낮|변화|좋아|나빠|문제)/.test(q);
+	if(hasData && _dataIntent){
+		var gAt2 = function(h){ if(h<0||h>23) return null; var k=(h<10?'0':'')+h; var ix=ctx.hours.indexOf(k); return (ix>=0 && ctx.ys[ix]!=null)?ctx.ys[ix]:null; };
+
+		// 공복(기상 직후) 혈당: 첫 식사 이전 가장 이른 측정값
+		if(/(공복|기상|자고\s*일어|일어나|아침\s*공복)/.test(q)){
+			var fmk = Object.keys(ctx.foodMap||{}).sort();
+			var firstMeal = fmk.length ? parseInt(fmk[0],10) : 9;
+			var fast=null, fastH=null;
+			for(var h=4; h<firstMeal; h++){ var gv=gAt2(h); if(gv!=null){ fast=gv; fastH=h; break; } }
+			if(fast==null){ for(var h2=4; h2<=9; h2++){ var gv2=gAt2(h2); if(gv2!=null){ fast=gv2; fastH=h2; break; } } }
+			if(fast!=null){
+				var ftag = fast<100?'정상':fast<126?'공복혈당장애':'<span style="color:#dc3545;">높음</span>';
+				return lbl+' 공복 혈당(약 '+fastH+'시): <b>'+fast+' mg/dL</b> ('+ftag+')<br>'
+				     +(fast<100?'공복 혈당이 정상 범위입니다 👍':fast<126?'공복혈당장애 구간이에요. 늦은 저녁 식사를 줄여보세요.':'공복 고혈당이 보입니다. 담당 의사와 상담을 권장합니다.')
+				     +'<br><small>※ 일반 참고용이며 진단이 아닙니다.</small>';
+			}
+			return lbl+' 기상 직후(공복) 측정값이 없어 공복 혈당을 계산할 수 없어요.';
+		}
+
+		// 아침/점심/저녁 시간대 평균·최고
+		var periods = [
+			{ re:/(아침|조식|오전)/,        name:'아침', s:5,  e:10 },
+			{ re:/(점심|중식|낮)/,          name:'점심', s:11, e:15 },
+			{ re:/(저녁|석식|밤|야간)/,     name:'저녁', s:17, e:22 }
+		];
+		for(var pi=0; pi<periods.length; pi++){
+			var P=periods[pi];
+			if(P.re.test(q)){
+				var pv=[]; for(var hh=P.s; hh<=P.e; hh++){ var g=gAt2(hh); if(g!=null) pv.push(g); }
+				if(pv.length){
+					var pavg=Math.round(pv.reduce(function(a,b){return a+b;},0)/pv.length);
+					var pmax=Math.max.apply(null,pv);
+					var ptag=pavg>180?'<span style="color:#dc3545;">고혈당</span>':pavg>140?'약간 높음':'정상';
+					return lbl+' '+P.name+' 시간대 혈당: 평균 <b>'+pavg+'</b> · 최고 <b>'+pmax+'</b> mg/dL ('+ptag+')<br>'
+					     +(pmax>180?'식후 고혈당이 보입니다. 식후 30분 걷기를 권장합니다.':pavg>140?'다소 높습니다. 탄수화물 양·식사 속도를 조절해 보세요.':'잘 관리되고 있습니다 👍')
+					     +'<br><small>※ 일반 참고용이며 진단이 아닙니다.</small>';
+				}
+				return lbl+' '+P.name+' 시간대 혈당 데이터가 없어요.';
+			}
+		}
+	}
 
 	/* ── 현재 데이터 기반 질문 ── */
 	if(/(높|위험|고혈당)/.test(q)&&/(오늘|현재|지금)/.test(q)&&hasData){
@@ -915,15 +1029,40 @@ function _chatResponse(q){
 	/* ── 일반 건강 지식: 데이터 파일(blood_qa.js)의 BLOOD_QA 에서 키워드 매칭 ──
 	   답변 추가/수정은 blood_qa.js 만 편집하면 됨 (이 코드 수정 불필요) */
 	if (typeof BLOOD_QA !== 'undefined' && BLOOD_QA.length) {
+		// 점수제 매칭: 첫 매칭이 아니라, 일치한 키워드 길이 합(구체적일수록 가중)으로 점수화해
+		// 가장 잘 맞는 1개만 선택. 1등이 2등보다 뚜렷이 앞설 때만 사용하고,
+		// 점수가 비슷(애매)하거나 약하면 null → 서버 LLM 이 의도 파악 (엉뚱한 고정답 방지)
+		var bestItem = null, bestScore = 0, bestMaxLen = 0, secondScore = 0;
 		for (var i = 0; i < BLOOD_QA.length; i++) {
 			var item = BLOOD_QA[i];
 			if (!item || !item.kw) continue;
+			var score = 0, maxLen = 0;
 			for (var j = 0; j < item.kw.length; j++) {
-				if (q.indexOf(String(item.kw[j]).toLowerCase()) !== -1) {
-					return item.a;
+				var kw = String(item.kw[j]).toLowerCase();
+				if (kw && q.indexOf(kw) !== -1) {
+					score += kw.length;              // 긴(구체적) 키워드일수록 가중
+					if (kw.length > maxLen) maxLen = kw.length;
 				}
 			}
+			if (score > bestScore)        { secondScore = bestScore; bestItem = item; bestScore = score; bestMaxLen = maxLen; }
+			else if (score > secondScore) { secondScore = score; }
 		}
+		// 신뢰 조건: 가장 긴 일치 키워드 2자 이상 + 2등과 점수 차 2 이상(키워드 1개 이상 우위)일 때만 채택
+		if (bestItem && bestMaxLen >= 2 && bestScore >= secondScore + 2) {
+			return bestItem.a;
+		}
+		// 그 외(약하거나 애매하게 여러 항목이 비슷) → null → LLM 으로 위임
+	}
+
+	/* ── 특정 음식 질문(짬뽕·라면 등 키워드 없는 음식) — 전용 답 없을 때 일반 음식 가이드로 답 ──
+	   "X 먹어도 돼요?" / "X은 혈당에 어떤가요/좋은가요" 패턴. (운동·스트레스 등은 위 BLOOD_QA 에서 이미 처리됨) */
+	if(/(먹어도|먹으면|먹는\s*게|먹는\s*건|드셔도|섭취해도|혈당에\s*(어떤|좋|나쁘|괜찮|영향|올라|안\s*좋))/.test(q)){
+		return '특정 음식과 혈당 (일반 가이드):<br>'
+		     + '• 흰쌀·면류·빵 등 <b>정제 탄수화물</b>과 단 음식은 혈당을 빠르게 올립니다.<br>'
+		     + '• <b>채소·단백질을 먼저</b> 먹고 천천히(20분 이상) 드세요.<br>'
+		     + '• 탄수화물은 양을 줄이고 잡곡·통곡물로 바꾸면 좋습니다.<br>'
+		     + '• 식후 <b>30분 걷기</b>로 식후 혈당 상승을 완화하세요.<br>'
+		     + '<small>※ 일반 참고용이며 음식별 반응은 개인차가 있습니다.</small>';
 	}
 
 	/* ── 매칭 실패 시 ──
