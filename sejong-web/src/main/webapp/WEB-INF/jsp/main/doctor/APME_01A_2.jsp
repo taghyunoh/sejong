@@ -1183,15 +1183,13 @@
 
 	  	          	  myChart3.on('click', function(params) {
 		                  	var selectedDate = params.name; // params.name에서 날짜를 가져옴
-	                      	drawTodayBloodChart(selectedDate, userId, avgBlood); // 선택된 날짜로 두 번째 차트 그리기
-	                   		drawOneMealChart(selectedDate, userId);
+	                      	drawTodayBloodChart(selectedDate, userId, avgBlood); // 선택된 날짜로 두 번째 차트 그리기 (식사 마커 포함)
                    });
 
 	  	          	  // 초기 로드 시 가장 최근 날짜 자동 선택 → 하단 2개 차트(하루혈당·식사별)를 클릭 없이 표시
 	  	          	  if (date2 && date2.length > 0) {
 	  	          	      var initDate = date2[date2.length - 1];
-	  	          	      drawTodayBloodChart(initDate, userId, avgBlood);
-	  	          	      drawOneMealChart(initDate, userId);
+	  	          	      drawTodayBloodChart(initDate, userId, avgBlood); // 식사 마커 포함
 	  	          	  }
 	  	      });
 	  	  }
@@ -1398,10 +1396,59 @@
                     ]
                 };
 
-                // 차트 초기화 및 설정
+                // 차트 초기화 및 설정 (혈당 라인 먼저 — 항상 표시)
+                // notMerge=true: 날짜 변경 시 이전 식사 마커(scatter)가 잔존하지 않도록 매번 완전 초기화
                 var mySecondChart = echarts.init(document.getElementById('SecondBloodChart'));
-                mySecondChart.setOption(secondOption);
-                
+                mySecondChart.setOption(secondOption, true);
+
+                // ── 하단 식사내용을 같은 차트에 겹쳐 표시 (식사 마커) ──
+                CommonUtil.callAjax(CommonUtil.getContextPath() + "/drawOneMealChart.do", "POST", formData, function(mealRes) {
+                    if (!mealRes || !mealRes.length) { return; }
+                    var mealMap = {}; // 시(hour) -> [음식명...]
+                    for (var i = 0; i < mealRes.length; i++) {
+                        var hh = parseInt(mealRes[i].hh, 10);
+                        if (isNaN(hh)) { hh = _extractHour(mealRes[i].dtm); }
+                        if (isNaN(hh) || hh < 0 || hh > 23) {           // 끼니로 폴백 배치
+                            var et = mealRes[i].eatType;
+                            hh = (et === '0') ? 8 : (et === '1') ? 12 : (et === '2') ? 18 : (et === '6') ? 21 : 12;
+                        }
+                        var nm = mealRes[i].foodNm || '식사';
+                        if (!mealMap[hh]) { mealMap[hh] = []; }
+                        if (mealMap[hh].indexOf(nm) === -1) { mealMap[hh].push(nm); }
+                    }
+                    var mealPoints = [];
+                    for (var h in mealMap) {
+                        if (!mealMap.hasOwnProperty(h)) { continue; }
+                        var hi = parseInt(h, 10);
+                        var yv = (UPT[hi] != null) ? UPT[hi] : Math.max(50, Math.round(avgval)); // 해당 시각 혈당값(없으면 평균 근처)
+                        mealPoints.push({
+                            value: [hi, yv],
+                            name: mealMap[h].join(', '),
+                            label: {
+                                show: true, position: 'top', distance: 10,
+                                formatter: mealMap[h].join('\n'),
+                                color: '#c0392b', fontSize: 11, fontWeight: 'bold', lineHeight: 14,
+                                backgroundColor: 'rgba(255,255,255,0.88)', padding: [2, 5], borderRadius: 3,
+                                borderColor: '#FFA500', borderWidth: 1
+                            }
+                        });
+                    }
+                    if (!mealPoints.length) { return; }
+                    // 혈당 라인(index 0) 유지 + 식사 마커(scatter) 추가
+                    mySecondChart.setOption({
+                        series: secondOption.series.concat([{
+                            name: '식사',
+                            type: 'scatter',
+                            symbol: 'pin',
+                            symbolSize: 28,
+                            itemStyle: { color: '#FFA500', borderColor: '#fff', borderWidth: 1 },
+                            data: mealPoints,
+                            z: 12,
+                            tooltip: { trigger: 'item', formatter: function (p) { return '🍽 ' + p.name; } }
+                        }])
+                    });
+                });
+
             });
         }
 	      //식사 메모
@@ -2218,13 +2265,7 @@
 					    <!--        <div id="drawOneMealChart" style="height: 500PX; width: 100%;"></div>  -->
 					      </section>
 						</div> 
-					</div>	   <!-- 분리 출력을 위해 나눔  -->   
-						<div class="chart-wrap">
-				          <section class="content-box">
-					          <div id="drawOneMealChart" style="height: 500PX; width: 100%;"></div>
-					      </section>
-						</div>
-
+					</div>	   <!-- 분리 출력을 위해 나눔  -->
 					</div>
 				</div>
 				
