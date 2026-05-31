@@ -2,7 +2,9 @@
 <!-- Bootstrap CSS -->
 <link href="/bootstrap/css/bootstrap.css" rel="stylesheet">   
 <link href="/asset/css/common.css" rel="stylesheet">
-<link href="/css/main.css" rel="stylesheet"> 
+<link href="/css/admin-common.css" rel="stylesheet">
+<script type="text/javascript" src="/js/admin-paging.js"></script>
+<link href="/css/main.css" rel="stylesheet">
 <link href="/css/modal.css" rel="stylesheet">
 <link href="/css/icon.css" rel="stylesheet">  
 <!-- <link href="/css/base.css" rel="stylesheet">  -->

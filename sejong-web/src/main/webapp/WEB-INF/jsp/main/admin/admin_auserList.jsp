@@ -13,8 +13,84 @@
 <!-- 스크립트 -->
 <!-- 달력(일자, 월별) 사용시 추가 필요함 -->
 <script src="/js/main.js"></script>
+<style>
+  :root { --reg-teal:#1f9b8e; --reg-teal-dark:#178074; --reg-teal-border:#bfe0db; --reg-teal-bg:#eaf6f4; }
+  .tab-pane .content-body { align-items: stretch; }
+  .tab-pane .content-body .tab-content, .tab-pane .content-body .content-wrap { width: 100%; }
+  .table-responsive { overflow-x: auto; }
+  #infoTable, #infoTable2 { width: 100%; }
+  #infoTable thead th, #infoTable2 thead th { position: sticky; top: 0; z-index: 2; white-space: nowrap; background-color: #d9edf7 !important; color: #000000 !important; }
+  #infoTable tbody tr, #infoTable2 tbody tr { cursor: pointer; }
+  #infoTable tbody tr:hover, #infoTable2 tbody tr:hover { background-color: #f2f2f2; }
+  #infoTable tbody tr:nth-child(even), #infoTable2 tbody tr:nth-child(even) { background-color: #f2f2f2; }
+  .paging { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .paging .pg-btn { min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid var(--reg-teal-border); background: #fff; color: #333; border-radius: 4px; cursor: pointer; font-size: 13px; line-height: 1; }
+  .paging .pg-btn:hover:not(:disabled) { background: var(--reg-teal-bg); }
+  .paging .pg-btn.active { background: var(--reg-teal); border-color: var(--reg-teal); color: #fff; font-weight: 700; }
+  .paging .pg-btn:disabled { opacity: .4; cursor: default; }
+  .modal-content { border-top: 3px solid var(--reg-teal); }
+  .modal-header.reg-head { border-bottom: 2px solid var(--reg-teal); }
+  .reg-modal-title { color: var(--reg-teal); font-weight: 700; font-size: 18px; margin: 0; }
+  .modal-footer .btn-primary { background: var(--reg-teal); border-color: var(--reg-teal); }
+  .modal-footer .btn-primary:hover { background: var(--reg-teal-dark); border-color: var(--reg-teal-dark); }
+  .reg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .reg-table th, .reg-table td { border: 1px solid var(--reg-teal-border); padding: 9px 12px; vertical-align: middle; font-size: 14px; }
+  .reg-table th { background: var(--reg-teal-bg); color: var(--reg-teal); font-weight: 600; text-align: left; white-space: nowrap; }
+  .reg-table td { background: #fff; }
+  .reg-table .req { color: #dc3545; margin-right: 3px; font-weight: 700; }
+  .reg-table input.form-control, .reg-table select.form-select { height: 34px; font-size: 14px; }
+  .reg-table textarea.form-control { font-size: 14px; }
+  .reg-table input.form-control.full, .reg-table select.form-select.full { width: 100%; }
+</style>
+<script type="text/javascript">
+if (typeof window.AdminPager !== 'function') {
+  window.AdminPager = function(o){ this.dataSel=o.dataArea; this.pagingSel=o.paging; this.rowHtml=o.rowHtml; this.size=o.pageSize||15; this.colspan=o.colspan||12; this.emptyMsg=o.emptyMsg||'검색된 정보가 없습니다.'; this.onRender=o.onRender||null; this.list=[]; this.page=1; };
+  window.AdminPager.prototype.setData = function(list){ this.list=list||[]; this.page=1; this.render(); };
+  window.AdminPager.prototype.goPage = function(p){ if(p<1) return; this.page=p; this.render(); };
+  window.AdminPager.prototype.render = function(){
+    var $a=$(this.dataSel); $a.empty(); var total=this.list.length;
+    if(total===0){ $a.append("<tr><td colspan='"+this.colspan+"'>"+this.emptyMsg+"</td></tr>"); this._paging(0); return; }
+    var tp=Math.ceil(total/this.size); if(this.page>tp) this.page=tp; if(this.page<1) this.page=1;
+    var s=(this.page-1)*this.size, e=Math.min(s+this.size,total), html="";
+    for(var i=s;i<e;i++){ html+=this.rowHtml(this.list[i], i); }
+    $a.append(html); if(this.onRender) this.onRender(); this._paging(tp);
+  };
+  window.AdminPager.prototype._paging = function(tp){
+    var $p=$(this.pagingSel); $p.empty(); if(tp<1) return;
+    var self=this, block=10, sp=Math.floor((this.page-1)/block)*block+1, ep=Math.min(sp+block-1,tp), html="";
+    function b(l,pg,dis,act){ return '<button class="pg-btn'+(act?' active':'')+'" '+(dis?'disabled':'')+' data-page="'+pg+'">'+l+'</button>'; }
+    html+=b('&laquo;',1,this.page===1,false); html+=b('&lsaquo;',this.page-1,this.page===1,false);
+    for(var p=sp;p<=ep;p++){ html+=b(p,p,false,p===this.page); }
+    html+=b('&rsaquo;',this.page+1,this.page===tp,false); html+=b('&raquo;',tp,this.page===tp,false);
+    $p.html(html);
+    $p.find('.pg-btn').off('click').on('click', function(){ var pg=parseInt($(this).attr('data-page'),10); if(!isNaN(pg)) self.goPage(pg); });
+  };
+}
+</script>
 <script type="text/javaScript">
 var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+
+// 공통 클라이언트 페이징 (admin-paging.js)
+var auserPager = new AdminPager({
+	dataArea:'#dataArea', paging:'#pagingArea', pageSize:15, colspan:10,
+	rowHtml:function(d, i){
+		var depnmText = (d.userGb == "D") ? "의사" : (d.userGb == "A" ? "관리자" : "");
+		var t = '<tr class="" onclick="javascript:fnDtlSearch(\''+d.userId.replace(/'/g, "\\'")+'\');" id="row_'+d.userId+'">';
+		t += "<td>" + (i+1) + "</td>";
+		t += "<td style='display: none;'>" + d.userId + "</td>";
+		t += "<td>" + d.userIdNm + "</td>";
+		t += "<td>" + d.userNm + "</td>";
+		t += "<td>" + depnmText + "</td>";
+		t += "<td>" + d.deptNm + "</td>";
+		t += "<td>" + d.startDate + "</td>";
+		t += "<td>" + d.endDate + "</td>";
+		t += "<td>" + d.useYn + "</td>";
+		t += "<td>" + d.lockYn + "</td>";
+		t += "<td>" + d.regDtm.substring(0,10) + "</td>";
+		t += "</tr>";
+		return t;
+	}
+});
 
 function fnSearch() {
 	 $("#infoTable tr").attr("class", "");
@@ -28,35 +104,7 @@ function fnSearch() {
    	dataType : "json",
    	success : function(data) {
    		if(data.error_code != "0") return;
-   		if(data.resultCnt > 0 ){
-    		var dataTxt = "";
-    		for(var i=0 ; i < data.resultCnt; i++){
-    			var depnmText = "";
-	    		if (data.resultLst[i].userGb == "D"){
-	    			depnmText = "의사";
-	    	    } else if(data.resultLst[i].userGb == "A") {
-	    	    	depnmText = "관리자";
-	    	    }
-    			dataTxt = '<tr class="" onclick="javascript:fnDtlSearch(\''
-    		               + data.resultLst[i].userId.replace(/'/g, "\\'")
-    		               + '\');" id="row_' + data.resultLst[i].userId + '">';
-				dataTxt += 	"<td>" + (i+1)  + "</td>" ;
-				dataTxt +=  "<td style='display: none;'>" + data.resultLst[i].userId  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].userIdNm  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].userNm  + "</td>" ;
-				dataTxt +=  "<td>" + depnmText   + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].deptNm  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].startDate  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].endDate  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].useYn  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].lockYn  + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].regDtm.substring(0,10)  + "</td>" ;
-				dataTxt +=  "</tr>";
-	            $("#dataArea").append(dataTxt);
-        	 }
-	 	  }else{
-				 $("#dataArea").append("<tr><td colspan='12'>검색된 정보가 없습니다.</td></tr>");
-		  }
+   		auserPager.setData(data.resultCnt > 0 ? data.resultLst : []);
       }
    });
 }
@@ -188,6 +236,8 @@ function modalClose(){
         window.adminModalInstance.hide();
     }
 }
+
+$(document).ready(function(){ fnSearch(); });
 </script>
 </head>
 <body>
@@ -254,6 +304,7 @@ function modalClose(){
                   </tbody>
                 </table>
               </div>
+              <div id="pagingArea" class="paging"></div>
             </div>
           </div>
         </section>
@@ -264,72 +315,74 @@ function modalClose(){
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
     <div class="modal-dialog  modal-820">
 
-      <div class="modal-content">
+            <div class="modal-content">
+        <div class="modal-header reg-head">
+          <h5 class="reg-modal-title">사용자 정보</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="modalClose();" aria-label="Close"></button>
+        </div>
+        <form:form commandName="DTO" id="regForm" name="regForm" method="post">
+          <input type="hidden" name="iud" id="iud" />
+          <input type="hidden" name="userId" id="userId" />
+          <div class="modal-body">
+            <table class="reg-table">
+              <colgroup><col style="width:16%"><col style="width:34%"><col style="width:16%"><col style="width:34%"></colgroup>
+              <tbody>
+                <tr>
+                  <th><span class="req">*</span>아이디</th>
+                  <td><input type="text" name="userIdNm" id="userIdNm" class="form-control" placeholder="아이디를 입력하세요." style="width:100%;"></td>
+                  <th><span class="req">*</span>사용자명</th>
+                  <td><input type="text" name="userNm" id="userNm" class="form-control" placeholder="사용자 명을 입력하세요." style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>사용자 구분</th>
+                  <td>
+                    <select class="form-select" name="userGb" id="userGb" style="width:100%;">
+                      <option value="">선택</option>
+                      <option value="D">D.의사</option>
+                      <option value="A">A.관리자</option>
+                    </select>
+                  </td>
+                  <th><span class="req">*</span>진료과명</th>
+                  <td><input type="text" name="deptNm" id="deptNm" class="form-control" placeholder="진료과명을 입력하세요." style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>시작일</th>
+                  <td><input type="date" name="startDate" id="startDate" class="form-control" style="width:100%;"></td>
+                  <th><span class="req">*</span>종료일</th>
+                  <td><input type="date" name="endDate" id="endDate" class="form-control" style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>lock여부</th>
+                  <td>
+                    <select class="form-select" name="lockYn" id="lockYn" style="width:100%;">
+                      <option value="">선택</option>
+                      <option value="Y">Y.봉인</option>
+                      <option value="N">N.해체</option>
+                    </select>
+                  </td>
+                  <th><span class="req">*</span>사용여부</th>
+                  <td>
+                    <select class="form-select" name="useYn" id="useYn" style="width:100%;">
+                      <option value="">선택</option>
+                      <option value="Y">Y.사용</option>
+                      <option value="N">N.미사용</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>비밀번호</th>
+                  <td><input type="password" name="userPw" id="userPw" class="form-control" placeholder="비밀번호를 입력하세요." style="width:100%;"></td>
+                  <th><span class="req">*</span>비밀번호 확인</th>
+                  <td><input type="password" name="afAuserPwd" id="afAuserPwd" class="form-control" placeholder="비밀번호를 재입력하세요." style="width:100%;"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </form:form>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary btn-sm"  onclick="fnSaveProc();">저장</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="fnSaveProc();">저장</button>
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
-    		<form:form commandName="DTO" id="regForm" name="regForm" method="post">
-              <input type="hidden" name="iud" id="iud" />
-        <div class="modal-body">
-          <div class="form-container">
-            <div class="form-wrap w-50">
-              <label for="" class="critical">아이디</label>
-              <input type="text" name="userIdNm" id="userIdNm" class="form-control" placeholder="아이디를 입력하세요.">
-              <input type="hidden" name="userId" id="userId" />
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">사용자명</label>
-              <input type="text" name="userNm" id="userNm" class="form-control" placeholder="사용자 명을 입력하세요.">
-            </div>
-
-            <div class="form-wrap w-50">
-              <label for=""class="critical">사용자 구분</label>
-       		  <select class="form-select" name="userGb" id="userGb">
-                <option value="">선택</option>
-                <option value="D">D.의사</option>
-                <option value="A">A.관리자</option>
-              </select>
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">진료과명</label>
-              <input type="text" name="deptNm" id="deptNm" class="form-control" placeholder="진료과명을  입력하세요.">
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">시작일</label>
-              <input type="date" name="startDate" id="startDate" class="form-control" placeholder="시작일를  입력하세요.">
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">종료일</label>
-              <input type="date" name="endDate" id="endDate" class="form-control" placeholder="종료일를  입력하세요.">
-            </div>
-            <div class="form-wrap w-50">
-              <label for=""class="critical">lock여부</label>
-       		  <select class="form-select" name="lockYn" id="lockYn">
-                <option value="">선택</option>
-                <option value="Y">Y.봉인</option>
-                <option value="N">N.해체</option>
-              </select>
-            </div>
-            <div class="form-wrap w-50">
-              <label for=""class="critical">사용여부</label>
-       		  <select class="form-select" name="useYn" id="useYn">
-                <option value="">선택</option>
-                <option value="Y">Y.사용</option>
-                <option value="N">N.미사용</option>
-              </select>
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">비밀번호</label>
-              <input type="password" name="userPw" id="userPw" class="form-control" placeholder="비밀번호를 입력하세요.">
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">비밀번호 확인</label>
-              <input type="password" name="afAuserPwd" id="afAuserPwd" class="form-control" placeholder="비밀번호를 재입력하세요.">
-            </div>
-          </div>
-        </div>
-        </form:form>
       </div>
 
     </div>

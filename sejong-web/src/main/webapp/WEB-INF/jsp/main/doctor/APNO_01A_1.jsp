@@ -11,6 +11,10 @@
  <title>공지 사항 </title>
 <!-- 달력(일자, 월별) 사용시 추가 필요함 -->  
 <script src="/js/main.js"></script>
+<style>
+  /* admin 그리드 헤더 컨셉 — 연한 하늘색 */
+  #infoTable thead th, #infoTable2 thead th { background-color: #d9edf7 !important; color: #000000 !important; }
+</style>
 <script type="text/javaScript"> 
 $( document ).ready(
 		function() {

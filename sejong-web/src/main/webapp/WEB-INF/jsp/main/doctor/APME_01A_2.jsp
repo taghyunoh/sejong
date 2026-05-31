@@ -72,11 +72,18 @@
         });
         
         // 서브 탭메뉴 인터렉션
-        $('.stab-item a').click(function () {
+        $('.stab-item a').click(function (e) {
+            e.preventDefault();
             $('.stab-item a').removeClass('active');
             $('.stab-content').removeClass('active');
             $(this).addClass('active');
-            $($(this).attr('href')).addClass('active');
+            var $target = $($(this).attr('href')).addClass('active');
+            // 숨김 탭에서 0크기로 그려진 echarts들을, 탭이 보일 때 컨테이너 크기에 맞춰 다시 사이즈 조정
+            setTimeout(function(){
+                $target.find('div').each(function(){
+                    try { var inst = echarts.getInstanceByDom(this); if (inst) inst.resize(); } catch(e){}
+                });
+            }, 60);
         });
 
         // 생년월일을 바탕으로 나이 계산
@@ -340,13 +347,27 @@
 	      			document.getElementById('fastingAvg').textContent = fastingAvg;
 	      			document.getElementById('avg').textContent = avgBlood;
 	      			document.getElementById('avgMeal').textContent = avgMeal;
-                    //agp추가 
+                    //agp추가
 	      			document.getElementById('gmi_agp').textContent = response.GMI;
 	      			document.getElementById('std_agp').textContent = response.stdBlood;
 	      			document.getElementById('cv_agp').textContent = response.CV;
 	      			document.getElementById('fastingAvg_agp').textContent = fastingAvg;
 	      			document.getElementById('avg_agp').textContent = avgBlood;
 	      			document.getElementById('avgMeal_agp').textContent = avgMeal;
+
+	      			// ② 표준 목표 판정 색상 (CV<36% 권장 / GMI 목표 / 평균 70~180)
+	      			(function(){
+	      			    var ok='#2f9e63', warn='#e0a800', bad='#d9534f';
+	      			    var cvN  = parseFloat(response.CV)  || 0;
+	      			    var gmiN = parseFloat(response.GMI) || 0;
+	      			    var avgN = parseFloat(avgBlood)      || 0;
+	      			    var cvCol  = (cvN < 36) ? ok : bad;                                   // 변동계수 목표 <36%
+	      			    var gmiCol = (gmiN < 7) ? ok : (gmiN < 8 ? warn : bad);               // GMI 목표 <7%
+	      			    var avgCol = (avgN >= 70 && avgN <= 180) ? ok : (avgN < 70 ? bad : warn); // 평균 목표 70~180
+	      			    $("#cv,#cv_agp").css({color:cvCol, fontWeight:'bold'});
+	      			    $("#gmi,#gmi_agp").css({color:gmiCol, fontWeight:'bold'});
+	      			    $("#avg,#avg_agp").css({color:avgCol, fontWeight:'bold'});
+	      			})();
 	      			
 	      			if(fastingAvg < 54) {
 	      				$("#fastingAvg").addClass("bl_color_very_low");
@@ -423,6 +444,20 @@
 	  	     		document.getElementById('normalPercentage').textContent = normalPercentage;
 	  	     		document.getElementById('lowPercentage').textContent = lowPercentage;
 	  	     		document.getElementById('lowestPercentage').textContent = lowestPercentage;
+
+	  	     		// ── AGP 표준 작성기준 판정 색상 (녹색=기준달성 / 빨강=미달) ──
+	  	     		(function(){
+	  	     		    var ok='#2f9e63', bad='#d9534f', bold='bold';
+	  	     		    var TIR = normalPercentage;                          // 목표 70~180
+	  	     		    var TAR = highestPercentage + highPercentage;        // >180 합계
+	  	     		    var TBR = lowPercentage + lowestPercentage;          // <70 합계
+	  	     		    var set = function(id, good){ var el=document.getElementById(id); if(el){ el.style.color = good?ok:bad; el.style.fontWeight = bold; } };
+	  	     		    set('normalPercentage',  TIR >= 70);                 // TIR  ≥ 70%
+	  	     		    set('highPercentage',    TAR <  25);                 // TAR(>180 합) < 25%
+	  	     		    set('highestPercentage', highestPercentage < 5);     // 매우높음(>250) < 5%
+	  	     		    set('lowPercentage',     TBR <  4);                  // TBR(<70 합) < 4%
+	  	     		    set('lowestPercentage',  lowestPercentage < 1);      // 매우낮음(<54) < 1%
+	  	     		})();
 	  	     		var cal_lowestPercentage  ;
 	  	     		var cal_Percentage5       ;
 	  	     		var cal_lowPercentage     ;
@@ -562,6 +597,12 @@
 	  	                                    label: {
 		                                        show: true,
 		                                        position: 'start',
+		                                        align: 'right',
+		                                        verticalAlign: 'middle',
+		                                        padding: [0, 8, 0, 0],
+		                                        formatter: '{c}',
+		                                        color: '#333',
+		                                        fontWeight: 'bolder',
 		                                        fontSize: 15
 		                                    },	  	                                    
 
@@ -578,6 +619,12 @@
 	  	                                    label: {
 		                                        show: true,
 		                                        position: 'start',
+		                                        align: 'right',
+		                                        verticalAlign: 'middle',
+		                                        padding: [0, 8, 0, 0],
+		                                        formatter: '{c}',
+		                                        color: '#333',
+		                                        fontWeight: 'bolder',
 		                                        fontSize: 15
 		                                    },	  	                                    
 	  	                                    symbol: 'none', 
@@ -604,6 +651,12 @@
 	  	                                    label: {
 		                                        show: true,
 		                                        position: 'start',
+		                                        align: 'right',
+		                                        verticalAlign: 'middle',
+		                                        padding: [0, 8, 0, 0],
+		                                        formatter: '{c}',
+		                                        color: '#333',
+		                                        fontWeight: 'bolder',
 		                                        fontSize: 15
 		                                    },	  	                                    
 
@@ -815,46 +868,92 @@
 		    }); 
 		}
 		
+		// 일일 혈당 프로필 — 날짜별 미니차트 15개를 하나의 연속 그래프로 통합
 		function drawChart14(day_after_start_date, end_date, userId) {
-          	var formData = { 
+          	var formData = {
           		             	start: day_after_start_date,
 	  	  	                      end: end_date,
 	  	  	                   userId: userId
                 		   };
             CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartDataMulti.do", "POST", formData, function(response) {
-    			var UPT      = []  ; // 서버로부터 받은 혈당 값
-    			var totval   = 0   ;
-    			var setval   = 0   ;
-    			var cntval   = 0   ;
-    			var maxval   = 250 ;
-    			var DTM_VAL  = ""  ; 
-    			var YMD_VAL  = ""  ; 
-    			var avgval   = 0   ;
-    			var option1  = ""  ;
-    			var chart    = ""  ; 
-    			response.forEach(item => { //오류무시  
-    				if (YMD_VAL  !=   item.CGM_DTM &&  YMD_VAL  != "") {
-						cntval = cntval + 1 ;
-  	    	            calDayChart(YMD_VAL,UPT,totval,maxval,setval,avgval,cntval,option1,chart);
-  	    	            UPT      = []  ;
-		    			totval   = 0   ;
-		    			setval   = 0   ;
-		    			YMD_VAL  = ""  ;
-		    			DTM_VAL  = ""  ; 
-		    			avgval   = 0   ;
-		    			option1  = ""  ; 
-		    			chart    = ""  ; 
-				   }
-    			   UPT.push(item.UPT_VALUE || 0);
-				   YMD_VAL = item.CGM_DTM ;   //일자 
-    			   DTM_VAL = item.CGM_TM  ;   //시간  
-				   totval += parseInt(item.UPT_VALUE)  ; 
-				   if (item.UPT_VALUE > setval) {
-					   setval = item.UPT_VALUE  ; // Y축기준 maxvalue에 저장 
-				   }
-	  	        });
-    			cntval = cntval + 1 ;
-		        calDayChart(YMD_VAL,UPT,totval,maxval,setval,avgval,cntval,option1,chart);
+    			var dom = document.getElementById('dailyAllChart');
+    			if (!dom) { return; }
+    			var prev = echarts.getInstanceByDom(dom);
+    			if (prev) { prev.dispose(); }
+    			var chart = echarts.init(dom);
+
+    			var xLabels = [];   // 일자 경계에만 'MM/DD' 표시, 나머지는 ''
+    			var data    = [];   // 시간별 평균 혈당
+    			var prevYmd = '';
+    			for (var i = 0; i < response.length; i++) {
+    				var ymd = String(response[i].CGM_DTM || ''); // 'yymmdd'
+    				var lbl = '';
+    				if (ymd !== prevYmd && ymd.length >= 6) {
+    					lbl = ymd.substring(2, 4) + '/' + ymd.substring(4, 6); // MM/DD
+    					prevYmd = ymd;
+    				}
+    				xLabels.push(lbl);
+    				var v = parseFloat(response[i].UPT_VALUE);
+    				data.push(isNaN(v) ? null : v);
+    			}
+
+    			if (data.length === 0) {
+    				chart.setOption({
+    					title: { text: '데이터 없음', left: 'center', top: 'middle',
+    						textStyle: { color: '#9aa3af', fontSize: 14, fontWeight: 'normal' } }
+    				});
+    				return;
+    			}
+
+    			var greenLabel = { show: true, position: 'end', distance: 4, color: '#2f9e63', fontSize: 11, formatter: '{c}' };
+    			var option = {
+    				grid: { left: 48, right: 56, top: 24, bottom: 56 },
+    				tooltip: {
+    					trigger: 'axis',
+    					formatter: function (p) {
+    						if (!p || !p.length) { return ''; }
+    						var v = p[0].value;
+    						return (v == null ? '-' : v + ' mg/dL');
+    					}
+    				},
+    				xAxis: {
+    					type: 'category', data: xLabels, boundaryGap: false,
+    					axisTick: { show: false },
+    					axisLine: { lineStyle: { color: '#cfd8e3' } },
+    					axisLabel: { interval: 0, color: '#6b7280', fontSize: 11 }
+    				},
+    				yAxis: {
+    					type: 'value', min: 0, max: 300, interval: 70,
+    					axisLine: { show: false }, axisTick: { show: false },
+    					splitLine: { lineStyle: { color: '#eef1f5' } },
+    					axisLabel: { color: '#6b7280', fontSize: 11 }
+    				},
+    				series: [{
+    					name: '혈당', type: 'line', data: data,
+    					smooth: true, symbol: 'none', connectNulls: true,
+    					lineStyle: { color: '#2f6fd1', width: 2 },
+    					areaStyle: { color: 'rgba(47,111,209,0.06)' },
+    					markArea: {
+    						silent: true,
+    						data: [
+    							[{ yAxis: 0,   itemStyle: { color: 'rgba(231,76,60,0.08)' } }, { yAxis: 70 }],   // 저혈당
+    							[{ yAxis: 70,  itemStyle: { color: 'rgba(46,204,113,0.10)' } }, { yAxis: 180 }],  // 목표
+    							[{ yAxis: 180, itemStyle: { color: 'rgba(243,156,18,0.10)' } }, { yAxis: 300 }]   // 고혈당
+    						]
+    					},
+    					markLine: {
+    						symbol: 'none', silent: true,
+    						data: [
+    							{ yAxis: 180, lineStyle: { color: '#f0a500', type: 'dashed' }, label: greenLabel },
+    							{ yAxis: 140, lineStyle: { color: '#2f9e63', type: 'dashed', opacity: 0.5 }, label: { show: true, position: 'end', distance: 4, color: '#2f9e63', fontSize: 11, formatter: '{c}' } },
+    							{ yAxis: 70,  lineStyle: { color: '#2f9e63', type: 'dashed' }, label: greenLabel }
+    						]
+    					}
+    				}],
+    				dataZoom: [{ type: 'slider', show: true, start: 0, end: 100, bottom: 8, height: 16 }]
+    			};
+    			chart.setOption(option);
+    			setTimeout(function () { chart.resize(); }, 50);
             });
         }
 		function calDayChart(YMD_VAL,UPT,totval,maxval,setval,avgval,cntval,option1,chart) {
@@ -1087,6 +1186,13 @@
 	                      	drawTodayBloodChart(selectedDate, userId, avgBlood); // 선택된 날짜로 두 번째 차트 그리기
 	                   		drawOneMealChart(selectedDate, userId);
                    });
+
+	  	          	  // 초기 로드 시 가장 최근 날짜 자동 선택 → 하단 2개 차트(하루혈당·식사별)를 클릭 없이 표시
+	  	          	  if (date2 && date2.length > 0) {
+	  	          	      var initDate = date2[date2.length - 1];
+	  	          	      drawTodayBloodChart(initDate, userId, avgBlood);
+	  	          	      drawOneMealChart(initDate, userId);
+	  	          	  }
 	  	      });
 	  	  }
 		//혈당활동개요(AGP)  
@@ -1113,200 +1219,99 @@
 	  	          }
 
 	  	          var agpChart = echarts.init(document.getElementById('agpChart'));
-	  	          
+
+	  	          // 데이터 부족 시 안내 후 종료 (AGP는 여러 시간대 데이터 필요)
+	  	          var hasPlot = false;
+	  	          if (response && response.length >= 2) {
+	  	              for (var hi = 0; hi < avg_value.length; hi++) { if (avg_value[hi] > 0) { hasPlot = true; break; } }
+	  	          }
+	  	          if (!hasPlot) {
+	  	              agpChart.clear();
+	  	              agpChart.setOption({ title:{ text:'AGP 분석에 필요한 혈당 데이터가 부족합니다 (여러 시간대 데이터 필요)',
+	  	                  left:'center', top:'middle', textStyle:{ color:'#9aa5b1', fontSize:14, fontWeight:'normal' } } });
+	  	              return;
+	  	          }
+
+	  	          // 밴드(영역) 계산: 5~95%, 25~75%
+	  	          var band9505 = [], band7525 = [];
+	  	          for (var bi = 0; bi < min_value.length; bi++) {
+	  	              band9505.push(Math.max(0, (max_value[bi]||0) - (min_value[bi]||0)));
+	  	              band7525.push(Math.max(0, (avgm_value[bi]||0) - (avgl_value[bi]||0)));
+	  	          }
+
 	  	          var option1 = {
-	  	              title: {
-	  	                  text: '혈당 활동 개요(AGP)'
-	  	              },
+	  	              grid: { left: 56, right: 76, top: 34, bottom: 42 },
 	  	              tooltip: {
-	  	                  trigger: 'axis'
+	  	                  trigger: 'axis',
+	  	                  axisPointer: { type: 'line', lineStyle: { color: '#9ec0ea', width: 1 } },
+	  	                  formatter: function(p){
+	  	                      if(!p || !p.length) return '';
+	  	                      var idx = p[0].dataIndex;
+	  	                      var f = function(v){ return (v==null ? '-' : Math.round(v)); };
+	  	                      return '<b>' + p[0].axisValue + '</b><br/>'
+	  	                           + '95% &nbsp;&nbsp;' + f(max_value[idx])  + ' mg/dL<br/>'
+	  	                           + '75% &nbsp;&nbsp;' + f(avgm_value[idx]) + '<br/>'
+	  	                           + '<b style="color:#163f86">50% &nbsp;&nbsp;' + f(avg_value[idx]) + '</b><br/>'
+	  	                           + '25% &nbsp;&nbsp;' + f(avgl_value[idx]) + '<br/>'
+	  	                           + '5% &nbsp;&nbsp;&nbsp;' + f(min_value[idx]);
+	  	                  }
 	  	              },
-	  	              legend: {
-	  	                  data: ['최고혈당','75%','평균혈당','25%','최저혈당']
+	  	              xAxis: {
+	  	                  type: 'category',
+	  	                  boundaryGap: false,
+	  	                  data: ['오전12','','','오전3','','','오전6','','','오전9','','','오후12','','','오후3','','','오후6','','','오후9','','','오전12'],
+	  	                  axisLine: { lineStyle: { color: '#cfd8e3' } },
+	  	                  axisTick: { show: false },
+	  	                  axisLabel: { color: '#6b7280', fontSize: 12 }
 	  	              },
-	                  xAxis: {
-	                        type: 'category',
-	                        data: ['오전12','','','오전3','','','오전6','','','오전9','','', '오후12','','','오후3','','','오후6','','','오후9','','','오전12'],
-	                        axisLabel: {
-	                            interval: 0, // 모든 레이블 표시
-	                            rotate: 0, // 기울기 없음
-	                            align: 'center', // 중앙 정렬,
-	                            fontSize: 12,
-	                            fontWeight: 'bolder'
-	                        }
-	                  },
-  	              
 	  	              yAxis: {
 	  	                  type: 'value',
-	  	                  min: 0,
-	  	                  max: 280,
-	  	                  interval: 70,
-	  	                //  interval: 0,
-			  	          axisLabel: {
-				  	          	fontSize: 15, // 레이블 글씨 크기
-		                        fontWeight: 'bolder'
-				  	          }
+	  	                  min: 0, max: 350, interval: 70,
+	  	                  axisLine: { show: false },
+	  	                  axisTick: { show: false },
+	  	                  axisLabel: { color: '#6b7280', fontSize: 12 },
+	  	                  splitLine: { lineStyle: { color: '#eceff3' } }
 	  	              },
-
 	  	              series: [
-	  	            	 
-                      {  
-  	                      name: '최저혈당',
-  	                      type: 'line',
-	                      data: min_value,
-	                      smooth: true,
-  	                      itemStyle: { color: 'skyblue' },
-  	                   // stack: 'blood', // 여러수치를 line를    
-  	                      symbolSize: 0, // 동그라미 크기 설정
-	  	                  label: {
-	  	              //        show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 11,
-                              fontWeight: 'bolder'
-	  	                  }
-  	                  }, 
-  	                  {
-  	                      name: '25%',
-  	                      type: 'line',
-  	                      data: avgl_value ,
-  	                      smooth: true,
-  	                      areaStyle: {
-  	                      // 아래가 아닌 위에서 색깔이 채워지도록 설정
-  	                        origin: 'end',
-  	                        color: 'rgba(200, 200, 200, 0.5)'  // 원하는 색상 설정
-  	                      },
-  	                      itemStyle: { color: 'green' },
-  	                  //    stack: 'blood',
-                   
-  	                      symbolSize: 0, // 동그라미 크기 설정
-  	                      label: {
-	  	                 //     show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 12,
-                              linewidth: 10 ,
-                              fontWeight: 'bolder'
-	  	                  }
- 	                      
-  	                  },  	                  
-  	                  {
-  	                      name: '평균혈당',
-  	                      type: 'line',
-                          data: avg_value ,
-  	                      smooth: true,
-  	                      itemStyle: { color: 'blue' },
-  	                 //     stack: 'blood',
-  	                      symbolSize: 6, // 동그라미 크기 설정
-  	                      label: {
-	  	             //         show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 12,
-      	                      linewidth: 10 ,
-                              fontWeight: 'bolder'
-	  	                  }
-  	                  },  	                   
-  	                  {
-  	                      name: '75%',
-  	                      type: 'line',
-  	                      data: avgm_value ,
-  	                      smooth: true,
-  	                      areaStyle: {
-  	  	                      // 아래가 아닌 위에서 색깔이 채워지도록 설정
-  	  	                        origin: 'start',
-  	  	                        color: 'rgba(200, 200, 200, 0.5)'  // 원하는 색상 설정
-  	  	                      },
-  	                      itemStyle: { color: 'green' },
-  	                //      stack: 'blood',  
-  	                      symbolSize: 0, // 동그라미 크기 설정
-  	                      label: {
-	  	             //         show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 12,
-                              linewidth: 10 ,
-                              fontWeight: 'bolder'
-	  	                  }
-  	                  },        
-	  	           	  {
-  	                      name: '최고혈당',
-  	                      type: 'line',
-  	                      data: max_value  ,
-  	                      borderWidth: 5 ,
-  	                      smooth: true,
-  	                      itemStyle: { color: 'skyblue' },
-  	  	             //     stack: 'blood',
-  	                      symbolSize: 0, // 동그라미 크기 설정
-  	                      markLine: {
-	                            data: [
-	                                {
-	                                    yAxis: 180,
-	                                    lineStyle: {
-	                                        color: 'red',
-	                                        width: 1
-	                                    },
-	                               //     symbol: 'none', 
-	                                    label: {
-	                                        show: true,
-	                                        position: 'start',
-	                                        fontSize: 15
-	                                    },
-	                                } ,  
-	                                {
-	                                    yAxis: 140,
-	                                    lineStyle: {
-	                                        color: 'green',
-	                                        width: 1
-	                                    },
-	                                    label: {
-	                                        show: false,
-	                                    },	                                    
-	                                } ,  
-	                                {
-	                                    yAxis: 70,
-	                                    lineStyle: {
-	                                        color: 'green',
-	                                        width: 1
-	                                    },
-	                                    label: {
-	                                        show: false,
-	                                    },	
-	                                },    	     	                                
-	                                {
-	                                    yAxis: 54,
-	                                    lineStyle: {
-	                                        color: 'red',
-	                                        width: 1
-	                                    },
-	                                    label: {
-	                                    	position: 'start',
-	                                        show: true,
-	                                        fontSize: 15
-	                                    },	
-	                                }
-	                             ]
- 	                      
-	  	                    },
-  	                      symbolSize: 0, // 동그라미 크기 설정
-	  	                  label: {
-	  	             //     show: true, // 숫자 값을 표시
-	  	                    position: 'top', // 점 위에 위치
-                            fontSize: 12,
-                            fontWeight: 'bolder'
-	  	                  } ,
-  	                  }
-	  	              ],
-	      	 		  dataZoom: [{
-	       		      			type: 'slider',
-	        	        		show: true,
-	        	       			xAxisIndex: [0],
-	        		        	start: 0, // 초기 시작 비율
-	        		        	end: 100 // 전체 데이터를 보여주고 슬라이드로 조정 가능
-	        		    		}
-	      	 		 		]
+	  	                  // 5~95% 밴드 (옅은 파랑)
+	  	                  { name:'min', type:'line', stack:'b9505', data:min_value, symbol:'none', smooth:true, silent:true,
+	  	                    lineStyle:{opacity:0}, areaStyle:{opacity:0},
+	  	                    endLabel:{ show:true, formatter:'5%', color:'#9aa5b1', fontSize:11 } },
+	  	                  { name:'5~95%', type:'line', stack:'b9505', data:band9505, symbol:'none', smooth:true, silent:true,
+	  	                    lineStyle:{opacity:0}, areaStyle:{ color:'#d8e7f8' },
+	  	                    endLabel:{ show:true, formatter:'95%', color:'#9aa5b1', fontSize:11 } },
+	  	                  // 25~75% 밴드 (진한 파랑) — 라벨은 오버랩 방지로 숨김(툴팁에서 확인)
+	  	                  { name:'25', type:'line', stack:'b7525', data:avgl_value, symbol:'none', smooth:true, silent:true,
+	  	                    lineStyle:{opacity:0}, areaStyle:{opacity:0}, endLabel:{ show:false } },
+	  	                  { name:'25~75%', type:'line', stack:'b7525', data:band7525, symbol:'none', smooth:true, silent:true,
+	  	                    lineStyle:{opacity:0}, areaStyle:{ color:'#9ec0ea' }, endLabel:{ show:false } },
+	  	                  // 중앙값(50%) 굵은 선 + 목표범위(70~180)
+	  	                  { name:'중앙값(50%)', type:'line', data:avg_value, symbol:'none', smooth:true, z:5,
+	  	                    lineStyle:{ color:'#163f86', width:3 },
+	  	                    endLabel:{ show:true, formatter:'50%', color:'#163f86', fontWeight:'bold', fontSize:12 },
+	  	                    markLine:{ symbol:'none', silent:true,
+	  	                        label:{ show:true, position:'end', distance:6, formatter:'{c}', color:'#2f9e63', fontSize:11, fontWeight:'bold' },
+	  	                        data:[ { yAxis:180, lineStyle:{ color:'#2f9e63', width:2 } },
+	  	                               { yAxis:70,  lineStyle:{ color:'#2f9e63', width:2 } } ] },
+	  	                    markArea:{ silent:true, itemStyle:{ color:'rgba(47,158,99,0.08)' },
+	  	                        data:[ [ { yAxis:70 }, { yAxis:180 } ] ] } }
+	  	              ]
 	  	          };
-
 	  	          agpChart.setOption(option1);
 	  	      });
 	  	  }		
-	      //혈당그래프의 일별 평균 혈당 클릭시 보여지는 하루 혈당그래프
+	      // 다양한 형식(숫자/epoch문자열/ISO/"YYYY-MM-DD HH:mm:ss")에서 시(0~23) 안전 추출, 실패 시 -1
+          function _extractHour(v){
+              if (v == null) return -1;
+              if (typeof v === 'number') return new Date(v).getHours();
+              var s = String(v);
+              if (/^\d{10,}$/.test(s)) return new Date(parseInt(s,10)).getHours();
+              var m = s.match(/[T ](\d{1,2}):/);
+              if (m) return parseInt(m[1],10);
+              var d = new Date(s);
+              return isNaN(d.getTime()) ? -1 : d.getHours();
+          }
+      //혈당그래프의 일별 평균 혈당 클릭시 보여지는 하루 혈당그래프
           function drawTodayBloodChart(selectedDate, userId, avgBlood) {
           	var formData = { 
             				 end: selectedDate ,  
@@ -1319,17 +1324,23 @@
 				var maxval   = 250 ;
 				var DTM_VAL  = ""  ; 
 				var avgval   = 0   ;
+				// 시(0~23)별 평균 혈당으로 정렬 — 실제 시간대 위치에 점 배치 (데이터 없는 시는 null → 선 연결)
+				var _sumH = [], _cntH = [], _cntAll = 0;
+				for (var _h = 0; _h < 24; _h++) { _sumH[_h] = 0; _cntH[_h] = 0; }
 				for (var i = 0; i < response.length; i++) {
-					if (DTM_VAL  !=  response[i].DTM.substring(11, 13)) {
-				    	UPT.push(response[i].UPT || 0);
-				    }
-				    DTM_VAL = response[i].DTM.substring(11, 13) ; 
-				    totval += parseInt(response[i].UPT)  ; 
-					if (response[i].UPT > setval) {
-						setval = response[i].UPT  ; // Y축기준 maxvalue에 저장 
-					}
+					// HM("HH:mm") 에서 시(hour) 추출 — DTM 직렬화 형식과 무관하게 확실
+					var _hh = parseInt(String(response[i].HM || '').substring(0,2), 10);
+					if (isNaN(_hh)) { _hh = _extractHour(response[i].DTM); } // 폴백
+					var _v  = parseInt(response[i].UPT, 10);
+					if (isNaN(_hh) || _hh < 0 || _hh > 23 || isNaN(_v) || _v <= 0) { continue; }
+					_sumH[_hh] += _v; _cntH[_hh] += 1; totval += _v; _cntAll += 1;
+					if (_v > setval) { setval = _v; }
 				}
-				avgval = (totval / response.length) ;
+				for (var _h = 0; _h < 24; _h++) {
+					UPT.push(_cntH[_h] > 0 ? Math.round(_sumH[_h] / _cntH[_h]) : null);
+				}
+				UPT.push(null); // 25번째 라벨(다음날 12시) 자리
+				avgval = (_cntAll > 0) ? (totval / _cntAll) : 0 ;
 				if (setval > maxval) {
 					maxval = Math.round(setval / 100) * 100 ;
 				}
@@ -1371,6 +1382,9 @@
                             type: 'line',
                             data: UPT,
                             smooth: true,
+                            connectNulls: true,
+                            showSymbol: true,
+                            symbolSize: 6,
                             lineStyle: {
                                 color: 'green'
                             },
@@ -1401,8 +1415,13 @@
 	    		    var eatTypes = Array(24).fill(''); // 각 시간대의 식사 유형
 
 	    		    for (var i = 0; i < response.length; i++) {
-	    		        var hour = response[i].dtm.substring(11, 13); // 현재 시간 (문자열)
-	    		        var hourIndex = parseInt(hour); // 정수로 변환
+	    		        // SQL이 직접 반환하는 hh(EAT_STIME 앞 2자리=시) 사용 — 정확한 시각에 배치
+	    		        var hourIndex = parseInt(response[i].hh, 10);
+	    		        if (isNaN(hourIndex)) { hourIndex = _extractHour(response[i].dtm); } // dtm 폴백
+	    		        if (isNaN(hourIndex) || hourIndex < 0 || hourIndex > 23) {        // 그래도 불가 시 끼니로 배치
+	    		            var _et = response[i].eatType;
+	    		            hourIndex = (_et==='0')?8:(_et==='1')?12:(_et==='2')?18:(_et==='6')?21:12;
+	    		        }
 
 	    		        // 음식 목록 처리
 	    		        var foods = response[i].foodNm; // 여러 음식을 쉼표로 구분
@@ -1458,22 +1477,31 @@
 	    		        },
 	    		        yAxis: {
 	    		            type: 'value',
-	    		            show: false // Y축 숨김
+	    		            max: 1.6,
+	    		            show: false // Y축 숨김 (막대 위 라벨 공간 확보 위해 max 여유)
 	    		        },
 	    		        series: [{
 	    		            name: '음식',
 	    		            type: 'bar',
-	    		            data: foodNm.map(item => item.length),
+	    		            barWidth: '45%',
+	    		            data: foodNm.map(item => (item ? 1 : 0)), // 식사 있는 시간대만 막대 표시
 	    		            label: {
 	    		                show: true,
-	    		                position: 'inside',
-                                fontSize: 14,
+	    		                position: 'top',
+                                distance: 6,
+                                fontSize: 12,
+                                color: '#333',
+                                lineHeight: 15,
+                                overflow: 'break',
+                                width: 90,
+                                align: 'center',
 	    		                formatter: function(params) {
-	    		                    return foodNm[params.dataIndex]; // 음식 이름 표시
+	    		                    return foodNm[params.dataIndex] || ''; // 음식 이름 표시(막대 위)
 	    		                }
 	    		            },
 	    		            itemStyle: {
-	    		                color: '#FFA500'
+	    		                color: '#FFA500',
+	    		                borderRadius: [4,4,0,0]
 	    		            },
 	    		        }],
 		      	 		  dataZoom: [{
@@ -1489,6 +1517,7 @@
 	                // 차트 초기화 및 설정
 	                var mySecondChart = echarts.init(document.getElementById('drawOneMealChart'));
 	                mySecondChart.setOption(option);
+                setTimeout(function(){ try{ mySecondChart.resize(); }catch(e){} }, 50); // 숨김 탭/지연 렌더 대비
 	          });  
 	      }
           
@@ -1925,13 +1954,13 @@
 		<!-- 서브 탭메뉴 영역 start -->
 		<ul class="stab-menu">
 			<li class="stab-item"><a class="active" id="tab1"
-				data-bs-toggle="tab" href="#sub-tab1">개 요</a></li>
+				href="#sub-tab1">개 요</a></li>
 			<li class="stab-item"><a class="" id="tab2" 
-				data-bs-toggle="tab" href="#sub-tab2">AGP 보고서</a></li>
+				href="#sub-tab2">AGP 보고서</a></li>
 			<li class="stab-item"><a class="" id="tab3"
-				data-bs-toggle="tab" href="#sub-tab3">혈당 그래프</a></li>
+				href="#sub-tab3">혈당 그래프</a></li>
 			<li class="stab-item"><a class="" id="tab4"
-				data-bs-toggle="tab" href="#sub-tab4">통 계</a></li>
+				href="#sub-tab4">통 계</a></li>
 		</ul>
 				<!-- 서브 탭메뉴 컨텐츠 영역 -->
 				<!-- 서브 탭 컨텐츠 개요 -->
@@ -2156,62 +2185,10 @@
 							<div id="agpChart" style="height: 550px; width: 1100px; margin: 0 auto; "></div>
 						</section>
   
-						<div class="content-row flex-left-right">
-							<section class="content-box box-row">
-								<div id="chart1" style="height: 80px; width: 300px;"></div>
-							</section>
-				            <section class="content-box box-row">
-				                <div id="chart2" style="height: 80px; width: 300px;"></div>
-				            </section>
-				            <section class="content-box box-row">
-				            	<div id="chart3" style="height: 80px; width: 300px;"></div>
-				            </section>
-            				
-						</div>
-						<div class="content-row flex-left-right">
-				            <section class="content-box box-row">
-				                <div id="chart4" style="height: 80px; width: 300px;"></div> 
-				            </section>
-				            <section class="content-box box-row">
-				                <div id="chart5" style="height: 80px; width: 300px;"></div> 
-				            </section>
-				            <section class="content-box box-row">
-				                <div id="chart6" style="height: 80px; width: 300px;"></div> 
-				            </section>
-						</div>
-						<div class="content-row flex-left-right">
-				            <section class="content-box box-row">
-				                <div id="chart7" style="height: 80px; width: 300px;"></div> 
-				            </section>
-				            <section class="content-box box-row">
-				                <div id="chart8" style="height: 80px; width: 300px;"></div> 
-				            </section>
-				            <section class="content-box box-row">
-				                <div id="chart9" style="height: 80px; width: 300px;"></div> 
-				            </section>
-						</div>	
-						<div class="content-row flex-left-right">
-				            <section class="content-box box-row">
-				                <div id="chart10" style="height: 80px; width: 300px;"></div> 
-				            </section>
-							<section class="content-box box-row">
-							    <div id="chart11" style="height: 80px; width: 300px;"></div> 
-							</section>
-							<section class="content-box box-row">
-							    <div id="chart12" style="height: 80px; width: 300px;"></div> 
-							</section>
-						</div>											
-						<div class="content-row flex-left-right">
-				            <section class="content-box box-row">
-				                <div id="chart13" style="height: 80px; width: 300px;"></div> 
-				            </section>
-							<section class="content-box box-row">
-							    <div id="chart14" style="height: 80px; width: 300px;"></div> 
-							</section>
-							<section class="content-box box-row">
-							    <div id="chart15" style="height: 80px; width: 300px;"></div> 
-							</section>
-						</div>	
+												<section class="content-box">
+							<h5>일일 혈당 프로필 <span>기간 내 날짜별 혈당 추이 (한 그래프)</span></h5>
+							<div id="dailyAllChart" style="height: 360px; width: 1100px; margin: 0 auto;"></div>
+						</section>	
 					</div>	
 						<!-- <section class="content-box">
 				      <h5>활동 (AGP)</h5>

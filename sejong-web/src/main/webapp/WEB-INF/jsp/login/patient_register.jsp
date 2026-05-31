@@ -23,9 +23,32 @@
 </script>
 <title>사용자 회원가입</title>
 <style>
+  /* ── 회원가입 폼 — 거래처정보 입력 화면 컨셉(테이블형 2열, 청록 라벨셀) 이식 ── */
+  /* 청록 포인트 컬러 변수 (이미지 컨셉) */
+  :root {
+    --reg-teal:        #1f9b8e;   /* 라벨 텍스트 / 버튼 */
+    --reg-teal-dark:   #178074;   /* 버튼 hover */
+    --reg-teal-border: #bfe0db;   /* 셀 테두리 */
+    --reg-teal-bg:     #eaf6f4;   /* 라벨 셀 배경 */
+  }
+  /* 입력 테이블 — label(청록셀) | input 을 2쌍씩 한 행에 배치 */
+  .reg-table { width:100%; border-collapse:collapse; table-layout:fixed; margin-top:4px; }
+  .reg-table th, .reg-table td { border:1px solid var(--reg-teal-border); padding:9px 12px; vertical-align:middle; font-size:14px; }
+  .reg-table th { background:var(--reg-teal-bg); color:var(--reg-teal); font-weight:600; text-align:left; width:18%; white-space:nowrap; }
+  .reg-table td { background:#fff; }
+  .reg-table .req { color:#dc3545; margin-right:3px; font-weight:700; }
+  .reg-table input.form-control { height:36px; font-size:14px; }
+  .reg-table .gender-wrap { padding:2px 0; }
+  .reg-table .gender-wrap label { margin:0 18px 0 0; font-weight:500; cursor:pointer; }
+  .reg-table .triple { display:flex; gap:8px; }
+  /* 청록 버튼(이미지 가입 버튼 컨셉) */
+  .btn-reg-teal { background:var(--reg-teal); border-color:var(--reg-teal); color:#fff; font-weight:600; }
+  .btn-reg-teal:hover, .btn-reg-teal:focus { background:var(--reg-teal-dark); border-color:var(--reg-teal-dark); color:#fff; }
+  #login h3.reg-title { color:var(--reg-teal); border-bottom:2px solid var(--reg-teal); padding-bottom:8px; margin-bottom:6px; width:100%; }
+
   /* 약관 동의 영역 — SEJONG_APP login.jsp 의 agreeList 스타일을 단순화하여 이식 */
-  .agree-box { border:1px solid #dee2e6; border-radius:6px; padding:12px 14px; margin-top:10px; background:#f8f9fa; }
-  .agree-box h6 { margin:0 0 8px 0; font-size:14px; color:#495057; font-weight:600; }
+  .agree-box { border:1px solid var(--reg-teal-border); border-radius:6px; padding:12px 14px; margin-top:14px; background:#f8fbfb; }
+  .agree-box h6 { margin:0 0 8px 0; font-size:14px; color:var(--reg-teal); font-weight:600; }
   .agree-item { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #e9ecef; }
   .agree-item:last-child { border-bottom:0; }
   .agree-item .agree-link { color:#0d6efd; text-decoration:underline; cursor:pointer; font-size:15px; flex:1; }
@@ -166,57 +189,57 @@ $(function(){
     -->
     <div class="set-pass-box" style="width:920px;max-width:96vw;padding:30px 48px;">
       <div class="set-pass-wrap" style="max-width:none;width:100%;">
-        <h3>사용자 회원가입</h3>
+        <h3 class="reg-title">사용자 회원가입</h3>
         <div class="pass-box w-100">
           <!--
-            상단 입력 영역 — 2개씩 행 배치 (Bootstrap row/col).
-            라벨은 각 입력 위에 그대로. 이메일·신장 라인은 입력 폭이 커서 단독 행 유지.
+            입력 영역 — 거래처정보 화면 컨셉의 테이블형 2열 레이아웃.
+            라벨은 청록 셀(왼쪽), 입력은 흰 셀(오른쪽). 필수 항목은 빨강 * 표시.
+            이메일·신장 라인은 입력 폭이 커서 colspan 으로 단독 행 유지.
           -->
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="mt-2">이름</label>
-              <input type="text" id="userNm" class="form-control" placeholder="이름">
-            </div>
-            <div class="col-6">
-              <label class="mt-2">전화번호 (-없이 숫자만)</label>
-              <input type="text" id="phone" class="form-control" placeholder="01012345678" maxlength="11" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
-            </div>
-
-            <div class="col-6">
-              <label class="mt-2">비밀번호 (4자 이상)</label>
-              <input type="password" id="userPw" class="form-control" placeholder="비밀번호">
-            </div>
-            <div class="col-6">
-              <label class="mt-2">비밀번호 확인</label>
-              <input type="password" id="userPw2" class="form-control" placeholder="비밀번호 확인">
-            </div>
-
-            <div class="col-6">
-              <label class="mt-2">생년월일 (YYYYMMDD 8자리)</label>
-              <input type="text" id="birth" class="form-control" placeholder="19900101" maxlength="8" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
-            </div>
-            <div class="col-6">
-              <label class="mt-2">성별</label>
-              <div style="padding-top:7px;">
-                <label class="me-3"><input type="radio" name="gender" value="M"> 남자</label>
-                <label><input type="radio" name="gender" value="F"> 여자</label>
-              </div>
-            </div>
-
-            <div class="col-12">
-              <label class="mt-2">이메일 (선택)</label>
-              <input type="text" id="email" class="form-control" placeholder="example@example.com">
-            </div>
-
-            <div class="col-12">
-              <label class="mt-2">신장(cm) / 체중(kg) / 당뇨분류코드</label>
-              <div class="d-flex" style="gap:8px;">
-                <input type="text" id="height" class="form-control" placeholder="신장" maxlength="3" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
-                <input type="text" id="weight" class="form-control" placeholder="체중" maxlength="3" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
-                <input type="text" id="blodGb" class="form-control" placeholder="코드" maxlength="2" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
-              </div>
-            </div>
-          </div>
+          <table class="reg-table">
+            <colgroup>
+              <col style="width:18%"><col style="width:32%"><col style="width:18%"><col style="width:32%">
+            </colgroup>
+            <tbody>
+              <tr>
+                <th><span class="req">*</span>이름</th>
+                <td><input type="text" id="userNm" class="form-control" placeholder="이름"></td>
+                <th><span class="req">*</span>전화번호</th>
+                <td><input type="text" id="phone" class="form-control" placeholder="01012345678 (-없이 숫자만)" maxlength="11" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');"></td>
+              </tr>
+              <tr>
+                <th><span class="req">*</span>비밀번호</th>
+                <td><input type="password" id="userPw" class="form-control" placeholder="4자 이상"></td>
+                <th><span class="req">*</span>비밀번호 확인</th>
+                <td><input type="password" id="userPw2" class="form-control" placeholder="비밀번호 확인"></td>
+              </tr>
+              <tr>
+                <th><span class="req">*</span>생년월일</th>
+                <td><input type="text" id="birth" class="form-control" placeholder="YYYYMMDD 8자리" maxlength="8" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');"></td>
+                <th><span class="req">*</span>성별</th>
+                <td>
+                  <div class="gender-wrap">
+                    <label><input type="radio" name="gender" value="M"> 남자</label>
+                    <label><input type="radio" name="gender" value="F"> 여자</label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th>이메일</th>
+                <td colspan="3"><input type="text" id="email" class="form-control" placeholder="example@example.com (선택)"></td>
+              </tr>
+              <tr>
+                <th>신장 / 체중 / 당뇨분류</th>
+                <td colspan="3">
+                  <div class="triple">
+                    <input type="text" id="height" class="form-control" placeholder="신장(cm)" maxlength="3" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
+                    <input type="text" id="weight" class="form-control" placeholder="체중(kg)" maxlength="3" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
+                    <input type="text" id="blodGb" class="form-control" placeholder="당뇨분류코드" maxlength="2" onKeyup="this.value=this.value.replace(/[^0-9]/g,'');">
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <!-- 약관 동의 — SEJONG_APP login.jsp 의 agreeList 와 동일 항목 (3개 모두 필수) -->
           <div class="agree-box">
@@ -245,7 +268,7 @@ $(function(){
 
         <div class="set-btn-box w-100">
           <button type="button" class="btn btn-outline-dark" onclick="location.href='/patient/login.do';">취소</button>
-          <button type="button" class="btn btn-primary" onclick="registerProc();">가입</button>
+          <button type="button" class="btn btn-reg-teal" onclick="registerProc();">가입</button>
         </div>
       </div>
     </div>

@@ -151,23 +151,23 @@
 
 	<!-- 식사메모 그래프 -->
 	<select id="drawOneMealChart" parameterType="String" resultType="map"><![CDATA[
-		SELECT dtm , eatType
+		SELECT dtm , eatType , hh
 			 , REPLACE(GROUP_CONCAT(foodNm),  ',' ,    '\r\n' ) AS foodNm
 		 FROM
 		(
 		      SELECT FOOD_SEQ as foodSeq,
 		             RTRIM(FOOD_NAME) as foodNm,
 		             STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') as dtm,
-		             MEAL_TYPE as mealType,
+		             CAST(LEFT(EAT_STIME, 2) AS UNSIGNED) as hh,
 		             CASE WHEN HOUR(STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s')) < 11 THEN '0'
 		                  WHEN HOUR(STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s')) < 16 THEN '1'
 		                  ELSE '2' END as eatType
 		        FROM T_FOOD_TRAN
 		       WHERE USER_UUID = #{userId}
-		         AND EAT_DATE = #{end}
+		         AND EAT_DATE = REPLACE(#{end}, '-', '')
 		         AND FOOD_NAME <> '음식아님'
 		       ORDER BY FOOD_SEQ
-		) K GROUP BY dtm , eatType
+		) K GROUP BY dtm , eatType , hh
 	]]>
 	</select>
 
@@ -178,9 +178,9 @@
    		 				WHERE USER_UUID = #{userId}
    		 				  AND ifnull(UPT_VALUE,0) > 0
       					  AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-		)SELECT  COALESCE(SUM(CASE WHEN UPT_VALUE >= 250 THEN 1 ELSE 0 END) ,0) AS HIGHTEST
-    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 180 AND UPT_VALUE < 250 THEN 1 ELSE 0 END),0) AS HIGHT
-    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 70 AND UPT_VALUE < 180 THEN 1 ELSE 0 END),0) AS NORMAL
+		)SELECT  COALESCE(SUM(CASE WHEN UPT_VALUE > 250 THEN 1 ELSE 0 END) ,0) AS HIGHTEST
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE > 180 AND UPT_VALUE <= 250 THEN 1 ELSE 0 END),0) AS HIGHT
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 70 AND UPT_VALUE <= 180 THEN 1 ELSE 0 END),0) AS NORMAL
     			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 54 AND UPT_VALUE < 70 THEN 1 ELSE 0 END),0) AS LOW
     			,COALESCE(SUM(CASE WHEN UPT_VALUE < 54 THEN 1 ELSE 0 END),0) AS LOWEST
 		   FROM COMM
@@ -193,7 +193,7 @@
 		SELECT COALESCE(AVG(UPT_VALUE),0) AS AvgBlood
     		  ,COALESCE(ROUND(STDDEV_SAMP(UPT_VALUE), 1),0) AS stdBlood
     		  ,COALESCE(ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1),0) AS CV
-    		  ,COALESCE(ROUND((0.023 * AVG(UPT_VALUE)) + 3.312, 1),0) AS GMI
+    		  ,COALESCE(ROUND((0.02392 * AVG(UPT_VALUE)) + 3.31, 1),0) AS GMI
     		  ,(SELECT COALESCE(AVG(a.UPT_VALUE),0)
 		  		FROM T_BLDINF_TRAN a
 		 		WHERE a.USER_UUID = #{userId}
@@ -377,7 +377,7 @@
 	    FROM T_BLDINF_TRAN a
 	    WHERE a.USER_UUID = #{userId}
 	    AND a.CGM_DTM >= DATE(#{start})
-        AND a.CGM_DTM < DATE(#{end})+'23:59:59'
+        AND a.CGM_DTM < DATE_ADD(DATE(#{end}), INTERVAL 1 DAY)
         and ifnull(a.UPT_VALUE,0) > 0
 		group by date, date2  order by date2
 	]]>
@@ -391,7 +391,7 @@
 	    FROM T_BLDINF_TRAN a
 	    WHERE a.USER_UUID = #{userId}
 	    AND a.CGM_DTM >= DATE(#{start})
-        AND a.CGM_DTM < DATE(#{end})+'23:59:59'
+        AND a.CGM_DTM < DATE_ADD(DATE(#{end}), INTERVAL 1 DAY)
         AND ifnull(a.UPT_VALUE,0) > 0
         GROUP BY DATE_FORMAT(CGM_DTM,'%y%m%d') , SUBSTR(CGM_DTM,11,3)
 		Order by CGM_DTM , CGM_TM asc
@@ -429,7 +429,7 @@
 			    FROM T_BLDINF_TRAN A
 	            WHERE A.USER_UUID = #{userId}
 	            AND A.CGM_DTM >= DATE(#{start})
-                AND A.CGM_DTM < DATE(#{end})+'23:59:59'
+                AND A.CGM_DTM < DATE_ADD(DATE(#{end}), INTERVAL 1 DAY)
 		        AND IFNULL(A.UPT_VALUE,0) > 0
 				GROUP BY SUBSTR(A.CGM_DTM,12,2)  , A.USER_UUID
 		        ORDER BY SUBSTR(A.CGM_DTM,12,2)
@@ -677,7 +677,7 @@
 			FROM T_BLDINF_TRAN a
 			  where a.USER_UUID  = #{userId}
 			    AND a.CGM_DTM >= DATE(#{start})
-		        AND a.CGM_DTM < DATE(#{end})+'23:59:59'
+		        AND a.CGM_DTM < DATE_ADD(DATE(#{end}), INTERVAL 1 DAY)
 			    and ifnull(a.UPT_VALUE,0) > 0
  				) k group by USER_UUID
 	]]>

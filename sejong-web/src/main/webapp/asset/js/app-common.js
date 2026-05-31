@@ -3,7 +3,7 @@
  */
 var IorA = navigator.userAgent.toLowerCase();
 //
-let android_interface = [
+var android_interface = [
 	{func: "Function Name", data: {cmd:"command", callback:"callback Function Name", data:""}},
 	{func: "f100", data: {cmd:"100", callback:"appCloseCallBack", data:""}},
 	{func: "f102", data: {cmd:"102", callback:"userInfoCallBack", data:""}},

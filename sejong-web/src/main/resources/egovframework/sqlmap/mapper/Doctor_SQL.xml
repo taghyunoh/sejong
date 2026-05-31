@@ -20,9 +20,12 @@
           From T_USER_TRAN A
 		  LEFT OUTER JOIN T_COMM_MST_DTL B ON B.CODE = 'CD7' AND B.DTL_CODE = A.BLOD_GB
 		 where 1=1
-		  AND USER_GB = #{userGb}
 		 ]]>
 
+		  <if test="userGb != null and userGb != ''"><![CDATA[
+		  AND USER_GB = #{userGb}
+		 ]]>
+		  </if>
 		  <if test="userNm != null and userNm != ''"><![CDATA[
 	         AND (A.USER_NM LIKE CONCAT('%',#{userNm},'%')
 	         OR A.PHONE LIKE CONCAT('%',#{userNm},'%'))

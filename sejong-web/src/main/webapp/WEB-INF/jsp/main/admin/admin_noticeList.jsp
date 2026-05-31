@@ -11,6 +11,60 @@
 <head>
 <!-- 달력(일자, 월별) 사용시 추가 필요함 -->
 <script src="/js/main.js"></script>
+<style>
+  :root { --reg-teal:#1f9b8e; --reg-teal-dark:#178074; --reg-teal-border:#bfe0db; --reg-teal-bg:#eaf6f4; }
+  .tab-pane .content-body { align-items: stretch; }
+  .tab-pane .content-body .tab-content, .tab-pane .content-body .content-wrap { width: 100%; }
+  .table-responsive { overflow-x: auto; }
+  #infoTable, #infoTable2 { width: 100%; }
+  #infoTable thead th, #infoTable2 thead th { position: sticky; top: 0; z-index: 2; white-space: nowrap; background-color: #d9edf7 !important; color: #000000 !important; }
+  #infoTable tbody tr, #infoTable2 tbody tr { cursor: pointer; }
+  #infoTable tbody tr:hover, #infoTable2 tbody tr:hover { background-color: #f2f2f2; }
+  #infoTable tbody tr:nth-child(even), #infoTable2 tbody tr:nth-child(even) { background-color: #f2f2f2; }
+  .paging { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .paging .pg-btn { min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid var(--reg-teal-border); background: #fff; color: #333; border-radius: 4px; cursor: pointer; font-size: 13px; line-height: 1; }
+  .paging .pg-btn:hover:not(:disabled) { background: var(--reg-teal-bg); }
+  .paging .pg-btn.active { background: var(--reg-teal); border-color: var(--reg-teal); color: #fff; font-weight: 700; }
+  .paging .pg-btn:disabled { opacity: .4; cursor: default; }
+  .modal-content { border-top: 3px solid var(--reg-teal); }
+  .modal-header.reg-head { border-bottom: 2px solid var(--reg-teal); }
+  .reg-modal-title { color: var(--reg-teal); font-weight: 700; font-size: 18px; margin: 0; }
+  .modal-footer .btn-primary { background: var(--reg-teal); border-color: var(--reg-teal); }
+  .modal-footer .btn-primary:hover { background: var(--reg-teal-dark); border-color: var(--reg-teal-dark); }
+  .reg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .reg-table th, .reg-table td { border: 1px solid var(--reg-teal-border); padding: 9px 12px; vertical-align: middle; font-size: 14px; }
+  .reg-table th { background: var(--reg-teal-bg); color: var(--reg-teal); font-weight: 600; text-align: left; white-space: nowrap; }
+  .reg-table td { background: #fff; }
+  .reg-table .req { color: #dc3545; margin-right: 3px; font-weight: 700; }
+  .reg-table input.form-control, .reg-table select.form-select { height: 34px; font-size: 14px; }
+  .reg-table textarea.form-control { font-size: 14px; }
+  .reg-table input.form-control.full, .reg-table select.form-select.full { width: 100%; }
+</style>
+<script type="text/javascript">
+if (typeof window.AdminPager !== 'function') {
+  window.AdminPager = function(o){ this.dataSel=o.dataArea; this.pagingSel=o.paging; this.rowHtml=o.rowHtml; this.size=o.pageSize||15; this.colspan=o.colspan||12; this.emptyMsg=o.emptyMsg||'검색된 정보가 없습니다.'; this.onRender=o.onRender||null; this.list=[]; this.page=1; };
+  window.AdminPager.prototype.setData = function(list){ this.list=list||[]; this.page=1; this.render(); };
+  window.AdminPager.prototype.goPage = function(p){ if(p<1) return; this.page=p; this.render(); };
+  window.AdminPager.prototype.render = function(){
+    var $a=$(this.dataSel); $a.empty(); var total=this.list.length;
+    if(total===0){ $a.append("<tr><td colspan='"+this.colspan+"'>"+this.emptyMsg+"</td></tr>"); this._paging(0); return; }
+    var tp=Math.ceil(total/this.size); if(this.page>tp) this.page=tp; if(this.page<1) this.page=1;
+    var s=(this.page-1)*this.size, e=Math.min(s+this.size,total), html="";
+    for(var i=s;i<e;i++){ html+=this.rowHtml(this.list[i], i); }
+    $a.append(html); if(this.onRender) this.onRender(); this._paging(tp);
+  };
+  window.AdminPager.prototype._paging = function(tp){
+    var $p=$(this.pagingSel); $p.empty(); if(tp<1) return;
+    var self=this, block=10, sp=Math.floor((this.page-1)/block)*block+1, ep=Math.min(sp+block-1,tp), html="";
+    function b(l,pg,dis,act){ return '<button class="pg-btn'+(act?' active':'')+'" '+(dis?'disabled':'')+' data-page="'+pg+'">'+l+'</button>'; }
+    html+=b('&laquo;',1,this.page===1,false); html+=b('&lsaquo;',this.page-1,this.page===1,false);
+    for(var p=sp;p<=ep;p++){ html+=b(p,p,false,p===this.page); }
+    html+=b('&rsaquo;',this.page+1,this.page===tp,false); html+=b('&raquo;',tp,this.page===tp,false);
+    $p.html(html);
+    $p.find('.pg-btn').off('click').on('click', function(){ var pg=parseInt($(this).attr('data-page'),10); if(!isNaN(pg)) self.goPage(pg); });
+  };
+}
+</script>
 <script type="text/javaScript">
 $( document ).ready(
 		function() {
@@ -18,6 +72,23 @@ $( document ).ready(
 });
 var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
 var uidGubun = "" ;
+
+// 공통 클라이언트 페이징 (admin-paging.js)
+var noticePager = new AdminPager({
+	dataArea:'#dataArea', paging:'#pagingArea', pageSize:15, colspan:7,
+	rowHtml:function(d, i){
+		var t = '<tr class="" onclick="javascript:fnDtlSearch(\''+d.notiSeq+'\');" id="row_'+d.notiSeq+'">';
+		t += "<td>" + (i+1) + "</td>";
+		t += "<td>" + d.userIdNm + "</td>";
+		t += "<td>" + d.title + "</td>";
+		t += "<td class='txt-left ellips'>" + d.expln + "</td>";
+		t += "<td>" + d.postStr + "</td>";
+		t += "<td>" + d.postEnd + "</td>";
+		t += "<td>" + d.regDtm.substring(0,10) + "</td>";
+		t += "</tr>";
+		return t;
+	}
+});
 function fnSearch() {
 
 	$("#infoTable tr").attr("class", "");
@@ -32,23 +103,7 @@ function fnSearch() {
 	dataType : "json",
    	success : function(data) {
    		if(data.error_code != "0") return;
-   		if(data.resultCnt > 0 ){
-    		var dataTxt = "";
-    		for(var i=0 ; i < data.resultCnt; i++){
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].notiSeq+'\');" id="row_'+data.resultLst[i].notiSeq+'">';
- 				dataTxt += 	"<td>" + (i+1)  + "</td>" ;
- 				dataTxt +=  "<td>" + data.resultLst[i].userIdNm   + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].title    + "</td>" ;
-				dataTxt +=  "<td class='txt-left ellips'>" + data.resultLst[i].expln    + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].postStr + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].postEnd + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].regDtm.substring(0,10) + "</td>" ;
-				dataTxt +=  "</tr>";
-	            $("#dataArea").append(dataTxt);
-        	 }
-	 	  }else{
-			  $("#dataArea").append("<tr><td colspan='12'>검색된 정보가 없습니다.</td></tr>");
-		  }
+   		noticePager.setData(data.resultCnt > 0 ? data.resultLst : []);
       }
    });
 }
@@ -210,6 +265,8 @@ function selectMonth() {
     // 날짜 설정
     GetDate(startDate,endDate);
 }
+
+$(document).ready(function(){ fnSearch(); });
 </script>
 </head>
 <body>
@@ -284,6 +341,7 @@ function selectMonth() {
                   </tbody>
                 </table>
               </div>
+              <div id="pagingArea" class="paging"></div>
             </div>
           </div>
         </section>
@@ -294,41 +352,45 @@ function selectMonth() {
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminlNoticeLabel" aria-hidden="true">
     <!-- 모달 class명으로 사이즈 조절 modal-320, 410, 520, 650, 820 -->
     <div class="modal-dialog  modal-820">
-      <div class="modal-content">
+            <div class="modal-content">
+        <div class="modal-header reg-head">
+          <h5 class="reg-modal-title">공지사항</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="modalClose();" aria-label="Close"></button>
+        </div>
+        <form:form commandName="DTO" id="regForm" name="regForm" method="post">
+          <input type="hidden" name="iud" id="iud"/>
+          <input type="hidden" name="notiSeq" id="notiSeq"/>
+          <input type="hidden" name="modId" id="modId" value="${sessionScope['q_user_id']}" />
+          <div class="modal-body">
+            <table class="reg-table">
+              <colgroup><col style="width:16%"><col style="width:34%"><col style="width:16%"><col style="width:34%"></colgroup>
+              <tbody>
+                <tr>
+                  <th><span class="req">*</span>제목</th>
+                  <td colspan="3"><input type="text" name="title" id="title" class="form-control" placeholder="제목을 입력하세요." style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>내용</th>
+                  <td colspan="3"><textarea class="form-control" placeholder="공지내용을 입력하세요." name="expln" id="expln" style="height:140px;width:100%;"></textarea></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>공지시작일</th>
+                  <td><input type="date" name="postStr" id="postStr" class="form-control" style="width:100%;"></td>
+                  <th><span class="req">*</span>공지종료일</th>
+                  <td><input type="date" name="postEnd" id="postEnd" class="form-control" style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>비밀번호</th>
+                  <td colspan="3"><input type="password" name="userPw" id="userPw" class="form-control" placeholder="비밀번호를 입력하세요." style="width:280px;"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </form:form>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary btn-sm"  onclick="fnSaveProc();">저장</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="fnSaveProc();">저장</button>
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
-         <form:form commandName="DTO"  id="regForm" name="regForm" method="post">
-           <input type="hidden" name="iud" id="iud"/>
-           <input type="hidden" name="notiSeq" id="notiSeq"/>
-           <input type="hidden" name="modId" id="modId" value="${sessionScope['q_user_id']}" />
-        <div class="modal-body">
-          <div class="form-container">
-            <div class="form-wrap w-100">
-              <label for="" class="critical" style="left">제목</label>
-              <input type="text" name="title" id="title" class="form-control" placeholder="제목을 입력하세요." >
-            </div>
-            <div class="form-wrap w-100">
-              <label for="" class="critical" style="left">내용</label>
-              <textarea class="form-control" aria-label="With textarea" placeholder="공지내용을 입력하세요." name="expln" id="expln"></textarea>
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical" style="left">공지시작일</label>
-              <input type="date" name="postStr" id="postStr" class="form-control">
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical" style="left">공지종료일</label>
-              <input type="date" name="postEnd" id="postEnd" class="form-control">
-
-            </div>
-            <div class="form-wrap w-50">
-              <label for="" class="critical">비밀번호</label>
-              <input type="password" name="userPw" id="userPw" class="form-control" placeholder="비밀번호를 입력하세요.">
-            </div>
-          </div>
-        </div>
-	  </form:form>
       </div>
     </div>
   </div>

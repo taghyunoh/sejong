@@ -10,10 +10,79 @@
 <head>
 <!-- 달력(일자, 월별) 사용시 추가 필요함 -->
 <script src="/js/main.js"></script>
+<style>
+  :root { --reg-teal:#1f9b8e; --reg-teal-dark:#178074; --reg-teal-border:#bfe0db; --reg-teal-bg:#eaf6f4; }
+  .tab-pane .content-body { align-items: stretch; }
+  .tab-pane .content-body .tab-content, .tab-pane .content-body .content-wrap { width: 100%; }
+  .table-responsive { overflow-x: auto; }
+  #infoTable, #infoTable2 { width: 100%; }
+  #infoTable thead th, #infoTable2 thead th { position: sticky; top: 0; z-index: 2; white-space: nowrap; background-color: #d9edf7 !important; color: #000000 !important; }
+  #infoTable tbody tr, #infoTable2 tbody tr { cursor: pointer; }
+  #infoTable tbody tr:hover, #infoTable2 tbody tr:hover { background-color: #f2f2f2; }
+  #infoTable tbody tr:nth-child(even), #infoTable2 tbody tr:nth-child(even) { background-color: #f2f2f2; }
+  .paging { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .paging .pg-btn { min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid var(--reg-teal-border); background: #fff; color: #333; border-radius: 4px; cursor: pointer; font-size: 13px; line-height: 1; }
+  .paging .pg-btn:hover:not(:disabled) { background: var(--reg-teal-bg); }
+  .paging .pg-btn.active { background: var(--reg-teal); border-color: var(--reg-teal); color: #fff; font-weight: 700; }
+  .paging .pg-btn:disabled { opacity: .4; cursor: default; }
+  .modal-content { border-top: 3px solid var(--reg-teal); }
+  .modal-header.reg-head { border-bottom: 2px solid var(--reg-teal); }
+  .reg-modal-title { color: var(--reg-teal); font-weight: 700; font-size: 18px; margin: 0; }
+  .modal-footer .btn-primary { background: var(--reg-teal); border-color: var(--reg-teal); }
+  .modal-footer .btn-primary:hover { background: var(--reg-teal-dark); border-color: var(--reg-teal-dark); }
+  .reg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .reg-table th, .reg-table td { border: 1px solid var(--reg-teal-border); padding: 9px 12px; vertical-align: middle; font-size: 14px; }
+  .reg-table th { background: var(--reg-teal-bg); color: var(--reg-teal); font-weight: 600; text-align: left; white-space: nowrap; }
+  .reg-table td { background: #fff; }
+  .reg-table .req { color: #dc3545; margin-right: 3px; font-weight: 700; }
+  .reg-table input.form-control, .reg-table select.form-select { height: 34px; font-size: 14px; }
+  .reg-table textarea.form-control { font-size: 14px; }
+  .reg-table input.form-control.full, .reg-table select.form-select.full { width: 100%; }
+</style>
+<script type="text/javascript">
+if (typeof window.AdminPager !== 'function') {
+  window.AdminPager = function(o){ this.dataSel=o.dataArea; this.pagingSel=o.paging; this.rowHtml=o.rowHtml; this.size=o.pageSize||15; this.colspan=o.colspan||12; this.emptyMsg=o.emptyMsg||'검색된 정보가 없습니다.'; this.onRender=o.onRender||null; this.list=[]; this.page=1; };
+  window.AdminPager.prototype.setData = function(list){ this.list=list||[]; this.page=1; this.render(); };
+  window.AdminPager.prototype.goPage = function(p){ if(p<1) return; this.page=p; this.render(); };
+  window.AdminPager.prototype.render = function(){
+    var $a=$(this.dataSel); $a.empty(); var total=this.list.length;
+    if(total===0){ $a.append("<tr><td colspan='"+this.colspan+"'>"+this.emptyMsg+"</td></tr>"); this._paging(0); return; }
+    var tp=Math.ceil(total/this.size); if(this.page>tp) this.page=tp; if(this.page<1) this.page=1;
+    var s=(this.page-1)*this.size, e=Math.min(s+this.size,total), html="";
+    for(var i=s;i<e;i++){ html+=this.rowHtml(this.list[i], i); }
+    $a.append(html); if(this.onRender) this.onRender(); this._paging(tp);
+  };
+  window.AdminPager.prototype._paging = function(tp){
+    var $p=$(this.pagingSel); $p.empty(); if(tp<1) return;
+    var self=this, block=10, sp=Math.floor((this.page-1)/block)*block+1, ep=Math.min(sp+block-1,tp), html="";
+    function b(l,pg,dis,act){ return '<button class="pg-btn'+(act?' active':'')+'" '+(dis?'disabled':'')+' data-page="'+pg+'">'+l+'</button>'; }
+    html+=b('&laquo;',1,this.page===1,false); html+=b('&lsaquo;',this.page-1,this.page===1,false);
+    for(var p=sp;p<=ep;p++){ html+=b(p,p,false,p===this.page); }
+    html+=b('&rsaquo;',this.page+1,this.page===tp,false); html+=b('&raquo;',tp,this.page===tp,false);
+    $p.html(html);
+    $p.find('.pg-btn').off('click').on('click', function(){ var pg=parseInt($(this).attr('data-page'),10); if(!isNaN(pg)) self.goPage(pg); });
+  };
+}
+</script>
 <script type="text/javaScript">
 var scrid = sessionStorage.getItem("q_screen_id");
 //모달이 있을 경우
 var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+
+// 공통 클라이언트 페이징 — 마스터 코드 목록 (admin-paging.js)
+var commMstPager = new AdminPager({
+	dataArea:'#dataArea1', paging:'#pagingArea1', pageSize:15, colspan:5,
+	rowHtml:function(d, i){
+		var t = '<tr class="" onclick="javascript:fnDtlSearch(\''+d.code+'\');" id="row_'+d.code+'">';
+		t += '<td>'+(i+1)+'</td>';
+		t += "<td>"+d.code+"</td>";
+		t += "<td>"+d.codeName+"</td>";
+		t += "<td>"+d.startDate+"</td>";
+		t += "<td>"+d.endDate+"</td>";
+		t += "</tr>";
+		return t;
+	}
+});
 //조회
 function fnSearch(gbn){
 	//등록폼 초기화
@@ -35,20 +104,7 @@ function fnSearch(gbn){
 				console.log(data);
 				if(data.error_code != "0") return;
 
-				if(data.resultCnt > 0 ){
-					var dataTxt = "";
-
-					for(var i=0 ; i < data.resultCnt; i++){
-						dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].code+'\');" id="row_'+data.resultLst[i].code+'">';
-						dataTxt += '<td>'+(i+1) +'</td>';
-						dataTxt += "<td>"+ data.resultLst[i].code+"</td>";
-						dataTxt += "<td>"+ data.resultLst[i].codeName+"</td>";
-						dataTxt += "<td>"+ data.resultLst[i].startDate+"</td>";
-						dataTxt += "<td>"+ data.resultLst[i].endDate+"</td>";
-						dataTxt += "</tr>";
-	                    $("#dataArea1").append(dataTxt);
-					}
-				}
+				commMstPager.setData(data.resultCnt > 0 ? data.resultLst : []);
 			}
 		});
 	}
@@ -356,6 +412,8 @@ function modalClose(){
          window.adminModalInstance.hide();  // 모달 닫기
      }
 }
+
+$(document).ready(function(){ fnSearch('M'); });
 </script>
 </head>
 <body id="BodyArea">
@@ -422,6 +480,7 @@ function modalClose(){
                   </tbody>
                 </table>
               </div>
+              <div id="pagingArea1" class="paging"></div>
             </div>
           </div>
           <div class="main-right">
@@ -475,48 +534,60 @@ function modalClose(){
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
     <!-- 모달 class명으로 사이즈 조절 modal-320, 410, 520, 650, 820 -->
     <div class="modal-dialog  modal-820">
-      <div class="modal-content">
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary btn-sm"  onclick="fnSaveProc();">저장</button>
-          <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
+            <div class="modal-content">
+        <div class="modal-header reg-head">
+          <h5 class="reg-modal-title">공통코드</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="modalClose();" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <div class="form-container">
-
-    		<form:form commandName="VO" id="regForm" name="regForm" method="post">
-              <input type="hidden" name="gbn" id="gbn" />
-              <input type="hidden" name="iud" id="iud" />
-              <input type="hidden" name="dupchk" id="dupchk" value="X"/>
-            <div class="form-wrap w-70">
-              <label for="" class="critical">코드</label>
-              <input type="text" name="code" id="code" class="form-control" placeholder="" readonly>
-              <button type="button" class="btn btn-outline-dark" id="mstdupid" onclick="fnDupchk('M');">중복체크</button>
-            </div>
-            <div class="form-wrap w-100" id="CodeName" >
-              <label for="" class="critical">코드명</label>
-              <input type="text" name="codeName"  id="codeName" class="form-control" placeholder="코드명을 입력하세요.">
-            </div>
-            <div class="form-wrap w-70" id="dtlCodeInfo" style="display:none">
-              <label for="" class="critical">상세코드</label>
-              <input type="text" name="dtlCode" id="dtlCode" class="form-control" placeholder="" readonly>
-              <button type="button" class="btn btn-outline-dark" id="dtldupid"  onclick="fnDupchk('D');">중복체크</button>
-            </div>
-            <div class="form-wrap w-100" id="dtlCodeName" style="display:none">
-              <label for="" class="critical">상세코드명</label>
-              <input type="text" name="dtlCodeNm" id="dtlCodeNm" class="form-control" placeholder="상세코드명을 입력하세요.">
-            </div>
-            <div class="form-wrap w-100">
-              <label for="" class="critical">적용시작일</label>
-              <input type="date" name="startDate" id="startDate"  class="form-control" value="">
-              <label for="" class="critical">적용종료일</label>
-              <input type="date" name="endDate" id="endDate" class="form-control" value="9999-12-31">
-            </div>
-            <div class="form-wrap w-50" id="sortInfo" style="display:none">
-              <label for="">정렬순서</label>
-              <input type="text" name="sort" id="sort" class="form-control" placeholder="00" value="">
-            </div>
-            </form:form>
+        <form:form commandName="VO" id="regForm" name="regForm" method="post">
+          <input type="hidden" name="gbn" id="gbn" />
+          <input type="hidden" name="iud" id="iud" />
+          <input type="hidden" name="dupchk" id="dupchk" value="X"/>
+          <div class="modal-body">
+            <table class="reg-table">
+              <colgroup><col style="width:20%"><col style="width:80%"></colgroup>
+              <tbody>
+                <tr>
+                  <th><span class="req">*</span>코드</th>
+                  <td>
+                    <input type="text" name="code" id="code" class="form-control" style="width:200px;display:inline-block;" readonly>
+                    <button type="button" class="btn btn-outline-dark" id="mstdupid" onclick="fnDupchk('M');">중복체크</button>
+                  </td>
+                </tr>
+                <tr id="CodeName">
+                  <th><span class="req">*</span>코드명</th>
+                  <td><input type="text" name="codeName" id="codeName" class="form-control" placeholder="코드명을 입력하세요." style="width:100%;"></td>
+                </tr>
+                <tr id="dtlCodeInfo" style="display:none">
+                  <th><span class="req">*</span>상세코드</th>
+                  <td>
+                    <input type="text" name="dtlCode" id="dtlCode" class="form-control" style="width:200px;display:inline-block;" readonly>
+                    <button type="button" class="btn btn-outline-dark" id="dtldupid" onclick="fnDupchk('D');">중복체크</button>
+                  </td>
+                </tr>
+                <tr id="dtlCodeName" style="display:none">
+                  <th><span class="req">*</span>상세코드명</th>
+                  <td><input type="text" name="dtlCodeNm" id="dtlCodeNm" class="form-control" placeholder="상세코드명을 입력하세요." style="width:100%;"></td>
+                </tr>
+                <tr>
+                  <th><span class="req">*</span>적용기간</th>
+                  <td>
+                    <input type="date" name="startDate" id="startDate" class="form-control" style="width:180px;display:inline-block;">
+                    <span style="margin:0 6px;">~</span>
+                    <input type="date" name="endDate" id="endDate" class="form-control" value="9999-12-31" style="width:180px;display:inline-block;">
+                  </td>
+                </tr>
+                <tr id="sortInfo" style="display:none">
+                  <th>정렬순서</th>
+                  <td><input type="text" name="sort" id="sort" class="form-control" placeholder="00" style="width:120px;"></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+        </form:form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-sm" onclick="fnSaveProc();">저장</button>
+          <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
       </div>
     </div>

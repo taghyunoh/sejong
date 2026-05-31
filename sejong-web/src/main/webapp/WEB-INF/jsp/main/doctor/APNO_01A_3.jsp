@@ -12,6 +12,10 @@
 <link href="/asset/component/sub_teb_menu.css" rel="stylesheet">
 <title>FAQ</title>
 <script src="/js/main.js"></script>
+<style>
+  /* admin 그리드 헤더 컨셉 — 연한 하늘색 */
+  #infoTable thead th, #infoTable2 thead th { background-color: #d9edf7 !important; color: #000000 !important; }
+</style>
 <script type="text/javascript">
 $(document).ready(function () {
 	fnSearch() ;

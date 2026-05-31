@@ -36,10 +36,11 @@
     border: 1px solid #ccc; /* 테두리 추가 */
   }
 
-  table thead th {
+  #infoTable thead th {
     position: sticky;
     top: 0; /* 헤더 고정 */
-    background-color: #f8f9fa; /* 헤더 배경색 */
+    background-color: #d9edf7 !important; /* 헤더 배경색 — 연한 하늘색 */
+    color: #000000 !important;
     z-index: 2; /* 헤더가 데이터보다 위에 위치하도록 설정 */
   }
 
@@ -53,7 +54,7 @@
 <script>
 var user_gubun = "" ;
 $(document).ready(function () {
-	$("#user_gb").prop("checked",true); 
+	$("#user_gb").prop("checked",false);
 	fnSearch() ;
 })
 </script>
@@ -70,7 +71,7 @@ function fnSearch() {
 //		return; 
 //	 }
  
-    user_gubun = $("#user_gb").is(':checked') ? "1" : "2" ;
+    user_gubun = $("#user_gb").is(':checked') ? "1" : "" ;   // 체크: 실증환자(1)만 / 해제: 전체
     
     var startTime = new Date(); //조회시작시간  
     
@@ -305,9 +306,6 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
           <div class="main-left w-100">
             <header class="main-hd">
               <h2></h2>
-              <div class="btn-box">
-                <button class="btn btn-outline-dark btn-sm" onclick="fnSyncBlood();">혈당 동기화</button>
-              </div>
             </header>
             <div class="main-content">
               <!-- 테이블 샘플 -->

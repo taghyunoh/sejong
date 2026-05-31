@@ -81,7 +81,7 @@
         <ul class="navbar-nav">
 			<c:if test="${sessionScope['q_admin_yn'] == 'A'}">
 	          	<li class="menu-item" data-menu="01">
-		           	<a href="javascript:void(0);" onclick="loadMenuPage('/admin/admin_ptList.do');"><button class="btn" type="button">회원자료관리</button></a> 
+		           	<a href="javascript:void(0);" onclick="loadMenuPage('/admin/admin_ptList.do');"><button id="adminPtBtn" class="btn" type="button">회원자료관리</button></a> 
 	          	</li>
 	          	<li class="menu-item" data-menu="02">
            			<a href="javascript:void(0);" onclick="loadMenuPage('/admin/admin_noticeList.do');"><button class="btn" type="button">공지사항관리</button></a>
@@ -139,6 +139,7 @@
     $.ajax({
       url: url,  // 요청할 URL
       method: "GET",  // HTTP 메소드
+      cache: false,  // 캐시 비활성화 — 변경된 화면이 즉시 반영되도록
       success: function(response) {
    	  
         // 서버에서 받은 HTML을 contentArea에 삽입
@@ -184,9 +185,14 @@ window.onload = function(){
 } 
 
 function handleMenuClick() {
- // controller단 에서 한번타고 admingu 초기화 
+ // controller단 에서 한번타고 admingu 초기화
   if ("${sessionScope['admingu']}" == 'D')  {
 	   document.getElementById("myButton").click();
+  }
+  // 관리자(A) 최초 진입 시 회원자료관리(환자목록) 자동 로드 — admin_ptList.do 에서 admingu 제거되어 1회만 동작
+  if ("${sessionScope['admingu']}" == 'A')  {
+	   var adminBtn = document.getElementById("adminPtBtn");
+	   if (adminBtn) adminBtn.click();
   }
 }
 $(document).ready(function () {

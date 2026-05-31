@@ -133,21 +133,24 @@ public class AdminController {
 	}	
 	// 환자정보관리 
     @RequestMapping(value = "/admin/admin_ptList.do")
-	public String ptList(Model model) throws Exception {
-		try { 
+	public String ptList(HttpServletRequest request, Model model) throws Exception {
+		try {
+			// 메인 최초 진입 자동 로드(handleMenuClick)가 1회만 동작하도록 admingu 제거 (의사 ptList 와 동일)
+			request.getSession().removeAttribute("admingu");
+
 			CommDTO cvo = new CommDTO();
 			cvo.setCode("CD7");
 			cvo.setUseYn("Y");
 
-			List <?> resultLst = codesvc.selectCommDetailList(cvo);	
+			List <?> resultLst = codesvc.selectCommDetailList(cvo);
 			model.addAttribute("cdtpList", resultLst);
-			
+
 		}catch(Exception ex) {
-			model.addAttribute("error_code", "10000"); 
+			model.addAttribute("error_code", "10000");
 		}
 		return ".main/admin/admin_ptList";
 
-	}  
+	}
   
     @RequestMapping(value="/admin/selectPatientList.do", method = RequestMethod.POST)
 	public String selectPatientList(@ModelAttribute("DTO") PatientDTO dto, HttpServletRequest request, Model model) throws Exception {
