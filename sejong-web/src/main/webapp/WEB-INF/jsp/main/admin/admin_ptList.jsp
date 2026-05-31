@@ -51,11 +51,14 @@
   #infoTable tbody tr:hover { background-color: #f2f2f2; }
 
   /* ② 하단 페이징 */
-  .paging { display:flex; justify-content:center; align-items:center; gap:4px; margin:14px 0 4px; flex-wrap:wrap; }
+  .paging { display:flex; justify-content:center; align-items:center; gap:4px; margin:14px 0 4px; flex-wrap:wrap; font-size:13px; }
   .paging .pg-btn { min-width:32px; height:32px; padding:0 8px; border:1px solid var(--reg-teal-border); background:#fff; color:#333; border-radius:4px; cursor:pointer; font-size:13px; line-height:1; }
   .paging .pg-btn:hover:not(:disabled) { background:var(--reg-teal-bg); }
   .paging .pg-btn.active { background:var(--reg-teal); border-color:var(--reg-teal); color:#fff; font-weight:700; }
   .paging .pg-btn:disabled { opacity:.4; cursor:default; }
+  .paging .pg-sep { margin: 0 6px; color:#888; }
+  .paging select { padding:3px 6px; border:1px solid var(--reg-teal-border); border-radius:3px; height:30px; }
+  .paging .pg-info { color:#555; }
 
   /* ③ 모달폼 — 회원가입(거래처정보) 테이블 컨셉 */
   .reg-table { width:100%; border-collapse:collapse; table-layout:fixed; }
@@ -188,28 +191,62 @@ function renderPage(){
    renderPaging(totalPages);
 }
 
-// 하단 페이징 버튼 렌더 (10개 블록 단위)
+// 하단 페이징 버튼 렌더
+//   - 페이지 크기 선택(10/15/20/50/100)
+//   - 현재 페이지 기준 앞뒤 ±2 윈도우 + 처음/끝 + '…' 생략 표시
+//   - "현재 / 전체 (총 N건)" 위치 표시
 function renderPaging(totalPages){
    var $p = $("#pagingArea");
    $p.empty();
-   if(totalPages < 1) return;   // 데이터가 있으면 1페이지여도 페이징 바 표시
-   var block = 10;
-   var startPage = Math.floor((gCurPage - 1) / block) * block + 1;
-   var endPage   = Math.min(startPage + block - 1, totalPages);
-   var html = "";
-   html += '<button class="pg-btn" '+(gCurPage===1?'disabled':'')+' onclick="goPage(1)">&laquo;</button>';
-   html += '<button class="pg-btn" '+(gCurPage===1?'disabled':'')+' onclick="goPage('+(gCurPage-1)+')">&lsaquo;</button>';
-   for(var p = startPage; p <= endPage; p++){
-      html += '<button class="pg-btn '+(p===gCurPage?'active':'')+'" onclick="goPage('+p+')">'+p+'</button>';
+   var total = gPatientList.length;
+   if(totalPages < 1) totalPages = 1;
+   var p = gCurPage;
+   var WIN = 2;
+   var fromP = Math.max(1, p - WIN);
+   var toP   = Math.min(totalPages, p + WIN);
+
+   var html = '';
+   // 페이지 크기 선택
+   html += '<span class="pg-info">페이지당 </span>';
+   html += '<select onchange="changePageSize(this.value)">';
+   [10,15,20,50,100].forEach(function(n){
+      html += '<option value="'+n+'" '+(n===gPageSize?'selected':'')+'>'+n+'</option>';
+   });
+   html += '</select>';
+   html += '<span class="pg-sep">|</span>';
+   // 처음/이전
+   html += '<button class="pg-btn" '+(p<=1?'disabled':'')+' onclick="goPage(1)">&laquo;</button>';
+   html += '<button class="pg-btn" '+(p<=1?'disabled':'')+' onclick="goPage('+(p-1)+')">&lsaquo;</button>';
+   // 번호 (윈도우 + 양끝)
+   if (fromP > 1) {
+      html += '<button class="pg-btn" onclick="goPage(1)">1</button>';
+      if (fromP > 2) html += '<span class="pg-sep">…</span>';
    }
-   html += '<button class="pg-btn" '+(gCurPage===totalPages?'disabled':'')+' onclick="goPage('+(gCurPage+1)+')">&rsaquo;</button>';
-   html += '<button class="pg-btn" '+(gCurPage===totalPages?'disabled':'')+' onclick="goPage('+totalPages+')">&raquo;</button>';
+   for (var i = fromP; i <= toP; i++) {
+      html += '<button class="pg-btn '+(i===p?'active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+   }
+   if (toP < totalPages) {
+      if (toP < totalPages-1) html += '<span class="pg-sep">…</span>';
+      html += '<button class="pg-btn" onclick="goPage('+totalPages+')">'+totalPages+'</button>';
+   }
+   // 다음/끝
+   html += '<button class="pg-btn" '+(p>=totalPages?'disabled':'')+' onclick="goPage('+(p+1)+')">&rsaquo;</button>';
+   html += '<button class="pg-btn" '+(p>=totalPages?'disabled':'')+' onclick="goPage('+totalPages+')">&raquo;</button>';
+   // 위치 + 총건수
+   html += '<span class="pg-sep">|</span>';
+   html += '<span class="pg-info">'+p+' / '+totalPages+' (총 '+total+'건)</span>';
+
    $p.html(html);
 }
 
 function goPage(p){
    if(p < 1) return;
    gCurPage = p;
+   renderPage();
+}
+function changePageSize(n){
+   gPageSize = parseInt(n,10);
+   gCurPage  = 1;
    renderPage();
 }
 //모달에 데이터를 전달하여 여는 함수

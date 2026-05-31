@@ -50,6 +50,21 @@
   .total-count {
     margin-right: 1rem; /* 오른쪽 여백 (옵션) */
   }
+  /* 페이징 영역 */
+  .grid-pager {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; padding: 10px 0; flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .grid-pager .pg-btn {
+    border: 1px solid #ccc; background:#fff; color:#333;
+    padding: 4px 10px; min-width: 32px; cursor:pointer; border-radius:3px;
+  }
+  .grid-pager .pg-btn:hover:not(:disabled) { background:#eef5ff; border-color:#1976d2; }
+  .grid-pager .pg-btn:disabled { color:#aaa; cursor:not-allowed; background:#f7f7f7; }
+  .grid-pager .pg-btn.active { background:#1976d2; color:#fff; border-color:#1976d2; font-weight:600; }
+  .grid-pager .pg-sep { margin: 0 6px; color:#888; }
+  .grid-pager select { padding: 3px 6px; border:1px solid #ccc; border-radius:3px; }
 </style>
 <script>
 var user_gubun = "" ;
@@ -58,13 +73,25 @@ $(document).ready(function () {
 	fnSearch() ;
 })
 </script>
-<script type="text/javaScript"> 
-//조회시작 
+<script type="text/javaScript">
+// ─────────────────────────────────────────────────────────────────────
+// 페이징 상태 (클라이언트 사이드)
+//   _gridRows     : 서버에서 받은 전체 리스트 (resultLst)
+//   _gridPage     : 현재 페이지 (1-base)
+//   _gridPageSize : 페이지당 행 수
+// ─────────────────────────────────────────────────────────────────────
+var _gridRows = [];
+var _gridPage = 1;
+var _gridPageSize = 20;
+
+//조회시작
 function fnSearch() {
 
 	 document.getElementById("regForm").reset();
-	 
+
 	 $("#dataArea").empty();
+	 _gridRows = []; _gridPage = 1;
+	 _renderPager();   // 검색 직전 페이저 초기화
 //	 	if($('#searchText').val() == "") {
 //		alert("검색어를 입력하세요.");
 //		$('#searchText').focus();
@@ -121,82 +148,123 @@ function fnSearch() {
             // 시분초로 포맷팅
             let formatTime = (date) => date.toLocaleTimeString();
             
-    		var dataTxt = "";
     		var totalCount = data.resultCnt ;
     		document.getElementById("totalCount").textContent = totalCount; // 건수 업데이트
-    		for(var i=0 ; i < data.resultCnt; i++){
-    			//성별 구분
-    			var genderText = "";
-	    		if (data.resultLst[i].gender == "F"){
-	    			genderText = "여성";
-	    	    } else if(data.resultLst[i].gender == "M") {
-	    	        genderText = "남성";
-	    	    } 
-   		
-	    		//만나이 계산
-    		    // 현재 날짜를 가져옵니다.
-	    		  var birthYear = data.resultLst[i].birth.substring(0,4);
-				  var birthMonth = data.resultLst[i].birth.substring(4,6);
-				  var birthDay = data.resultLst[i].birth.substring(6,8);
-				  var birthDate = birthYear+ "-" + birthMonth +"-" + birthDay;
-					  
-				  var currentDate = new Date();
-				  var currentYear = currentDate.getFullYear();
-				  var currentMonth = currentDate.getMonth();
-				  var currentDay = currentDate.getDate();
-				  
-				  var age = currentYear - birthYear;
-				  if (currentMonth < birthMonth) {
-					    age-1;
-					  }
-					  // 현재 월과 생일의 월이 같은 경우, 현재 일과 생일의 일을 비교합니다.
-					  else if (currentMonth === birthMonth && currentDay < birthDay) {
-					    age-1;
-					  }else{
-						age;
-					  }
-				  
-	             var userText = "";
-	             if (data.resultLst[i].userGb == "1"){
-	            	 userText = "실증환자";
-	             } else if(data.resultLst[i].userGb == "2") {
-	            	 userText = "테스트";
-	             } 	  
-	    		  
-    			dataTxt = '<tr  class="" onclick="javascript:fnDtlSearch(\''+data.resultLst[i].userUuid+'\');" id="row_'+data.resultLst[i].userUuid+'">'; 
-				dataTxt += 	"<td>" + (i+1)  + "</td>" ; 
-				dataTxt +=  "<td>" + data.resultLst[i].userNm.substring(0,1)  + "*" +
-				                     data.resultLst[i].userNm.substring(2,3)  + "</td>" ;
-				                     
-				dataTxt +=  "<td>" + data.resultLst[i].phone.substring(0,3)+"-****-" + 
-									 data.resultLst[i].phone.substring(7,11)+"</td>" ;
-				dataTxt +=  "<td>" + genderText   + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].birth.substring(0,4)+"년&nbsp" + 
-									 data.resultLst[i].birth.substring(4,6)+"월&nbsp" + 
-									 data.resultLst[i].birth.substring(6,8)+"일" + "</td>" ;
-				dataTxt +=  "<td>" + age   + "</td>" ;
-	            
-				dataTxt +=  "<td>" + data.resultLst[i].dtlCodeNm   + "</td>" ;
-	            dataTxt +=  "<td>" + data.resultLst[i].height        + "</td>" ;
-	            dataTxt +=  "<td>" + data.resultLst[i].weight        + "</td>" ;
-	            
-				dataTxt +=  "<td>" + data.resultLst[i].joinYmd.substring(0,4)+"년&nbsp" + 
-									 data.resultLst[i].joinYmd.substring(4,6)+"월&nbsp" + 
-									 data.resultLst[i].joinYmd.substring(6,8)+"일" + "</td>" ;
-				dataTxt +=  "<td>" + data.resultLst[i].regDtm        + "</td>" ;					 
-			    dataTxt +=  "<td>" + userText   + "</td>" ;					 
-				dataTxt +=  "</tr>";
-	            $("#dataArea").append(dataTxt);
-	            
-				$("#userUuid").val(data.resultLst[i].userUuid);
-        	 }
+    		// 전체 리스트 캐시 후 1페이지 렌더 (페이지 단위로 잘라 렌더)
+    		_gridRows = data.resultLst || [];
+    		_gridPage = 1;
+    		_renderGridPage();
 	 	  }else{
+	 			 _gridRows = []; _gridPage = 1;
+	 			 document.getElementById("totalCount").textContent = 0;
 				 $("#dataArea").append("<tr><td colspan='12'>검색된 정보가 없습니다.</td></tr>");
+				 _renderPager();
 		  }
       }
    });
 }
-function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()).padStart(2, '0'); 
+// ─────────────────────────────────────────────────────────────────────
+// 현재 페이지 행만 렌더
+// ─────────────────────────────────────────────────────────────────────
+function _renderGridPage(){
+	$("#dataArea").empty();
+	var total = _gridRows.length;
+	if (total === 0) {
+		$("#dataArea").append("<tr><td colspan='12'>검색된 정보가 없습니다.</td></tr>");
+		_renderPager();
+		return;
+	}
+	var totalPages = Math.max(1, Math.ceil(total / _gridPageSize));
+	if (_gridPage > totalPages) _gridPage = totalPages;
+	if (_gridPage < 1) _gridPage = 1;
+
+	var startIdx = (_gridPage - 1) * _gridPageSize;
+	var endIdx   = Math.min(startIdx + _gridPageSize, total);
+
+	var html = "";
+	for (var i = startIdx; i < endIdx; i++) {
+		var row = _gridRows[i];
+		// 성별
+		var genderText = (row.gender == "F") ? "여성" : (row.gender == "M") ? "남성" : "";
+		// 만나이
+		var birthYear  = row.birth.substring(0,4);
+		var birthMonth = parseInt(row.birth.substring(4,6),10);
+		var birthDay   = parseInt(row.birth.substring(6,8),10);
+		var cd = new Date();
+		var age = cd.getFullYear() - parseInt(birthYear,10);
+		if ((cd.getMonth()+1) < birthMonth) age--;
+		else if ((cd.getMonth()+1) === birthMonth && cd.getDate() < birthDay) age--;
+		// 환자 구분
+		var userText = (row.userGb == "1") ? "실증환자" : (row.userGb == "2") ? "테스트" : "";
+
+		html += '<tr ondblclick="javascript:fnDtlSearch(\''+row.userUuid+'\');" id="row_'+row.userUuid+'">';
+		html +=   "<td>" + (i+1) + "</td>";   // 전체 기준 일련번호 (페이지 넘겨도 연속)
+		html +=   "<td>" + row.userNm.substring(0,1) + "*" + row.userNm.substring(2,3) + "</td>";
+		html +=   "<td>" + row.phone.substring(0,3) + "-****-" + row.phone.substring(7,11) + "</td>";
+		html +=   "<td>" + genderText + "</td>";
+		html +=   "<td>" + row.birth.substring(0,4) + "년&nbsp;" + row.birth.substring(4,6) + "월&nbsp;" + row.birth.substring(6,8) + "일</td>";
+		html +=   "<td>" + age + "</td>";
+		html +=   "<td>" + row.dtlCodeNm + "</td>";
+		html +=   "<td>" + row.height + "</td>";
+		html +=   "<td>" + row.weight + "</td>";
+		html +=   "<td>" + row.joinYmd.substring(0,4) + "년&nbsp;" + row.joinYmd.substring(4,6) + "월&nbsp;" + row.joinYmd.substring(6,8) + "일</td>";
+		html +=   "<td>" + row.regDtm + "</td>";
+		html +=   "<td>" + userText + "</td>";
+		html += "</tr>";
+	}
+	$("#dataArea").html(html);
+	_renderPager();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 페이저 UI 렌더 (1 2 3 … N 형태, 좌/우 화살표 포함)
+// ─────────────────────────────────────────────────────────────────────
+function _renderPager(){
+	var total = _gridRows.length;
+	var totalPages = Math.max(1, Math.ceil(total / _gridPageSize));
+	var p = _gridPage;
+	// 화면에 표시할 페이지 번호 범위 (현재 페이지 기준 앞뒤 2개)
+	var WIN = 2;
+	var fromP = Math.max(1, p - WIN);
+	var toP   = Math.min(totalPages, p + WIN);
+
+	var html = '';
+	// 페이지 크기 선택
+	html += '<span>페이지당 </span>';
+	html += '<select onchange="_changePageSize(this.value)">';
+	[10,20,50,100].forEach(function(n){
+		html += '<option value="'+n+'" '+(n===_gridPageSize?'selected':'')+'>'+n+'</option>';
+	});
+	html += '</select>';
+	html += '<span class="pg-sep">|</span>';
+	// 처음/이전
+	html += '<button class="pg-btn" '+(p<=1?'disabled':'')+' onclick="_gotoPage(1)">«</button>';
+	html += '<button class="pg-btn" '+(p<=1?'disabled':'')+' onclick="_gotoPage('+(p-1)+')">‹</button>';
+	// 번호
+	if (fromP > 1) {
+		html += '<button class="pg-btn" onclick="_gotoPage(1)">1</button>';
+		if (fromP > 2) html += '<span class="pg-sep">…</span>';
+	}
+	for (var i = fromP; i <= toP; i++) {
+		html += '<button class="pg-btn '+(i===p?'active':'')+'" onclick="_gotoPage('+i+')">'+i+'</button>';
+	}
+	if (toP < totalPages) {
+		if (toP < totalPages-1) html += '<span class="pg-sep">…</span>';
+		html += '<button class="pg-btn" onclick="_gotoPage('+totalPages+')">'+totalPages+'</button>';
+	}
+	// 다음/끝
+	html += '<button class="pg-btn" '+(p>=totalPages?'disabled':'')+' onclick="_gotoPage('+(p+1)+')">›</button>';
+	html += '<button class="pg-btn" '+(p>=totalPages?'disabled':'')+' onclick="_gotoPage('+totalPages+')">»</button>';
+	// 위치 표시
+	html += '<span class="pg-sep">|</span>';
+	html += '<span>'+p+' / '+totalPages+' (총 '+total+'건)</span>';
+
+	$("#gridPager").html(html);
+}
+function _gotoPage(n){ _gridPage = n; _renderGridPage(); }
+function _changePageSize(n){ _gridPageSize = parseInt(n,10); _gridPage = 1; _renderGridPage(); }
+
+function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()).padStart(2, '0');
          const minutes = String(date.getMinutes()).padStart(2, '0'); 
          const seconds = String(date.getSeconds()).padStart(2, '0'); 
          const milliseconds = String(date.getMilliseconds()).padStart(3, '0'); 
@@ -341,15 +409,17 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
                       <th>환자구분</th>
                     </tr>
                   </thead>
-                  <tbody id="dataArea"> 
+                  <tbody id="dataArea">
         			<tr>
         				<td colspan="8">&nbsp;</td>
         			</tr>
                   </tbody>
                 </table>
               </div>
+              <!-- 페이저 영역 -->
+              <div id="gridPager" class="grid-pager"></div>
             </div>
-          </div> 
+          </div>
         </section>
         </div>
         </div>
