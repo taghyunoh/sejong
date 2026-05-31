@@ -15,7 +15,7 @@
 <script src="/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="/asset/js/commonUtil.js"></script>
 <script src="/asset/js/ui-message.js"></script>
-<script src="/asset/js/blood_qa.js"></script>
+<script src="/asset/js/blood_qa.js?v=<%= System.currentTimeMillis() %>"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
