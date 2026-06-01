@@ -81,7 +81,7 @@ public class DoctorController {
 		@RequestMapping(value = "/tab/tab.do")
 		public String tab(HttpServletRequest request, Model model) throws Exception {
 			return ".main/doctor/APME_01A_2";
-		} 
+		}
 		// 2026-05-27 정리: /tab/tab1~4.do 제거 (대상 JSP 없음, 호출처도 없음)
 
 		/*

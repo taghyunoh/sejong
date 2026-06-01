@@ -86,6 +86,32 @@
     font-size:15px; cursor:pointer;
   }
   .isens-guide-btn:hover { background:#0b5ed7; }
+
+  /* ── 좌측 사이드바 메뉴 ── */
+  .side-nav { position:fixed; left:0; top:0; bottom:0; width:200px; background:#fff; border-right:1px solid #e3e6ea;
+    box-shadow:2px 0 8px rgba(0,0,0,0.05); z-index:1030; display:flex; flex-direction:column; padding:16px 0; }
+  .side-nav .sn-brand { font-size:16px; font-weight:700; color:#0d6efd; padding:6px 20px 14px; border-bottom:1px solid #eef0f2;
+    margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .side-nav .sn-item { display:flex; align-items:center; gap:11px; padding:11px 20px; font-size:14.5px; font-weight:500;
+    color:#3c4043; cursor:pointer; border:0; background:none; width:100%; text-align:left; transition:all .12s;
+    border-left:3px solid transparent; }
+  .side-nav .sn-item:hover { background:#f1f6ff; color:#0d6efd; border-left-color:#0d6efd; }
+  .side-nav .sn-item .sn-ico { font-size:18px; line-height:1; width:22px; text-align:center; }
+  .side-nav .sn-sep { height:1px; background:#eef0f2; margin:8px 16px; }
+  /* 사이드바 폭만큼 본문을 우측으로 밀어줌 */
+  body.has-side-nav { padding-left:200px; }
+  @media (max-width:1320px){ .side-nav { width:168px; } body.has-side-nav { padding-left:168px; } }
+  @media (max-width:980px){ .side-nav { display:none; } body.has-side-nav { padding-left:0; } }
+  /* FAQ 아코디언 */
+  #faqList .accordion-button:not(.collapsed) { background:#eef4ff; color:#0d6efd; box-shadow:none; }
+  #faqList .accordion-button:focus { box-shadow:none; }
+  /* 세부혈당그래프 모달 — 표준 풀스크린(최상단에 딱 붙음) */
+  #detailGraphModal { padding:0 !important; }
+  #detailGraphModal .modal-dialog { margin:0 !important; max-width:none !important;
+    width:100vw !important; height:100vh !important; transform:none !important; }
+  #detailGraphModal .modal-content { height:100vh !important; max-height:none !important; top:auto !important;
+    transform:none !important; border:0 !important; border-radius:0 !important; }
+  #detailGraphModal .modal-body { padding:0; }
 </style>
 <script type="text/javaScript">
 var userUuid = "${sessionScope.userUuid}";
@@ -768,6 +794,180 @@ function _initExerPicker(){
 }
 
 /* ══════════════════════════════════════
+   자주하는 질문 (FAQ)  —  /admin/faqList.do (T_FAQ_TRAN) 재사용
+══════════════════════════════════════ */
+function openFaq(){
+	new bootstrap.Modal(document.getElementById('faqModal')).show();
+	if (window._faqAll) renderFaq(window._faqAll);   // 이미 로드됨 → 즉시 표시
+	else loadFaqList();
+}
+function loadFaqList(){
+	$('#faqList').html('<div class="text-center text-muted py-4">불러오는 중…</div>');
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/admin/faqList.do',
+		type:'post', data:{ searchGb:'ALL', searchText:'' }, dataType:'json',
+		success:function(r){
+			var rows = (r && r.resultLst) ? r.resultLst : [];
+			// 사용중(USE_YN!=='N') FAQ만 노출
+			window._faqAll = rows.filter(function(x){ return (x.useYn||'Y') !== 'N'; });
+			$('#faqSearch').val('');
+			renderFaq(window._faqAll);
+		},
+		error:function(){ $('#faqList').html('<div class="text-center text-danger py-4">FAQ를 불러오지 못했습니다.</div>'); }
+	});
+}
+function _faqGbLabel(gb){ return gb==='T'?'공통':gb==='A'?'앱':gb==='W'?'웹':'기타'; }
+function _faqGbColor(gb){ return gb==='T'?'#6c757d':gb==='A'?'#198754':gb==='W'?'#0d6efd':'#adb5bd'; }
+function _faqEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderFaq(rows){
+	if(!rows || !rows.length){ $('#faqList').html('<div class="text-center text-muted py-4">등록된 FAQ가 없습니다.</div>'); return; }
+	var h='<div class="accordion" id="faqAcc">';
+	rows.forEach(function(d, i){
+		var gb=d.faqGb||'';
+		h+='<div class="accordion-item border-0 mb-2 shadow-sm" style="border-radius:10px;overflow:hidden;">'
+		 +'<h2 class="accordion-header">'
+		 +'<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqC'+i+'" style="font-size:14.5px;font-weight:600;">'
+		 +'<span style="display:inline-block;min-width:34px;text-align:center;font-size:11px;font-weight:700;color:#fff;background:'+_faqGbColor(gb)+';border-radius:6px;padding:2px 6px;margin-right:10px;">'+_faqGbLabel(gb)+'</span>'
+		 +_faqEsc(d.qstnConts)
+		 +'</button></h2>'
+		 +'<div id="faqC'+i+'" class="accordion-collapse collapse" data-bs-parent="#faqAcc">'
+		 +'<div class="accordion-body" style="font-size:14px;line-height:1.7;color:#333;white-space:pre-wrap;">'+_faqEsc(d.ansrConts)+'</div>'
+		 +'</div></div>';
+	});
+	h+='</div>';
+	$('#faqList').html(h);
+}
+function _faqFilter(){
+	if(!window._faqAll) return;
+	var q=$.trim($('#faqSearch').val()).toLowerCase();
+	if(!q){ renderFaq(window._faqAll); return; }
+	renderFaq(window._faqAll.filter(function(d){
+		return (String(d.qstnConts||'').toLowerCase().indexOf(q)!==-1)
+		    || (String(d.ansrConts||'').toLowerCase().indexOf(q)!==-1);
+	}));
+}
+
+/* ══════════════════════════════════════
+   세부혈당그래프 — 의사용 APME_01A_2(개요/AGP/혈당그래프/통계) 재사용
+   · /tab/tabInfo.do 로 본인 정보를 세션(t_*)에 세팅 → /tab/tab.do 새 창
+══════════════════════════════════════ */
+// iframe 내부(동일 출처)에 상단 공통 헤더(allCare 바) 숨김 CSS 주입 — 동적 렌더 대비 최대 2초 반복
+function _dgHideHeader(frame){
+	var tries = 0;
+	(function inject(){
+		try {
+			var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+			if (doc && doc.body && !doc.getElementById('_dgHideStyle')) {
+				var st = doc.createElement('style');
+				st.id = '_dgHideStyle';
+				st.textContent = '.gnb-container,#header{display:none!important;}'
+					+ ' html,body,#wrap,#contents{margin:0!important;padding-top:0!important;}'
+					+ ' #printableArea,.content-body{padding-top:6px!important;}';
+				(doc.head || doc.documentElement).appendChild(st);
+			}
+		} catch(e){}
+		if (++tries < 20) setTimeout(inject, 100);
+	})();
+}
+function openDetailGraph(){
+	// 1) 본인 정보를 세션(t_*)에 세팅 → 2) iframe 으로 APME_01A_2(/tab/tab.do) 로드 → 3) 모달 표시
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/tab/tabInfo.do',
+		type:'post', data:{ userUuid: userUuid }, dataType:'json',
+		success:function(){
+			// 래핑 버전(데이터 정상) + embed=1(서버측 헤더 미렌더). 클라이언트측에서도 헤더 숨김 주입(이중 보장)
+			// 깜빡임 방지: 헤더 제거 전까지 iframe 을 숨겨두고, load 시점에 헤더 제거 후 표시
+			var $f = $('#detailGraphFrame');
+			$f.css('visibility','hidden');
+			$f.off('load.dg').on('load.dg', function(){
+				_dgHideHeader(this);              // load 시점 = DOM 완성 → 즉시 헤더 숨김
+				$(this).css('visibility','visible');
+			});
+			$f.attr('src', CommonUtil.getContextPath()+'/tab/tab.do?embed=1');
+			new bootstrap.Modal(document.getElementById('detailGraphModal')).show();
+		},
+		error:function(){
+			_alertBox('세부 혈당 그래프를 여는 중 오류가 발생했습니다.', { icon:'⚠️', okColor:'red' });
+		}
+	});
+}
+
+/* ══════════════════════════════════════
+   1:1 문의 (질의응답)  —  /patient/myAsq*.do (T_ASQ_TRAN, 세션 userUuid)
+══════════════════════════════════════ */
+function openAsq(){
+	new bootstrap.Modal(document.getElementById('asqModal')).show();
+	loadAsqList();
+}
+function loadAsqList(){
+	$('#asqList').html('<div class="text-center text-muted py-4">불러오는 중…</div>');
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/myAsqList.do',
+		type:'post', dataType:'json',
+		success:function(r){ renderAsq((r && r.resultLst) ? r.resultLst : []); },
+		error:function(){ $('#asqList').html('<div class="text-center text-danger py-4">문의 내역을 불러오지 못했습니다.</div>'); }
+	});
+}
+function saveAsq(){
+	var conts = $.trim($('#asqInput').val());
+	if(!conts){ _alertBox('문의 내용을 입력하세요.', { icon:'💬' }); return; }
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/myAsqSave.do',
+		type:'post', data:{ qstnConts:conts }, dataType:'json',
+		success:function(r){
+			if(r && r.error_code==='0'){ $('#asqInput').val(''); loadAsqList(); _alertBox('문의가 등록되었습니다.', { icon:'✅' }); }
+			else _alertBox('등록에 실패했습니다. 다시 시도해 주세요.', { icon:'⚠️', okColor:'red' });
+		},
+		error:function(){ _alertBox('시스템 오류입니다. 다시 시도해 주세요.', { icon:'⚠️', okColor:'red' }); }
+	});
+}
+function delAsq(seq){
+	_confirmBox({
+		icon:'💬', okText:'삭제',
+		msg:'이 문의를 삭제할까요?',
+		onOk:function(){
+			$.ajax({
+				url: CommonUtil.getContextPath()+'/patient/myAsqDelete.do',
+				type:'post', data:{ asqSeq:seq }, dataType:'json',
+				success:function(r){
+					if(r && r.error_code==='0'){ loadAsqList(); _alertBox('삭제되었습니다.', { icon:'🗑️' }); }
+					else _alertBox('삭제에 실패했습니다. 다시 시도해 주세요.', { icon:'⚠️', okColor:'red' });
+				},
+				error:function(){ _alertBox('시스템 오류입니다. 다시 시도해 주세요.', { icon:'⚠️', okColor:'red' }); }
+			});
+		}
+	});
+}
+function _asqYmd(s){ s=String(s==null?'':s); return s.replace('T',' ').substring(0,16); }
+function renderAsq(rows){
+	if(!rows || !rows.length){ $('#asqList').html('<div class="text-center text-muted py-4">등록된 문의가 없습니다.</div>'); return; }
+	var h='<div class="accordion" id="asqAcc">';
+	rows.forEach(function(d, i){
+		var answered = (d.ansrYn==='Y' && d.ansrConts && $.trim(d.ansrConts)!=='');
+		var badge = answered
+			? '<span style="font-size:11px;font-weight:700;color:#fff;background:#198754;border-radius:6px;padding:2px 7px;margin-right:10px;">답변완료</span>'
+			: '<span style="font-size:11px;font-weight:700;color:#fff;background:#adb5bd;border-radius:6px;padding:2px 7px;margin-right:10px;">답변대기</span>';
+		var ansHtml = answered
+			? '<div style="margin-top:10px;padding:10px 12px;background:#eef4ff;border-radius:8px;font-size:14px;line-height:1.7;white-space:pre-wrap;"><b style="color:#0d6efd;">답변</b><br>'+_faqEsc(d.ansrConts)+'</div>'
+			: '<div style="margin-top:10px;font-size:13px;color:#888;">아직 답변이 등록되지 않았습니다.</div>';
+		h+='<div class="accordion-item border-0 mb-2 shadow-sm" style="border-radius:10px;overflow:hidden;">'
+		 +'<h2 class="accordion-header">'
+		 +'<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#asqC'+i+'" style="font-size:14.5px;font-weight:600;">'
+		 +badge+'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;">'+_faqEsc(d.qstnConts)+'</span>'
+		 +'</button></h2>'
+		 +'<div id="asqC'+i+'" class="accordion-collapse collapse" data-bs-parent="#asqAcc">'
+		 +'<div class="accordion-body" style="font-size:14px;line-height:1.7;color:#333;">'
+		 +'<div class="text-muted small mb-1">'+_asqYmd(d.qstnYmd)+'</div>'
+		 +'<div style="white-space:pre-wrap;">'+_faqEsc(d.qstnConts)+'</div>'
+		 +ansHtml
+		 +'<div class="text-end mt-2"><button class="btn btn-outline-danger btn-sm py-0 px-3" style="font-size:12px;" onclick="delAsq(\''+_faqEsc(d.asqSeq)+'\')">삭제</button></div>'
+		 +'</div></div></div>';
+	});
+	h+='</div>';
+	$('#asqList').html(h);
+}
+
+/* ══════════════════════════════════════
    혈당 평가 패널
 ══════════════════════════════════════ */
 var _evalCtx = { hours:[], ys:[], foodMap:{}, exerMap:{}, label:'' };
@@ -1105,6 +1305,38 @@ $(document).on('show.bs.modal', '.modal', function(){
 $(document).on('hidden.bs.modal', '.modal', function(){
 	if ($('.modal.show').length) $('body').addClass('modal-open');
 });
+/* 세부혈당그래프 모달: body 직계 보장 + 다이얼로그/콘텐츠를 인라인으로 최상단 풀스크린 강제
+   (CSS 배포 여부와 무관하게 동작하도록 shown 시점에 직접 스타일 지정) */
+$(document).on('shown.bs.modal', '#detailGraphModal', function(){
+	if (this.parentNode !== document.body) document.body.appendChild(this);
+	this.style.setProperty('top', '0', 'important');
+	this.style.setProperty('left', '0', 'important');
+	this.style.setProperty('padding', '0', 'important');
+	var dlg = this.querySelector('.modal-dialog');
+	if (dlg) {
+		// 다이얼로그를 뷰포트 좌상단에 직접 고정 — 부모 레이아웃/여백과 무관하게 최상단 보장
+		dlg.style.setProperty('position', 'fixed', 'important');
+		dlg.style.setProperty('top', '0', 'important');
+		dlg.style.setProperty('left', '0', 'important');
+		dlg.style.setProperty('right', '0', 'important');
+		dlg.style.setProperty('bottom', '0', 'important');
+		dlg.style.setProperty('margin', '0', 'important');
+		dlg.style.setProperty('max-width', 'none', 'important');
+		dlg.style.setProperty('width', '100vw', 'important');
+		dlg.style.setProperty('height', '100vh', 'important');
+		dlg.style.setProperty('transform', 'none', 'important');
+	}
+	var c = this.querySelector('.modal-content');
+	if (c) {
+		// 공통 modal.css 의 max-height:94vh / top:50% / translateY(-50%) 무력화(상단 띠 원인)
+		c.style.setProperty('height', '100vh', 'important');
+		c.style.setProperty('max-height', 'none', 'important');
+		c.style.setProperty('top', 'auto', 'important');
+		c.style.setProperty('transform', 'none', 'important');
+		c.style.setProperty('border', '0', 'important');
+		c.style.setProperty('border-radius', '0', 'important');
+	}
+});
 
 /* ── 우측 패널 높이: 좌측 컬럼 하단 기준으로 맞춤 (다변 스크롤) ── */
 function _syncRightPanel(){
@@ -1132,8 +1364,25 @@ function showIsensGuide(onConfirm){
 }
 </script>
 </head>
-<body>
-<div class="container-fluid py-4" style="max-width:1420px;margin:0 auto;padding-left:20px;padding-right:20px;">
+<body class="has-side-nav">
+<!-- ══════════════════════════════════════════════
+     좌측 사이드바 메뉴
+══════════════════════════════════════════════ -->
+<nav class="side-nav">
+	<div class="sn-brand">🩸 혈당 관리</div>
+	<button type="button" class="sn-item" onclick="openFaq();">
+		<span class="sn-ico">❓</span><span>자주하는 질문</span>
+	</button>
+	<button type="button" class="sn-item" onclick="openAsq();">
+		<span class="sn-ico">💬</span><span>질의응답관리</span>
+	</button>
+	<button type="button" class="sn-item" onclick="openDetailGraph();">
+		<span class="sn-ico">📈</span><span>세부혈당그래프</span>
+	</button>
+	<!-- 추가 기능 메뉴는 여기에 -->
+</nav>
+
+<div class="container-fluid py-4" style="max-width:1820px;margin:0 auto;padding-left:16px;padding-right:16px;">
 	<div class="d-flex justify-content-between align-items-center mb-3">
 		<h3>${sessionScope.userNm}님 환영합니다</h3>
 		<div class="d-flex align-items-center gap-2">
@@ -1194,7 +1443,7 @@ function showIsensGuide(onConfirm){
 		</div>
 
 		<!-- 우측: 혈당 평가 + Q&A (높이는 JS로 좌측 컬럼에 맞춤) -->
-		<div id="rightPanel" style="width:400px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;position:sticky;top:16px;overflow:hidden;">
+		<div id="rightPanel" style="width:460px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;position:sticky;top:16px;overflow:hidden;">
 			<!-- 혈당 평가 (고정) -->
 			<div class="card-tile" style="padding:16px 18px;flex-shrink:0;">
 				<h5 style="font-size:17px;margin-bottom:12px;">📊 혈당 평가</h5>
@@ -1377,6 +1626,93 @@ function showIsensGuide(onConfirm){
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     자주하는 질문 (FAQ) 모달
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="faqModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0d6efd 0%,#0aa2c0 100%);">
+        <div>
+          <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.15rem;">❓ 자주하는 질문</h5>
+          <p class="text-white-50 small mb-0 mt-1">궁금한 점을 빠르게 확인하세요</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 pt-3 pb-4" style="background:#f8f9fc;">
+        <div class="input-group input-group-sm mb-3">
+          <span class="input-group-text bg-white">🔍</span>
+          <input type="text" id="faqSearch" class="form-control" placeholder="질문 검색…" onkeyup="_faqFilter();">
+        </div>
+        <div id="faqList">
+          <div class="text-center text-muted py-4">불러오는 중…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     1:1 문의 (질의응답) 모달 — sejong_app ASQ 참조
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="asqModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#6610f2 0%,#0d6efd 100%);">
+        <div>
+          <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.15rem;">💬 1:1 문의</h5>
+          <p class="text-white-50 small mb-0 mt-1">궁금한 점을 남기시면 답변해 드립니다</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 pt-3 pb-4" style="background:#f8f9fc;">
+        <!-- 문의 등록 -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold text-muted mb-2 d-flex align-items-center gap-2">
+              <span style="width:6px;height:18px;background:#6610f2;border-radius:3px;display:inline-block;"></span>새 문의 등록
+            </h6>
+            <div class="small text-secondary mb-2" style="background:#f0f0f5;border-radius:8px;padding:9px 12px;line-height:1.5;">
+              진료와 관련된 내용은 답변이 제한되며, 진료 시 의료진과 상담하셔야 합니다.<br>
+              실증·체험 진행과 관련한 문의만 가능합니다.
+            </div>
+            <textarea id="asqInput" class="form-control form-control-sm rounded-2" rows="4"
+              placeholder="문의 내용을 입력하세요." lang="ko" inputmode="text" style="ime-mode:active;resize:none;"></textarea>
+            <div class="text-end mt-3">
+              <button class="btn btn-primary btn-sm px-4 rounded-pill" onclick="saveAsq();">등록</button>
+            </div>
+          </div>
+        </div>
+        <!-- 내 문의 이력 -->
+        <h6 class="fw-semibold text-muted mb-2 d-flex align-items-center gap-2">
+          <span style="width:6px;height:18px;background:#0d6efd;border-radius:3px;display:inline-block;"></span>내 문의 이력
+        </h6>
+        <div id="asqList">
+          <div class="text-center text-muted py-4">불러오는 중…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     세부 혈당 그래프 모달 (APME_01A_2.jsp 를 iframe 으로 로드)
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="detailGraphModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header py-2 px-3" style="background:linear-gradient(135deg,#0d6efd 0%,#0aa2c0 100%);">
+        <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.05rem;">📈 세부 혈당 그래프</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" style="display:flex;overflow:hidden;">
+        <iframe id="detailGraphFrame" src="about:blank" title="세부 혈당 그래프"
+                style="flex:1;width:100%;height:100%;border:0;"></iframe>
       </div>
     </div>
   </div>

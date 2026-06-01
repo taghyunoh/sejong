@@ -43,8 +43,9 @@ public interface AdminService {
 	boolean   deletefaq(FaqDTO dto)       throws Exception;
 	
 	List<?>   selectasqList(AsqDTO dto)   throws Exception;
+	List<?>   selectMyAsqList(AsqDTO dto) throws Exception;   // 환자 본인 1:1 문의 목록
 	AsqDTO    asqInfo(AsqDTO dto)         throws Exception;
-	boolean   insertasq(AsqDTO dto)       throws Exception; 
-	boolean   updateasq(AsqDTO dto)       throws Exception; 
-	boolean   deleteasq(AsqDTO dto)       throws Exception;	
+	boolean   insertasq(AsqDTO dto)       throws Exception;
+	boolean   updateasq(AsqDTO dto)       throws Exception;
+	boolean   deleteasq(AsqDTO dto)       throws Exception;
 }

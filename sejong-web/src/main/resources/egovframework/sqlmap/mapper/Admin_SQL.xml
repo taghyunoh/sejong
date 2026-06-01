@@ -583,4 +583,41 @@
     ]]>
     </update>
 
+	<!-- 환자 본인 1:1 문의 목록 (sejong_app ASQ 참조) -->
+	<select id="selectMyAsqList" parameterType="AsqDTO" resultType="AsqDTO"><![CDATA[
+	     Select   ASQ_SEQ
+	            , USER_UUID
+	            , QSTN_TITL
+	            , QSTN_CONTS
+	            , QSTN_YMD
+	            , ANSR_CONTS
+	            , ANSR_YN
+	       From T_ASQ_TRAN
+	      where USER_UUID = #{userUuid}
+	      order by QSTN_YMD DESC
+	]]></select>
+
+	<!-- 환자 본인 1:1 문의 등록 -->
+	<insert id="insertasq" parameterType="AsqDTO"><![CDATA[
+	   INSERT INTO T_ASQ_TRAN
+	     ( USER_UUID
+	     , QSTN_TITL
+	     , QSTN_CONTS
+	     , QSTN_YMD
+	     , ANSR_YN )
+	   VALUES
+	     ( #{userUuid}
+	     , #{qstnTitl}
+	     , #{qstnConts}
+	     , NOW()
+	     , 'N' )
+	]]></insert>
+
+	<!-- 환자 본인 1:1 문의 삭제 -->
+	<delete id="deleteasq" parameterType="AsqDTO"><![CDATA[
+	   DELETE FROM T_ASQ_TRAN
+	    WHERE USER_UUID = #{userUuid}
+	      AND ASQ_SEQ   = #{asqSeq}
+	]]></delete>
+
 </mapper>

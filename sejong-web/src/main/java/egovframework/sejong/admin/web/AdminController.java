@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined;
@@ -528,10 +529,64 @@ public class AdminController {
 			
 		}catch(Exception ex) {
 			log.error(" FaqAct ERROR ! : "+ ex.getMessage());
-			model.addAttribute("error_code", "10000"); 
-						
+			model.addAttribute("error_code", "10000");
+
 		}
 		//
 		return "jsonView";
-	}	
+	}
+
+	// ══════════════════════════════════════════════
+	//  환자 본인 1:1 문의 (질의응답) — sejong_app ASQ 참조
+	//  · 보안: 사용자 식별은 항상 세션 userUuid 사용(클라이언트 값 무시)
+	// ══════════════════════════════════════════════
+	@RequestMapping(value = "/patient/myAsqList.do", method = RequestMethod.POST)
+	public String myAsqList(HttpSession session, Model model) throws Exception {
+		try {
+			Object uuid = session.getAttribute("userUuid");
+			AsqDTO dto = new AsqDTO();
+			dto.setUserUuid(uuid == null ? "" : uuid.toString());
+			List<?> result = svc.selectMyAsqList(dto);
+			model.addAttribute("resultLst", result);
+			model.addAttribute("resultCnt", result.size());
+			model.addAttribute("error_code", "0");
+		} catch (Exception ex) {
+			log.error(" myAsqList ERROR ! : " + ex.getMessage());
+			model.addAttribute("error_code", "10000");
+		}
+		return "jsonView";
+	}
+
+	@RequestMapping(value = "/patient/myAsqSave.do", method = RequestMethod.POST)
+	public String myAsqSave(@ModelAttribute("DTO") AsqDTO dto, HttpSession session, Model model) throws Exception {
+		try {
+			Object uuid = session.getAttribute("userUuid");
+			dto.setUserUuid(uuid == null ? "" : uuid.toString());
+			// 제목 미입력 시 본문 앞부분으로 자동 생성(QSTN_TITL NOT NULL 대비)
+			if (dto.getQstnTitl() == null || dto.getQstnTitl().trim().isEmpty()) {
+				String c = dto.getQstnConts() == null ? "" : dto.getQstnConts().trim();
+				dto.setQstnTitl(c.length() > 50 ? c.substring(0, 50) : c);
+			}
+			svc.insertasq(dto);
+			model.addAttribute("error_code", "0");
+		} catch (Exception ex) {
+			log.error(" myAsqSave ERROR ! : " + ex.getMessage());
+			model.addAttribute("error_code", "10000");
+		}
+		return "jsonView";
+	}
+
+	@RequestMapping(value = "/patient/myAsqDelete.do", method = RequestMethod.POST)
+	public String myAsqDelete(@ModelAttribute("DTO") AsqDTO dto, HttpSession session, Model model) throws Exception {
+		try {
+			Object uuid = session.getAttribute("userUuid");
+			dto.setUserUuid(uuid == null ? "" : uuid.toString());
+			svc.deleteasq(dto);   // 세션 userUuid + asqSeq 조건 → 본인 글만 삭제
+			model.addAttribute("error_code", "0");
+		} catch (Exception ex) {
+			log.error(" myAsqDelete ERROR ! : " + ex.getMessage());
+			model.addAttribute("error_code", "10000");
+		}
+		return "jsonView";
+	}
 }

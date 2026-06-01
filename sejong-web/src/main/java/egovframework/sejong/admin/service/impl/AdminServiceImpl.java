@@ -145,6 +145,10 @@ public class AdminServiceImpl implements AdminService {
 		return mapper.selectasqList(dto);
 	}
 	@Override
+	public List<?> selectMyAsqList(AsqDTO dto) throws Exception {
+		return mapper.selectMyAsqList(dto);
+	}
+	@Override
 	public AsqDTO asqInfo(AsqDTO dto) throws Exception {
 		// TODO Auto-generated method stub
 		return mapper.asqInfo(dto);

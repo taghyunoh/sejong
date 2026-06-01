@@ -15,7 +15,8 @@
   <link href="/asset/component/sub_teb_menu.css" rel="stylesheet" />
   <link rel="stylesheet" href="/js/jquery/grid/css/jquery-ui.css" />
 <title>${sessionScope['t_user_nm']}님 정보</title>
-<script src="/js/main.js"></script>
+<%-- embed(환자 대시보드 iframe) 모드에선 daterangepicker 의존 main.js 미로드(중복 jQuery로 에러) --%>
+<c:if test="${param.embed ne '1'}"><script src="/js/main.js"></script></c:if>
 <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
 <script>
   var previousStyle = {}; // 초기 상태 저장을 위한 전역 변수

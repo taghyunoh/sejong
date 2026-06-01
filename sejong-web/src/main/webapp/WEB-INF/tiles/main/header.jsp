@@ -31,8 +31,8 @@
 <script type="text/javascript" src="/asset/js/pagination.js"></script>
 <!-- 데이트피커 년월 js -->
 <script type="text/javascript" src="/asset/js/monthpicker/bootstrap-monthpicker.js"></script>
-<script src="/js/layout.js"></script>   
-<script src="/js/common.js"></script> 
+<c:if test="${param.embed ne '1'}"><script src="/js/layout.js"></script></c:if>
+<script src="/js/common.js"></script>
 <script type="text/javascript" src='/asset/js/jquery/common.js'></script>
 
 <script type="text/javascript">
@@ -42,7 +42,7 @@
 <!-- Font 및 animate 추후 수정  -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-<link rel="stylesheet" type="text/css" href="<c:url value='/asset/css/style.css'/>"/>	
+<link rel="stylesheet" type="text/css" href="<c:url value='/asset/css/style.css'/>?v=<%= nowTime.getTime() %>"/>
 	
 <!-- JQuery 관련 -->
 <!-- <script type="text/javascript" src='/asset/js/jquery/common.js'></script>  --> 
@@ -52,7 +52,7 @@
 <script type="text/javascript" src="<c:url value='/asset/js/commonUtil.js'/>?date=<%= nowTime %>"></script> 
 <script type="text/javascript" src="<c:url value='/asset/js/app-common.js'/>?date=<%= nowTime %>"></script> 
 <script type="text/javascript" src="<c:url value='/asset/js/plugins.min.js'/>"></script>
-<script type="text/javascript" src="<c:url value='/asset/js/default.js'/>"></script>
+<c:if test="${param.embed ne '1'}"><script type="text/javascript" src="<c:url value='/asset/js/default.js'/>"></script></c:if>
 <script type="text/javascript" src="<c:url value='/asset/js/tmpl.min.js' />"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  
@@ -68,11 +68,21 @@
 	    color: white ;
 	}
 </style>
+<c:if test="${param.embed eq '1'}">
+<style>
+	/* 환자 대시보드 iframe(embed) — 헤더 제거 후 상단 빈 공간 제거 */
+	html, body { margin:0 !important; padding:0 !important; }
+	#header { display:none !important; }
+	.gnb-container { display:none !important; }
+</style>
+</c:if>
 <body>
 <!-- 페이지 콘텐츠를 동적으로 업데이트할 div  -->
- <div id="contentArea"> 
- 
-  <nav class="navbar navbar-expand-lg bg-primary-v1 gnb-container"> 
+ <div id="contentArea">
+
+  <!-- embed=1(환자 대시보드 iframe 등)일 때 공통 헤더 바 숨김 -->
+  <c:if test="${param.embed ne '1'}">
+  <nav class="navbar navbar-expand-lg bg-primary-v1 gnb-container">
     <div class="container-fluid">
          <div class="logo-wrap">
                <img src="/asset/img/logo_01.png" alt="allCare" />
@@ -127,6 +137,7 @@
         </a>
       </div>
     </nav>
+  </c:if>
   </div>
   <!-- 페이지 콘텐츠를 동적으로 업데이트할 div  -->
 </body>
