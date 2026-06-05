@@ -207,6 +207,18 @@ public class BloodController {
 		return json;
 	}
 
+	/** 가장 최근 측정일 1건(일평균) — 최근 1주일에 데이터가 없을 때 화면 좌측에 표시 */
+	@RequestMapping(value = "/getLastBloodDay.do", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseObject getLastBloodDay(HttpSession session) {
+		ResponseObject json = new ResponseObject();
+		Object uuidObj = session.getAttribute("userUuid");
+		if (uuidObj == null) { json.IsSucceed = false; return json; }
+		json.Data = bloodService.getLastBloodDay(uuidObj.toString());
+		json.IsSucceed = true;
+		return json;
+	}
+
 	/** 오늘 공복·식후 평균 (세션 환자) */
 	@RequestMapping(value = "/getTodayBlodAvg.do", method = RequestMethod.POST)
 	@ResponseBody

@@ -62,6 +62,11 @@ public class BloodServiceImpl implements BloodService {
 	}
 
 	@Override
+	public Map<String, Object> getLastBloodDay(String userId) {
+		return bloodMapper.getLastBloodDay(userId);
+	}
+
+	@Override
 	public Map<String, Object> getTodayMealBlood(String userId) {
 		return bloodMapper.getTodayMealBlood(userId);
 	}

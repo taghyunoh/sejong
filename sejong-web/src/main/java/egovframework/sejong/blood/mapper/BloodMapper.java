@@ -33,6 +33,9 @@ public interface BloodMapper {
 	/** 오늘 최근 혈당 2건 */
 	List<Map<String, Object>> getTodayBlood(String userUuid);
 
+	/** 가장 최근 측정일 1건(일평균) — 최근 1주일에 데이터가 없을 때 좌측 표시용 */
+	Map<String, Object> getLastBloodDay(String userId);
+
 	/** 오늘 식후 평균 혈당 */
 	Map<String, Object> getTodayMealBlood(String userId);
 

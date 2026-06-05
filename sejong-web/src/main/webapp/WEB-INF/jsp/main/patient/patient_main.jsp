@@ -350,7 +350,9 @@ function drawDailyChart(rows){
 	if (typeof echarts === 'undefined') {
 		$("#dailyChart").html('<div class="text-center text-danger p-3">차트 라이브러리(echarts) 로드 실패 — 네트워크/CDN 차단 여부를 확인하세요.</div>');
 	} else if (present.length === 0) {
-		$("#dailyChart").html('<div class="text-center text-muted p-3">최근 1주일 데이터 없음</div>');
+		// 최근 1주일 데이터 없음 — 가장 최근 측정일 1건을 좌측 끝에 표시(사용자가 마지막 측정일 확인 가능)
+		_drawLastDayFallback(labels, dateKeys);
+		return;
 	} else {
 		var maxV = Math.max.apply(null, present);
 		var minV = Math.min.apply(null, present);
@@ -430,6 +432,70 @@ function drawDailyChart(rows){
 		defaultLabel = (today.getMonth()+1)+'/'+today.getDate();
 	}
 	loadDayChart(defaultKey, defaultLabel);
+}
+
+// 최근 1주일에 데이터가 전혀 없을 때: 가장 최근 측정일 1건을 차트 좌측 끝에 표시.
+//  · 우측 7일(오늘-6 ~ 오늘)은 비워두고, 그 왼쪽에 마지막 측정일 막대를 1개 붙임
+//  · 막대를 클릭하지 않아도 그 날짜의 시간대별 차트(하단)까지 자동으로 그려줌
+function _drawLastDayFallback(weekLabels, weekDateKeys){
+	$.ajax({
+		url: CommonUtil.getContextPath() + "/getLastBloodDay.do",
+		type:"post", dataType:"json",
+		success:function(r){
+			var row     = (r && r.IsSucceed && r.Data) ? r.Data : null;
+			var lastKey = row ? String(row.date2) : null;            // 'YYYY-MM-DD'
+			var lastVal = row ? Math.round(parseFloat(row.avgBlood)||0) : 0;
+
+			// 과거 데이터조차 없음 → 기존 '데이터 없음' 안내 + 오늘(빈) 시간대 차트
+			if (!lastKey || lastVal <= 0) {
+				$("#dailyChart").html('<div class="text-center text-muted p-3">최근 1주일 데이터 없음</div>');
+				var t = new Date();
+				loadDayChart(formatDay(t), (t.getMonth()+1)+'/'+t.getDate());
+				return;
+			}
+
+			var lastLabel = _dayLabel(lastKey);                      // '5/20'
+			var labels   = [lastLabel].concat(weekLabels);           // 좌측 끝 = 마지막 측정일
+			var vals     = [lastVal].concat(weekLabels.map(function(){ return null; }));
+
+			// 주간 평균/통계는 이 1건 기준으로 표시
+			$("#weekAvg").text(lastVal);
+			window._weekStats = { avg:lastVal, max:lastVal, min:lastVal, days:1 };
+
+			if (typeof echarts === 'undefined') {
+				$("#dailyChart").html('<div class="text-center text-danger p-3">차트 라이브러리(echarts) 로드 실패</div>');
+			} else {
+				var dom = document.getElementById('dailyChart');
+				var prev = echarts.getInstanceByDom(dom);
+				if (prev) prev.dispose();
+				$("#dailyChart").empty();
+				var chart = echarts.init(dom);
+				chart.setOption({
+					tooltip:{ trigger:'axis', formatter:function(p){
+							var x = p && p[0];
+							if(!x || x.value==null) return '';
+							return x.axisValue+' <small style="color:#888;">(최근 측정)</small><br/>혈당: <b>'+x.value+' mg/dL</b>';
+						}},
+					grid:{ left:34, right:6, top:20, bottom:30 },
+					xAxis:{ type:'category', data:labels },
+					yAxis:{ type:'value', min:0, max:300 },
+					series:[{ type:'bar', barMaxWidth:58,
+						data: vals.map(function(v){
+							if (v == null) return { value:null };
+							// 마지막 측정일 막대는 강조(진한 테두리)
+							return { value:v, itemStyle:{ color:'#0d6efd', borderColor:'#1a237e', borderWidth:3,
+								shadowBlur:6, shadowColor:'rgba(26,35,126,0.45)' } };
+						}),
+						label:{ show:true, position:'top', formatter:function(p){ return p.value!=null?p.value:''; } } }]
+				});
+			}
+			// 하단 시간대별 차트도 마지막 측정일로 자동 표시
+			loadDayChart(lastKey, lastLabel);
+		},
+		error:function(){
+			$("#dailyChart").html('<div class="text-center text-muted p-3">최근 1주일 데이터 없음</div>');
+		}
+	});
 }
 
 function loadDayChart(dateKey, label){

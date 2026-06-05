@@ -333,6 +333,24 @@
 	]]>
 	</select>
 
+	<!-- 최근 1주일 범위에 데이터가 없을 때 화면 좌측에 표시할 '가장 최근 측정일' 1건(일평균) -->
+	<select id="getLastBloodDay" parameterType="String" resultType="map"><![CDATA[
+		SELECT SUBSTRING(a.CGM_DTM,1,10)            AS date2,
+		       DATE_FORMAT(a.CGM_DTM, '%c/%e')      AS date,
+		       COALESCE(ROUND(AVG(a.UPT_VALUE),1),0) AS avgBlood
+		  FROM T_BLDINF_TRAN a
+		 WHERE a.USER_UUID = #{userId}
+		   AND IFNULL(a.UPT_VALUE,0) > 0
+		   AND DATE(a.CGM_DTM) = (
+		         SELECT MAX(DATE(b.CGM_DTM))
+		           FROM T_BLDINF_TRAN b
+		          WHERE b.USER_UUID = #{userId}
+		            AND IFNULL(b.UPT_VALUE,0) > 0
+		       )
+		 GROUP BY date2, date
+	]]>
+	</select>
+
 	<select id="getTodayMealBlood" parameterType="String" resultType="map"><![CDATA[
 		SELECT
 			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
