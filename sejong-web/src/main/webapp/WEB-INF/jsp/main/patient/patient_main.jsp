@@ -651,7 +651,9 @@ function logout(){
 	});
 }
 /* ── 공통 헬퍼 ── */
-function pad(n){ return (n<10?'0':'')+n; }
+function pad(n){ 
+	return (n<10?'0':'')+n; 
+}
 // 현재 시간대별 차트에 표시된 날짜 추적
 var _currentDayKey = null, _currentDayLabel = null;
 // "2026-05-29" → "5/29" 레이블 변환
@@ -663,18 +665,25 @@ function localDate(d){
 	return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); 
 }
 function fmtT(s){ 
-	if(!s||s.length<4) return s||''; return s.substring(0,2)+':'+s.substring(2,4); 
+	if(!s||s.length<4) return s||''; 
+	return s.substring(0,2)+':'+s.substring(2,4); 
 }
 function fmtD(s){ 
-	if(!s||s.length<8) return s||''; return s.substring(0,4)+'-'+s.substring(4,6)+'-'+s.substring(6,8); 
+	if(!s||s.length<8) 
+		return s||''; 
+	return s.substring(0,4)+'-'+s.substring(4,6)+'-'+s.substring(6,8); 
 }
 /* HH:MM (time input) → HHMMSS (서버 전송용) */
 function toHHMMSS(hhmm){ 
-	if(!hhmm) return ''; var p=hhmm.replace(':',''); return p.length>=4 ? p.substring(0,4)+'00' : ''; 
+	if(!hhmm) 
+		return ''; 
+	var p=hhmm.replace(':',''); 
+	return p.length>=4 ? p.substring(0,4)+'00' : ''; 
 }
 /* HH:MM:SS 현재 시각 */
 function nowHHMM(){
-	var t=new Date(); return pad(t.getHours())+':'+pad(t.getMinutes()); 
+	var t=new Date(); 
+	return pad(t.getHours())+':'+pad(t.getMinutes()); 
 }
 
 /* ── 식사 기록 모달 ── */
