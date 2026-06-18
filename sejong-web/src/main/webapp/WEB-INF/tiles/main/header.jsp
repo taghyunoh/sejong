@@ -113,6 +113,7 @@
            		</li>
 	          	<li class="menu-item" data-menu="08">
            			<a href="javascript:void(0);" onclick="loadMenuPage('/logistics_demo.jsp');"><button class="btn" type="button">물류관리</button></a>
+
            		</li>
            </c:if>
 			<c:if test="${sessionScope['q_admin_yn'] == 'D'}">

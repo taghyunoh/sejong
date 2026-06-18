@@ -19,6 +19,7 @@
   .logi-side a.mi .ic { width:18px; text-align:center; }
   .logi-side a.mi.core { color:#aef0e7; }
 
+
   /* 우측 콘텐츠 */
   .logi-main { flex:1; padding:22px 28px; background:var(--logi-bg); overflow:auto; }
   .logi-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
