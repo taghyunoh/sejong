@@ -537,6 +537,19 @@ public class AdminController {
 	}
 
 	// ══════════════════════════════════════════════
+	//  물류관리 (입고/재고/발주/출고) — 화면(사이드바) 구성만, 테이블/로직 추후
+	//  · 좌측 사이드바 + 우측 콘텐츠 단일 셸. 세부화면은 logistics.jsp 내 패널 전환
+	// ══════════════════════════════════════════════
+	@RequestMapping(value = "/admin/logistics.do")
+	public String logistics(Model model) throws Exception {
+		try {
+		} catch (Exception ex) {
+			model.addAttribute("error_code", "10000");
+		}
+		return ".main/admin/logistics";
+	}
+
+	// ══════════════════════════════════════════════
 	//  환자 본인 1:1 문의 (질의응답) — sejong_app ASQ 참조
 	//  · 보안: 사용자 식별은 항상 세션 userUuid 사용(클라이언트 값 무시)
 	// ══════════════════════════════════════════════
