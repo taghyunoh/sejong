@@ -105,6 +105,7 @@
   .panel { display:none; }
   .panel.show { display:block; }
 </style>
+
 <script type="text/javascript">
   // 사이드바 메뉴 → 우측 패널 전환 (시연용, 데이터/테이블은 추후)
   function logiGo(key, el){
