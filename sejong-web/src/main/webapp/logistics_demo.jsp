@@ -4,9 +4,26 @@
 <head>
 <style>
   :root { --logi-teal:#1f9b8e; --logi-teal-dark:#178074; --logi-border:#dfe6e3; --logi-bg:#f4f8f7; }
+  /* 흐린 회색 글자를 진한 색으로 (또렷하게) */
+  .logi-wrap .sub, .logi-wrap .wh-meta, .logi-wrap .note,
+  .logi-wrap .form-row label, .logi-wrap .kpi .k-lbl,
+  .logi-wrap .loc-legend, .logi-wrap table.logi-tb thead th,
+  .logi-wrap .grp, .logi-wrap .flow .step, .logi-wrap .lc-st { color:#1f2a37 !important; }
+  /* 본문 기본 글자색을 거의 검정으로 */
+  .logi-wrap, .logi-wrap a.mi, .logi-wrap table.logi-tb td,
+  .logi-wrap input, .logi-wrap select, .logi-wrap .chip { color:#10161d; }
+  /* 입력값 placeholder 도 또렷하게 */
+  .logi-wrap ::placeholder { color:#5b6775; opacity:1; }
 
   /* 전체 셸: 좌측 사이드바 + 우측 콘텐츠 */
-  .logi-wrap { display:flex; min-height:calc(100vh - 70px); background:#fff; }
+  .logi-wrap { display:flex; min-height:calc(100vh - 70px); background:#fff; font-weight:700; }
+  /* 전역 글자 진하게: 기본 700, 강조 800~900 */
+  .logi-wrap, .logi-wrap input, .logi-wrap select, .logi-wrap button, .logi-wrap table,
+  .logi-wrap a.mi, .logi-wrap td, .logi-wrap .sub, .logi-wrap .wh-meta,
+  .logi-wrap .note, .logi-wrap label, .logi-wrap .chip { font-weight:700; }
+  .logi-wrap b, .logi-wrap strong, .logi-wrap th, .logi-wrap .wh-nm, .logi-wrap .loc,
+  .logi-wrap .lc-code, .logi-wrap h2, .logi-wrap h3, .logi-wrap .k-val,
+  .logi-wrap a.mi.on, .logi-wrap .side-tit { font-weight:900; }
 
   /* 좌측 사이드바 */
   .logi-side { width:236px; flex:0 0 236px; background:#1f2a37; color:#cdd6e0; padding:0 0 30px; }
