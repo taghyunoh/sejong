@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <html>
 <head>
+<meta charset="UTF-8">
 <style>
   :root { --logi-teal:#1f9b8e; --logi-teal-dark:#178074; --logi-border:#dfe6e3; --logi-bg:#f4f8f7; }
   /* 흐린 회색 글자를 진한 색으로 (또렷하게) */
@@ -121,6 +122,138 @@
   .note { font-size:12px; color:#9aa7b3; margin-top:6px; }
   .panel { display:none; }
   .panel.show { display:block; }
+
+  /* ===== 출고현황표 전용 ===== */
+  .ss-upload { display:flex; align-items:center; gap:12px; background:#eafaf6; border:1px dashed #8fd6c2; border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+  .ss-upload .u-ic { font-size:26px; }
+  .ss-upload .u-txt { flex:1; font-size:13px; color:#137a6c; }
+  .ss-upload .u-txt b { color:#0e6657; }
+  .ss-upload .u-txt small { display:block; color:#3a8f81; margin-top:2px; }
+  .ss-file { display:none; }
+
+  .ss-topbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+               background:#fff; border:1px solid var(--logi-border); border-left:4px solid var(--logi-teal); border-radius:9px; padding:9px 16px; margin-bottom:6px; }
+  .ss-topbar .tb-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ss-topbar .db-ic { font-size:20px; }
+  .ss-topbar label { font-size:13px; color:#37475a; font-weight:600; }
+  .ss-topbar input[type=date] { height:34px; border:1px solid var(--logi-border); border-radius:6px; padding:0 10px; font-size:13px; cursor:pointer; background:#fff; }
+  .ss-topbar input[type=date]:hover { border-color:var(--logi-teal); }
+  .ss-topbar input[type=date]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.75; }
+  .ss-topbar input[type=date]:hover::-webkit-calendar-picker-indicator { opacity:1; }
+  .ss-topbar .tb-stats { display:flex; gap:8px; flex-wrap:wrap; }
+  .ss-topbar .st { background:var(--logi-bg); border:1px solid var(--logi-border); border-radius:8px; padding:5px 14px; text-align:center; min-width:92px; }
+  .ss-topbar .st-l { display:block; font-size:11px; color:#6b7a89; }
+  .ss-topbar .st-v { display:block; font-size:18px; font-weight:800; color:#1f2a37; line-height:1.25; }
+  .ss-dateinfo { font-size:12px; color:#6b7a89; margin:0; flex:1 1 220px; min-width:180px; line-height:1.4; }
+  .ss-dateinfo b { color:#137a6c; }
+  .ss-srcbadge { display:inline-block; background:#eef3f2; color:#37475a; border:1px solid var(--logi-border); border-radius:11px; padding:1px 10px; font-size:11.5px; font-weight:700; margin-right:6px; }
+  .ss-srcbadge.up { background:#e3f4ef; color:#137a6c; border-color:#b9e6dd; }
+  .tb-stats.ss-flash { animation:ssKpiFlash 1.2s ease; }
+  @keyframes ssKpiFlash { 0%{ box-shadow:0 0 0 3px rgba(31,155,142,.55); } 60%{ box-shadow:0 0 0 3px rgba(31,155,142,.25); } 100%{ box-shadow:0 0 0 0 rgba(31,155,142,0); } }
+
+  table.ss-tb { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.ss-tb th, table.ss-tb td { border:1px solid var(--logi-border); padding:7px 8px; text-align:center; white-space:nowrap; }
+  table.ss-tb thead th { background:#1f9b8e; color:#fff; position:sticky; top:0; z-index:1; }
+  table.ss-tb thead th.sub { background:#34a99d; font-weight:600; }
+  table.ss-tb td.itnm { text-align:left; max-width:380px; white-space:normal; word-break:break-all; }
+  table.ss-tb tr.grp td { background:#eef3f2; text-align:left; font-weight:700; color:#178074; cursor:pointer; user-select:none; }
+  table.ss-tb tr.grp:hover td { background:#e3efec; }
+  table.ss-tb tr.grp td .cnt { float:right; font-weight:400; color:#6b7a89; font-size:11px; }
+  table.ss-tb tr.grp td .caret { display:inline-block; width:14px; color:#1f9b8e; font-size:10px; }
+  table.ss-tb td.code { font-family:Consolas,monospace; font-size:11.5px; color:#6b7a89; }
+  table.ss-tb td.itnm .ic { display:block; font-family:Consolas,monospace; font-size:11px; color:#9aa7b3; margin-top:2px; }
+  table.ss-tb td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.ss-tb td.zero { color:#cdd6e0; }
+  table.ss-tb td.sum { font-weight:700; background:#f4f8f7; color:#1f2a37; }
+  table.ss-tb tr.subtot td { background:#fbfdfc; font-weight:600; color:#37475a; }
+  table.ss-tb tr.gtot td { background:#1f2a37; color:#fff; font-weight:700; }
+  table.ss-tb tr.gtot td.zero { color:#8a98a8; }
+  .ss-scroll { max-height:74vh; overflow:auto; border:1px solid var(--logi-border); border-radius:8px; }
+
+  /* 전치형(품목=열, 출고장=행) 와이드 표 */
+  table.sswide { width:auto; min-width:100%; }
+  table.sswide th, table.sswide td { border:1px solid var(--logi-border); padding:6px 7px; text-align:center; white-space:nowrap; font-size:12px; }
+  table.sswide thead th { background:#1f9b8e; color:#fff; position:sticky; top:0; z-index:3; }
+  table.sswide thead th.bizh { background:#137a6c; border-bottom:1px solid #0e6657; cursor:pointer; user-select:none; }
+  table.sswide thead th.bizh:hover { background:#0e6657; }
+  table.sswide thead th.bizh .bx { opacity:.55; font-size:10px; }
+  table.sswide thead th.bizh:hover .bx { opacity:1; }
+  .ss-hidden-bar { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px; font-size:12.5px; }
+  .ss-hidden-bar .hb-lbl { color:#6b7a89; font-weight:600; }
+  .ss-hidden-bar .hb-chip { background:#eef3f2; border:1px solid var(--logi-border); color:#37475a; border-radius:13px; padding:3px 11px; cursor:pointer; font-weight:600; }
+  .ss-hidden-bar .hb-chip:hover { background:#e3efec; border-color:var(--logi-teal); color:#137a6c; }
+  table.sswide thead th.prodh { background:#34a99d; font-weight:600; white-space:normal; word-break:break-all; min-width:84px; max-width:96px; font-size:10.5px; line-height:1.25; vertical-align:bottom; top:31px; }
+  table.sswide thead th.prodh .pc { display:block; font-family:Consolas,monospace; font-size:9.5px; color:#dff5f1; margin-top:2px; }
+  /* 좌측 고정 열(출고장) */
+  table.sswide .stick { position:sticky; left:0; z-index:2; min-width:118px; text-align:left; }
+  table.sswide thead th.stick { z-index:5; background:#178074; }
+  table.sswide tbody td.stick { background:#f4f8f7; font-weight:600; color:#178074; }
+  table.sswide tbody td.stick .sub2 { font-weight:400; color:#9aa7b3; font-size:10.5px; }
+  table.sswide td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.sswide td.zero { color:#cdd6e0; }
+  table.sswide td.colsum, table.sswide th.colsum { background:#eef3f2; font-weight:700; color:#1f2a37; }
+  table.sswide tr.lgrp { cursor:pointer; }
+  table.sswide tr.lgrp td { background:#eef3f2; color:#178074; font-weight:700; font-size:11.5px; }
+  table.sswide tr.lgrp td.stick { background:#e3efec; }
+  table.sswide tr.lgrp:hover td { background:#dcefe9; }
+  table.sswide tr.lgrp .zcaret { display:inline-block; width:12px; color:#1f9b8e; font-size:10px; }
+  table.sswide tr.lsub td { background:#eaf5f2; font-weight:700; color:#137a6c; }
+  table.sswide tr.lsub td.stick { background:#dcefe9; }
+  table.sswide tr.ztot td { background:#1f2a37; font-weight:700; color:#fff; }
+  table.sswide tr.ztot td.stick { background:#11161d; color:#fff; }
+  table.sswide tr.ztot td.zero { color:#8a98a8; }
+  table.sswide tr.unrow td { background:#fff1d6; color:#b3760f; font-weight:600; }
+  table.sswide tr.unrow td.stick { background:#ffd9a8; color:#a85700; cursor:help; border-left:3px solid #e8941f; white-space:nowrap; }
+  table.sswide tr.unrow td.uhl { background:#ffe0e0; color:#c0392b; font-weight:800; }
+  table.sswide tr.unrow td.colsum { background:#ffe0b0; color:#a85700; }
+  table.sswide tr.sec td { background:#1f2a37; color:#fff; text-align:left; font-weight:700; position:sticky; left:0; }
+  table.sswide tr.r-stock td.num { color:#178074; }
+  table.sswide tr.r-month td.num { color:#6b7a89; }
+  table.sswide tr.r-now td { background:#fffaf0; }
+  table.sswide tr.r-now td.num { color:#c47f17; font-weight:700; }
+  table.sswide tr.r-sel td { background:#e3f4ef; }
+  table.sswide tr.r-sel td.num { color:#137a6c; font-weight:800; }
+  table.sswide tr.r-sel td.stick { background:#cdebe2; color:#137a6c; font-weight:800; border-left:3px solid #1f9b8e; }
+  table.sswide td.neg { color:#c0392b; font-weight:700; }
+
+  /* 존(출고장)별 막대 */
+  .zone-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:9px; }
+  .zone-bar { border:1px solid var(--logi-border); border-radius:8px; padding:9px 11px; background:#fff; }
+  .zone-bar .zb-top { display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+  .zone-bar .zb-code { font-weight:700; color:var(--logi-teal-dark); }
+  .zone-bar .zb-qty { font-weight:700; color:#1f2a37; }
+  .zone-bar .zb-track { height:7px; border-radius:4px; background:#e7edeb; overflow:hidden; }
+  .zone-bar .zb-track > i { display:block; height:100%; background:linear-gradient(90deg,#34a99d,#1f9b8e); }
+  .zone-bar .zb-inb { font-size:10.5px; color:#9aa7b3; margin-top:4px; }
+
+  /* 재고량/출고량 상태 */
+  table.ss-tb td.st-ok { color:var(--logi-teal-dark); }
+  table.ss-tb td.st-low { color:#c47f17; font-weight:700; }
+  table.ss-tb td.st-neg { color:#c0392b; font-weight:700; }
+  .ss-toast { position:fixed; right:24px; bottom:24px; background:#1f2a37; color:#fff; padding:13px 18px; border-radius:9px; font-size:13.5px; box-shadow:0 6px 22px rgba(0,0,0,.25); opacity:0; transform:translateY(12px); transition:.25s; z-index:9999; }
+  .ss-toast.on { opacity:1; transform:translateY(0); }
+  .ss-toast b { color:#aef0e7; }
+
+  /* 발주현황표 미리보기 모달 */
+  .ss-modal { display:none; position:fixed; inset:0; background:rgba(15,23,32,.5); z-index:9998; }
+  .ss-modal.on { display:flex; align-items:flex-start; justify-content:center; }
+  .ss-modal .box { background:#fff; width:min(1120px,95vw); margin-top:4vh; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.3); max-height:90vh; display:flex; flex-direction:column; }
+  .ss-modal .mh { background:linear-gradient(135deg,#1f9b8e,#137a6c); color:#fff; padding:14px 20px; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center; }
+  .ss-modal .mh h4 { margin:0; font-size:16px; font-weight:600; }
+  .ss-modal .mh .x { cursor:pointer; font-size:22px; line-height:1; color:#fff; opacity:.9; background:none; border:none; }
+  .ss-modal .mbar { padding:11px 20px; border-bottom:1px solid var(--logi-border); display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:13px; }
+  .ss-modal .mbar b { color:#1f2a37; }
+  .ss-modal .mbar select { height:32px; border:1px solid var(--logi-border); border-radius:6px; padding:0 8px; font-size:12.5px; }
+  .ss-modal .mbody { padding:14px 20px; overflow:auto; }
+  .ss-modal .mfoot { padding:12px 20px; border-top:1px solid var(--logi-border); display:flex; justify-content:flex-end; gap:8px; }
+  .ss-pvinfo { font-size:12.5px; color:#137a6c; background:#eafaf6; border:1px solid #b9e6dd; border-radius:7px; padding:7px 12px; margin-bottom:10px; }
+  .ss-pvinfo.warn { color:#b3760f; background:#fff4e0; border-color:#f0d9a8; }
+  .ss-pvinfo .tag { display:inline-block; background:#fff7cc; border:1px solid #e8d894; border-radius:4px; padding:1px 6px; margin:0 2px; font-size:11px; color:#7a6310; }
+  table.ss-pv { border-collapse:collapse; font-size:11.5px; }
+  table.ss-pv td, table.ss-pv th { border:1px solid #e3e9e7; padding:3px 7px; white-space:nowrap; max-width:170px; overflow:hidden; text-overflow:ellipsis; }
+  table.ss-pv tr.hdr td { background:#eef3f2; font-weight:700; color:#178074; position:sticky; top:0; }
+  table.ss-pv td.hl { background:#fff7cc; }
+  table.ss-pv td.rn { background:#f4f8f7; color:#9aa7b3; text-align:right; position:sticky; left:0; }
 </style>
 
 <script type="text/javascript">
@@ -293,6 +426,458 @@
   document.addEventListener('DOMContentLoaded', _logiInit);
   (function(){ _logiInit(); })();
 </script>
+
+<!-- 엑셀 파서 (xlsx) — CDN 지연/차단 시에도 화면이 먼저 뜨도록 defer -->
+<script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script type="text/javascript">
+  /* ===================================================================
+     출고현황표 — 발주현황표(엑셀) 업로드 → 출고량/재고량 자동작성
+     · 원천: 발주현황표 노란칸 [품목명 · 사업장명 · 존(출고장) · 수량]
+     · 출고장 = 입고장 기준 존 그룹 (1→A존 / 2→C존 / 3→D존 / 4→F존)
+     · 업로드 없이도 시연되도록 실제 2026.06.19 발주 127행을 내장
+     =================================================================== */
+  var SHIP_DATA = [{"code":"1000800551","item":"(PAZAC)박스대,제이투팩,11.2KG(400EA/BOX)","biz":"new파작(종로점)","inb":"3","zone":"D7","qty":2},{"code":"1000800551","item":"(PAZAC)박스대,제이투팩,11.2KG(400EA/BOX)","biz":"new파작(여의도점)","inb":"3","zone":"D8","qty":1},{"code":"1000800552","item":"(PAZAC)박스소,제이투팩,8.4KG(400EA/BOX)","biz":"new파작(종로점)","inb":"3","zone":"D7","qty":1},{"code":"1000797636","item":"(PAZAC)홀더,대승씨엔씨,7.35KG(1,000EA/BOX)","biz":"new파작(여의도점)","inb":"3","zone":"D8","qty":1},{"code":"1000781893","item":"(뜨돈)195파이용기뚜껑,검정,구형,PP,300EA/BOX","biz":"뜨돈 수원 영통점","inb":"1","zone":"A3","qty":1},{"code":"1000781893","item":"(뜨돈)195파이용기뚜껑,검정,구형,PP,300EA/BOX","biz":"뜨돈 동탄 성공 본점","inb":"2","zone":"C2","qty":1},{"code":"1000781894","item":"(뜨돈)195파이용기몸체,소,검정,구형,PP,300EA/BOX","biz":"뜨돈 수원 영통점","inb":"1","zone":"A3","qty":1},{"code":"1000781894","item":"(뜨돈)195파이용기몸체,소,검정,구형,PP,300EA/BOX","biz":"뜨돈 동탄 성공 본점","inb":"2","zone":"C2","qty":1},{"code":"1000782041","item":"(뜨돈)5칸돈가스도시락세트,검정,240*180*35MM,몸체PP,뚜껑PE","biz":"뜨돈 시흥 배곧점","inb":"3","zone":"D7","qty":1},{"code":"1000779754","item":"(뜨돈)각대봉투,소,120*60*220MM,무지크라프트,1000EA/BO","biz":"뜨돈 시흥 배곧점","inb":"3","zone":"D7","qty":1},{"code":"1000779736","item":"(뜨돈)소스용기뚜껑,95파이,PP,1000EA/BOX","biz":"뜨돈 동탄 카림애비뉴점","inb":"2","zone":"C2","qty":1},{"code":"1000736180","item":"(런던&레이&하이)74Ø3.25온스,크림치즈용,소,용기,740*500*3","biz":"성수CC","inb":"3","zone":"D2","qty":3},{"code":"1000736181","item":"(런던&레이&하이)F74Ø크림치즈용,소,무타공뚜껑,F74Ø(무타공)뚜껑,","biz":"성수CC","inb":"3","zone":"D2","qty":2},{"code":"1000730573","item":"(런던&레이&하이)노루지코팅깔개,소,130*100MM,10000EA/BO","biz":"런베잠실_홀1층","inb":"2","zone":"C5","qty":1},{"code":"1000736204","item":"(런던&레이&하이)보냉팩,소,180*240MM+50MM,600EA/BOX","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":1},{"code":"1000736204","item":"(런던&레이&하이)보냉팩,소,180*240MM+50MM,600EA/BOX","biz":"런베도산","inb":"4","zone":"F2","qty":1},{"code":"1000736213","item":"(런던&레이&하이)보냉팩,중,240*350MM+40MM,400EA/BOX","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":1},{"code":"1000730576","item":"(런던&레이&하이)줄무늬크라프트유산지,350*250MM,3000EA/BO","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":1},{"code":"1000730576","item":"(런던&레이&하이)줄무늬크라프트유산지,350*250MM,3000EA/BO","biz":"런베여의도_창고-B6층","inb":"2","zone":"C7","qty":1},{"code":"1000730576","item":"(런던&레이&하이)줄무늬크라프트유산지,350*250MM,3000EA/BO","biz":"레이안국","inb":"4","zone":"F1","qty":1},{"code":"1000730576","item":"(런던&레이&하이)줄무늬크라프트유산지,350*250MM,3000EA/BO","biz":"런베수원_홀","inb":"4","zone":"F7","qty":1},{"code":"1000731259","item":"(런던베이글)샌드위치펄프용기,일체형,182*130*50MM,600ML,5","biz":"런베잠실_홀1층","inb":"2","zone":"C5","qty":1},{"code":"1000731259","item":"(런던베이글)샌드위치펄프용기,일체형,182*130*50MM,600ML,5","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":2},{"code":"1000731259","item":"(런던베이글)샌드위치펄프용기,일체형,182*130*50MM,600ML,5","biz":"런베여의도_창고-B6층","inb":"2","zone":"C7","qty":3},{"code":"1000731259","item":"(런던베이글)샌드위치펄프용기,일체형,182*130*50MM,600ML,5","biz":"런베도산","inb":"4","zone":"F2","qty":1},{"code":"1000731259","item":"(런던베이글)샌드위치펄프용기,일체형,182*130*50MM,600ML,5","biz":"런베수원_홀","inb":"4","zone":"F7","qty":3},{"code":"1000792544","item":"(런던베이글)아돌이종이컵,16온스,2도인쇄,1000EA/BOX","biz":"런베여의도_창고-B6층","inb":"2","zone":"C7","qty":1},{"code":"1000730686","item":"(런던베이글)칵테일냅킨,W230mm,L230mm,1도인쇄,10000EA/","biz":"런베여의도_창고-B6층","inb":"2","zone":"C7","qty":1},{"code":"1000792545","item":"(런던베이글)필로소피종이컵,16온스,1도인쇄,1000EA/BOX","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":1},{"code":"1000718241","item":"(레이어드)친환경종이컵,16OZ,무지,1000EA/BOX","biz":"런베잠실_홀2층","inb":"2","zone":"C5","qty":1},{"code":"1000719149","item":"(레이어드)하이웨스트&베이글박스,소,130*100*115MM,200EA/","biz":"하웨판교","inb":"4","zone":"F5","qty":1},{"code":"1000715525","item":"(명동피자)물티슈,1도인쇄,1000EA/BOX,D-2","biz":"명동피자(명동본점-창고)","inb":"3","zone":"D3","qty":2},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(세종아름점)25년","inb":"1","zone":"A8","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(신관점)","inb":"1","zone":"A9","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(오산시청점)","inb":"2","zone":"C1","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(봉천)","inb":"3","zone":"D1","qty":2},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈 덮밥이 마포점(26)","inb":"3","zone":"D1","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(분당수내)25","inb":"","zone":"","qty":0},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(세종보람점)26","inb":"3","zone":"D6","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(세종조치원25년)","inb":"3","zone":"D6","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"파스타입니다(왕십리점)","inb":"3","zone":"D7","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"배고픈덮밥이(길동점)","inb":"4","zone":"F2","qty":1},{"code":"1000736040","item":"(배고픈덮밥이)덮밥용기,뚜껑,160Ǿ,PP,300EA/BOX","biz":"파스타입니다(수유점)","inb":"4","zone":"F8","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(세종아름점)25년","inb":"1","zone":"A8","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(신관점)","inb":"1","zone":"A9","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(오산시청점)","inb":"2","zone":"C1","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(봉천)","inb":"3","zone":"D1","qty":2},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈 덮밥이 마포점(26)","inb":"3","zone":"D1","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(세종조치원25년)","inb":"3","zone":"D6","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"파스타입니다(왕십리점)","inb":"3","zone":"D7","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"배고픈덮밥이(길동점)","inb":"4","zone":"F2","qty":1},{"code":"1000736038","item":"(배고픈덮밥이)덮밥용기,몸체,1290CC,160*88MM,300EA/BO","biz":"파스타입니다(수유점)","inb":"4","zone":"F8","qty":1},{"code":"1000791735","item":"(스프링롤명가)WL-F800SET(흰색),198*116*53MM,150S","biz":"스프링롤 명가_수원영통점","inb":"1","zone":"A7","qty":1},{"code":"1000791735","item":"(스프링롤명가)WL-F800SET(흰색),198*116*53MM,150S","biz":"스프링롤 명가_답십리","inb":"3","zone":"D7","qty":2},{"code":"1000795136","item":"(아벡쉐리)컵홀더,12/16/20,SC합지인쇄,코네트,9.62KG(100","biz":"아벡쉐리 한남점(홀)","inb":"4","zone":"F7","qty":2},{"code":"1000793901","item":"(아임도넛)각대봉투,피앤텍,8KG(1000EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":1},{"code":"1000793900","item":"(아임도넛)슬리브인박스,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":2},{"code":"1000793900","item":"(아임도넛)슬리브인박스,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(성수점)","inb":"2","zone":"C5","qty":3},{"code":"1000793899","item":"(아임도넛)슬리브터널형,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":2},{"code":"1000793899","item":"(아임도넛)슬리브터널형,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(성수점)","inb":"2","zone":"C5","qty":2},{"code":"1000802403","item":"(아임도넛)에스파콜라보박스,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":2},{"code":"1000802403","item":"(아임도넛)에스파콜라보박스,선피앤피,8KG(200EA/BOX)","biz":"아임도넛(성수점)","inb":"2","zone":"C5","qty":2},{"code":"1000802405","item":"(아임도넛)옐로우비닐,그린팩코리아,11.8KG(500EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":2},{"code":"1000802405","item":"(아임도넛)옐로우비닐,그린팩코리아,11.8KG(500EA/BOX)","biz":"아임도넛(성수점)","inb":"2","zone":"C5","qty":2},{"code":"1000804387","item":"(아임도넛)원형간지,325MM,대영전산,10KG(3000EA/BOX)","biz":"아임도넛(홍대점)","inb":"2","zone":"C4","qty":2},{"code":"1000768163","item":"(오베이글)각대봉투,대,흰색,180*110*430MM,2도,1000EA/","biz":"오베이글(카페)","inb":"2","zone":"C4","qty":1},{"code":"1000758525","item":"(주니아)랩지,크라프트,330*330MM,코팅,1도,1000EA/BOX","biz":"주니아_약수점","inb":"2","zone":"C5","qty":1},{"code":"1000755871","item":"(주니아)아이스컵,뚜껑,돔리드,DIA92MM,1000EA/BOX","biz":"주니아_판교IT센터점","inb":"2","zone":"C5","qty":1},{"code":"1000755863","item":"(주니아)파니니용기,크라프트,도시락2호,600EA/BOX","biz":"주니아_판교IT센터점","inb":"2","zone":"C5","qty":1},{"code":"1000757230","item":"(주니아)포켓(반)봉투,200*240MM,무지,코팅,1000EA/BOX","biz":"주니아_길음역점","inb":"3","zone":"D2","qty":1},{"code":"1000767819","item":"(파스타예요)사각죽용기뚜껑,130*180MM,PP,500EA/BOX","biz":"파스타예요(중랑상봉점)","inb":"1","zone":"A9","qty":1},{"code":"1000767819","item":"(파스타예요)사각죽용기뚜껑,130*180MM,PP,500EA/BOX","biz":"파스타예요(송파점_신)","inb":"2","zone":"C5","qty":1},{"code":"1000767819","item":"(파스타예요)사각죽용기뚜껑,130*180MM,PP,500EA/BOX","biz":"파스타예요(서울역점)","inb":"3","zone":"D3","qty":1},{"code":"1000767819","item":"(파스타예요)사각죽용기뚜껑,130*180MM,PP,500EA/BOX","biz":"파스타예요(분당점)","inb":"3","zone":"D5","qty":1},{"code":"1000767819","item":"(파스타예요)사각죽용기뚜껑,130*180MM,PP,500EA/BOX","biz":"파스타예요(성남점_新)","inb":"4","zone":"F4","qty":1},{"code":"1000767816","item":"(포엠)사각죽용기몸체,대,180*130*H65MM,1000ML,PP,50","biz":"파스타예요(분당점)","inb":"3","zone":"D5","qty":1},{"code":"1000767817","item":"(포엠)사각죽용기몸체,중,180*130*H55MM,850ML,PP,500","biz":"파스타예요(중랑상봉점)","inb":"1","zone":"A9","qty":1},{"code":"1000767817","item":"(포엠)사각죽용기몸체,중,180*130*H55MM,850ML,PP,500","biz":"파스타예요(서울역점)","inb":"3","zone":"D3","qty":1},{"code":"1000767817","item":"(포엠)사각죽용기몸체,중,180*130*H55MM,850ML,PP,500","biz":"파스타예요(강서본점)","inb":"4","zone":"F4","qty":1},{"code":"1000767817","item":"(포엠)사각죽용기몸체,중,180*130*H55MM,850ML,PP,500","biz":"파스타예요(성남점_新)","inb":"4","zone":"F4","qty":1},{"code":"1000771713","item":"(포케올데이)랩샌드위치노루지,30*30CM,1도인쇄,코팅40G,1000E","biz":"POKE 분당야탑점","inb":"3","zone":"D5","qty":1},{"code":"1000767985","item":"(포케올데이)스프용기뚜껑,330CC,100파이*15MM,두겹,무지,500","biz":"POKE 안암점","inb":"4","zone":"F7","qty":1},{"code":"1000758813","item":"(프로티너)냅킨,흰색,115*115MM,크라프트,삼양앤컴퍼니,10000E","biz":"잠실방이점_프로티너","inb":"3","zone":"D8","qty":1},{"code":"1000758814","item":"(프로티너)물티슈,무지,100*70MM(포장지),200*130MM(속지)","biz":"잠실방이점_프로티너","inb":"3","zone":"D8","qty":1},{"code":"1000759547","item":"(프로티너)소스컵뚜껑,1OZ,45파이,무타공,평리드,DIA45MM,PET","biz":"홍대입구역점_프로티너","inb":"4","zone":"F7","qty":1},{"code":"1000759544","item":"(프로티너)소스컵뚜껑,2OZ,62파이,무타공,평리드,DIA62MM,PET","biz":"홍대입구역점_프로티너","inb":"4","zone":"F7","qty":1},{"code":"1000759541","item":"(프로티너)소스컵몸체,2OZ,62파이,DIA62MM,PET,2000EA/","biz":"홍대입구역점_프로티너","inb":"4","zone":"F7","qty":1},{"code":"1000759549","item":"(프로티너)펄프용기뚜껑,PET,500EA/BOX","biz":"판교역점_프로티너","inb":"3","zone":"D8","qty":1},{"code":"1000759548","item":"(프로티너)펄프용기몸체,1칸,210X130X70MM,1000ML,500E","biz":"판교역점_프로티너","inb":"3","zone":"D8","qty":1},{"code":"1000794792","item":"(허그런치)1350CC컵지용기,300EA/BOX,180*155*73MM","biz":"허그런치(시흥)","inb":"2","zone":"C3","qty":3},{"code":"1000794793","item":"(허그런치)180ǾPET뚜껑,300EA/BOX","biz":"허그런치(시흥)","inb":"2","zone":"C3","qty":3},{"code":"1000773313","item":"(허그런치)대나무젓가락,현대산업,개별포장,인쇄,2000EA/BOX","biz":"허그런치(시흥)","inb":"2","zone":"C3","qty":7},{"code":"1000773313","item":"(허그런치)대나무젓가락,현대산업,개별포장,인쇄,2000EA/BOX","biz":"허그런치(성남)","inb":"3","zone":"D5","qty":2},{"code":"1000774531","item":"(허그런치)일회용숟가락,개별포장,백색,L175MM,1500EA/BOX","biz":"허그런치(시흥)","inb":"2","zone":"C3","qty":8},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(서울 강서점)","inb":"3","zone":"D6","qty":1},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(서울역삼점)","inb":"3","zone":"D7","qty":1},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(수원 영통점)","inb":"3","zone":"D8","qty":1},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(화성 동탄점)","inb":"3","zone":"D8","qty":1},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000773357","item":"(호호솥밥)먹는법스티커,100MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(서울 서대문점)","inb":"4","zone":"F7","qty":1},{"code":"1000783957","item":"(호호솥밥)비닐쇼핑백,중,그린팩,37(M16*2)*50MM,2도,500E","biz":"호호솥밥(안양 만안점)","inb":"3","zone":"D8","qty":1},{"code":"1000783957","item":"(호호솥밥)비닐쇼핑백,중,그린팩,37(M16*2)*50MM,2도,500E","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(분당 판교점)","inb":"2","zone":"C5","qty":1},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(경기 안산점)","inb":"3","zone":"D7","qty":1},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(서울역삼점)","inb":"3","zone":"D7","qty":2},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(서울 송파점)","inb":"3","zone":"D8","qty":1},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(화성 동탄점)","inb":"3","zone":"D8","qty":1},{"code":"1000771764","item":"(호호솥밥)솥밥용기/뚜껑/PET,160파이,300EA/BOX","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(분당 판교점)","inb":"2","zone":"C5","qty":1},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(경기 안산점)","inb":"3","zone":"D7","qty":1},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(서울역삼점)","inb":"3","zone":"D7","qty":2},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(서울 송파점)","inb":"3","zone":"D8","qty":1},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(화성 동탄점)","inb":"3","zone":"D8","qty":1},{"code":"1000771760","item":"(호호솥밥)솥밥용기/용기/크라프트,160파이/900ML,300EA/BOX","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000771765","item":"(호호솥밥)원형스티커,80MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(서울 강서점)","inb":"3","zone":"D6","qty":1},{"code":"1000771765","item":"(호호솥밥)원형스티커,80MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000771765","item":"(호호솥밥)원형스티커,80MM/아트/코팅,1000EA/BOX","biz":"호호솥밥(서울 서대문점)","inb":"4","zone":"F7","qty":1},{"code":"1000775934","item":"(화계전통)타원찜용기,소,뚜껑,100EA/BOX","biz":"화계전통_서울시립대점","inb":"2","zone":"C3","qty":1},{"code":"1000775933","item":"(화계전통)타원찜용기,소,몸체,100EA/BOX","biz":"화계전통_서울시립대점","inb":"2","zone":"C3","qty":1},{"code":"1000743500","item":"냉면용기뚜껑,중,DIA200MM,PP,200EA/BOX","biz":"헬키푸키 석촌점","inb":"2","zone":"C3","qty":1},{"code":"1000743500","item":"냉면용기뚜껑,중,DIA200MM,PP,200EA/BOX","biz":"혜준당_보문점","inb":"3","zone":"D8","qty":1},{"code":"1000743499","item":"냉면용기몸체,중,DIA200MM*H70MM,PP,200EA/BOX","biz":"헬키푸키 석촌점","inb":"2","zone":"C3","qty":1},{"code":"1000743499","item":"냉면용기몸체,중,DIA200MM*H70MM,PP,200EA/BOX","biz":"혜준당_보문점","inb":"3","zone":"D8","qty":1},{"code":"1000765857","item":"수저세트,무지,검정,숟가락(L170MM,PP),젓가락(L180MM,대나무","biz":"뜨돈 시흥 배곧점","inb":"3","zone":"D7","qty":1},{"code":"1000765857","item":"수저세트,무지,검정,숟가락(L170MM,PP),젓가락(L180MM,대나무","biz":"호호솥밥(평택 비전점)","inb":"4","zone":"F2","qty":1},{"code":"1000455371","item":"종이컵,10OZ,로앤그린,친환경,DIA85*H95MM,1000EA/BOX","biz":"블루엘리펀트 성수","inb":"1","zone":"A9","qty":1},{"code":"1000756544","item":"종이컵,92파이,20OZ,대크린상,DIA92MM,1000EA/BOX","biz":"블루엘리펀트 성수","inb":"1","zone":"A9","qty":1}];
+
+  function ssBrand(item){ var m=/^\(([^)]+)\)/.exec(item||''); return m?m[1]:'기타·공통'; }
+  // 품목명에서 앞쪽 (사업장/브랜드) 접두 제거 — 상단 그룹헤더와 중복 방지
+  function ssShortName(item){ var s=(''+(item||'')).replace(/^\([^)]*\)\s*/,''); return s||(item||''); }
+  function ssHash(s){ var h=5381,i; for(i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return h; }
+  function ssNum(n){ return (Math.round(n||0)).toLocaleString(); }
+  function ssSet(id,html){ var e=document.getElementById(id); if(e) e.innerHTML=html; }
+
+  // 발주현황표 → 집계 (출고장=행, 품목=열 / 품목코드 매칭 / 선택일=당일 필터)
+  function ssAggregate(){
+    var from=(document.getElementById('ssDateFrom')||{}).value||'';
+    var to=(document.getElementById('ssDateTo')||{}).value||'';
+    var zoneTot={}, zoneInb={}, items={}, bizSet={}, matrix={}, zoneSet={}, unassigned=0, totQty=0, unassignedList=[], unMatrix={}, unCnt={}, unNames=[], unTot=0;
+    SHIP_DATA.forEach(function(r){
+      var d=r.date||SS_TODAY;
+      if(from && d<from) return;          // ★ 시작일자 이전 제외
+      if(to && d>to) return;              // ★ 종료일자 이후 제외
+      var q = +r.qty||0;
+      if(r.biz) bizSet[r.biz]=1;
+      if(!r.zone){                         // 존 미지정 → 미배정 집계
+        var sn=ssShortName(r.item);
+        unassigned++; unassignedList.push((r.biz||'')+' · '+sn);
+        var uk=(''+(r.code||'')).trim() ? (''+(r.code||'')).trim() : ('NM:'+r.item);
+        unMatrix[uk]=(unMatrix[uk]||0)+q; unCnt[uk]=(unCnt[uk]||0)+1; unTot+=q;
+        if(unNames.indexOf(sn)<0) unNames.push(sn);
+        return;
+      }
+      totQty += q;
+      var code=(''+(r.code||'')).trim();
+      var key = code ? code : ('NM:'+r.item);   // ★ 품목코드로 매칭
+      var br=ssBrand(r.item);
+      if(!items[key]) items[key]={code:code, name:r.item, brand:br, qty:0};
+      items[key].qty+=q;
+      zoneSet[r.zone]=1; zoneTot[r.zone]=(zoneTot[r.zone]||0)+q; zoneInb[r.zone]=(r.inb||'');
+      matrix[r.zone]=matrix[r.zone]||{};
+      matrix[r.zone][key]=(matrix[r.zone][key]||0)+q;
+    });
+    return {items:items,matrix:matrix,zoneTot:zoneTot,zoneInb:zoneInb,zoneSet:zoneSet,bizSet:bizSet,unassigned:unassigned,unassignedList:unassignedList,unMatrix:unMatrix,unCnt:unCnt,unNames:unNames,unTot:unTot,totQty:totQty};
+  }
+
+  var SS_MONTHS=['5월','4월','3월','2월','1월'];  // 데모용 과거 월
+
+  function ssRender(){
+    var tbl=document.getElementById('ssWideTbl'); if(!tbl) return;
+    var ag=ssAggregate();
+
+    // ── KPI (당일=선택일 기준) — 컴팩트 숫자
+    ssSet('ssKpiItem', ssNum(Object.keys(ag.items).length));
+    ssSet('ssKpiQty',  ssNum(ag.totQty));
+    ssSet('ssKpiZone', ssNum(Object.keys(ag.zoneTot).length));
+    ssSet('ssKpiBiz',  ssNum(Object.keys(ag.bizSet).length));
+
+    // ── 기간 정보 밴드
+    var from=(document.getElementById('ssDateFrom')||{}).value||'';
+    var to=(document.getElementById('ssDateTo')||{}).value||'';
+    var dts=ssAllDates(); var hasData=(ag.totQty>0 || Object.keys(ag.items).length>0);
+    var prefix = (from && from===to) ? (from===SS_TODAY?'당일':'선택일') : '기간';
+    ssSet('ssKpiPrefix', prefix);
+    var range = (from && from===to) ? (from + (from===SS_TODAY?' <b>(금일)</b>':'')) : (from||'~')+' ~ '+(to||'~');
+    var info='<span class="ss-srcbadge'+(window.ssSrcUp?' up':'')+'">'+(window.ssSrcInfo||'내장 샘플')+'</span> 📅 '+range
+      + (hasData ? '' : ' &nbsp;|&nbsp; <span style="color:#c0392b">해당 기간 데이터 없음</span>')
+      + (dts.length>1 ? ' &nbsp;|&nbsp; 파일 출고일자 '+dts.length+'개: '+dts.map(function(x){return x.d+'('+x.n+')';}).join(', ') : '')
+      + (ag.unassigned>0 ? ' &nbsp;|&nbsp; <span style="color:#c0392b; cursor:help" title="존(출고장) 미지정 발주 — 출고장이 비어 집계 제외&#10;'+(ag.unassignedList||[]).join('&#10;').replace(/"/g,'&quot;')+'">미배정 '+ag.unassigned+'건 ⓘ</span>' : '');
+    ssSet('ssDateInfo', info);
+
+    // ── 사업장(브랜드) 선택 옵션
+    var brands={}; Object.keys(ag.items).forEach(function(k){ brands[ag.items[k].brand]=1; });
+    var brandList=Object.keys(brands).sort(function(a,b){ return a.localeCompare(b,'ko'); });
+    var sel=document.getElementById('ssBizSel');
+    var keep = sel.value || '__ALL__';
+    if(sel.options.length !== brandList.length+1){
+      sel.innerHTML='<option value="__ALL__">전체 ('+brandList.length+' 사업장)</option>'
+        + brandList.map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('');
+      sel.value = brandList.indexOf(keep)>=0 ? keep : '__ALL__';
+    }
+    var pick=sel.value;
+
+    // ── 품목(열) 순서: 사업장 → 품목명
+    var keys=Object.keys(ag.items);
+    if(pick && pick!=='__ALL__') keys=keys.filter(function(k){ return ag.items[k].brand===pick; });
+    keys.sort(function(a,b){
+      var A=ag.items[a],B=ag.items[b];
+      return A.brand.localeCompare(B.brand,'ko') || A.name.localeCompare(B.name,'ko');
+    });
+    keys=keys.filter(function(k){ return !ssBizHidden[ag.items[k].brand]; });  // 숨긴 사업장 제외
+    // 숨긴 사업장 복원 바
+    var hb=document.getElementById('ssHiddenBar');
+    if(hb){ var hd=Object.keys(ssBizHidden).filter(function(b){return ssBizHidden[b];});
+      if(hd.length){ hb.style.display='flex';
+        hb.innerHTML='<span class="hb-lbl">🙈 숨긴 사업장:</span>'
+          + hd.map(function(b){ return '<span class="hb-chip" data-br="'+b.replace(/"/g,'&quot;')+'" onclick="ssBizShowName(this.getAttribute(\'data-br\'))">'+b+' ↩</span>'; }).join('')
+          + '<button class="btn-line" style="padding:3px 11px; margin-left:4px" onclick="ssBizShowAll()">전체 펼치기</button>';
+      } else { hb.style.display='none'; hb.innerHTML=''; }
+    }
+    var zones=Object.keys(ag.zoneSet).sort();
+    var INB={'1':'1입고장','2':'2입고장','3':'3입고장','4':'4입고장'};
+    var ncol=keys.length+2;
+
+    if(!keys.length){ tbl.innerHTML='<tbody><tr><td style="padding:24px;color:#9aa7b3">표시할 품목이 없습니다.</td></tr></tbody>'; return; }
+
+    // ── thead : 1행 사업장 / 2행 품목명(코드)
+    var th1='<tr><th class="stick" rowspan="2">출고장 \\ 품목</th>';
+    var th2='<tr>';
+    var i=0;
+    while(i<keys.length){
+      var br=ag.items[keys[i]].brand, j=i;
+      while(j<keys.length && ag.items[keys[j]].brand===br) j++;
+      th1+='<th class="bizh" colspan="'+(j-i)+'" data-br="'+br.replace(/"/g,'&quot;')+'" onclick="ssBizHideName(this.getAttribute(\'data-br\'))" title="클릭 시 이 사업장 열 숨기기">'+br+' <span class="bx">✕</span></th>';
+      for(var p=i;p<j;p++){ var it=ag.items[keys[p]];
+        th2+='<th class="prodh" title="'+it.name.replace(/"/g,'&quot;')+'">'+ssShortName(it.name)+'<span class="pc">'+(it.code||'-')+'</span></th>';
+      }
+      i=j;
+    }
+    th1+='<th class="colsum" rowspan="2">합계</th></tr>'; th2+='</tr>';
+
+    // ── tbody : 출고장(존) 행 — A존~F존(영문) 그룹별 + 그룹 합계
+    var LETTER_INB={'A':'1입고장','B':'','C':'2입고장','D':'3입고장','E':'','F':'4입고장'};
+    var byL={}, letters=[];
+    zones.forEach(function(z){ var L=(z.charAt(0)||'').toUpperCase(); if(!byL[L]){ byL[L]=[]; letters.push(L); } byL[L].push(z); });
+    letters.sort();
+    window.ssLetters=letters.slice();
+    var colTot={}, grand=0, tb='';
+    letters.forEach(function(L){
+      var col=!!ssZoneCollapsed[L];
+      tb+='<tr class="lgrp" onclick="ssToggleZone(\''+L+'\')"><td class="stick"><span class="zcaret" id="zc_'+L+'">'+(col?'▶':'▼')+'</span> '+L+'존</td>'
+        + '<td colspan="'+(keys.length+1)+'" style="text-align:left">'
+        + (LETTER_INB[L]?LETTER_INB[L]+' · ':'')+byL[L].length+'개 존 ('+byL[L].join(', ')+')'
+        + (col?' <span style="color:#9aa7b3">— 접힘(클릭하여 펼치기)</span>':'')+'</td></tr>';
+      var lCol={}, lSum=0;
+      byL[L].forEach(function(z){
+        var rowSum=0, cells='';
+        keys.forEach(function(k){
+          var v=(ag.matrix[z]&&ag.matrix[z][k])||0; rowSum+=v; colTot[k]=(colTot[k]||0)+v; lCol[k]=(lCol[k]||0)+v;
+          cells+= v>0?'<td class="num">'+ssNum(v)+'</td>':'<td class="num zero">·</td>';
+        });
+        grand+=rowSum; lSum+=rowSum;
+        tb+='<tr class="zg_'+L+'"'+(col?' style="display:none"':'')+'><td class="stick">&nbsp;&nbsp;'+z+' 존</td>'+cells+'<td class="num colsum">'+ssNum(rowSum)+'</td></tr>';
+      });
+      var lc=''; keys.forEach(function(k){ lc+='<td class="num">'+ssNum(lCol[k]||0)+'</td>'; });
+      tb+='<tr class="lsub"><td class="stick">'+L+'존 합계</td>'+lc+'<td class="num colsum">'+ssNum(lSum)+'</td></tr>';
+    });
+    // 전체 출고장 합계
+    var ztc=''; keys.forEach(function(k){ ztc+='<td class="num">'+ssNum(colTot[k]||0)+'</td>'; });
+    tb+='<tr class="ztot"><td class="stick">전체 출고장 합계</td>'+ztc+'<td class="num colsum">'+ssNum(grand)+'</td></tr>';
+    // 미배정(존 미지정) 행 — 존이 비어 집계에서 빠진 발주
+    if(ag.unassigned>0){
+      var uTitle=('존(출고장) 미지정 발주\n'+(ag.unassignedList||[]).join('\n')).replace(/"/g,'&quot;');
+      var uLbl='⚠ 미배정 '+ag.unassigned+'건';
+      var uc=''; keys.forEach(function(k){ var c=ag.unCnt[k]||0, v=ag.unMatrix[k]||0; uc+= c>0?'<td class="num uhl" title="미배정 '+c+'건 (존·수량 미지정)">'+(v>0?ssNum(v):'0')+'</td>':'<td class="num zero">·</td>'; });
+      tb+='<tr class="unrow"><td class="stick" title="'+uTitle+'">'+uLbl+'</td>'+uc+'<td class="num colsum">'+ssNum(ag.unTot)+'</td></tr>';
+    }
+
+    // ── 하단 출고내역 · 재고량
+    tb+='<tr class="sec"><td colspan="'+ncol+'">📦 출고내역 · 재고량 &nbsp;<span style="font-weight:400;color:#aef0e7">(선택일=선택기간 출고 / 당월=이번달 전체 / 월별·재고량 데모값)</span></td></tr>';
+    // 재고량(기초)
+    var sc='',st=0;
+    keys.forEach(function(k){ var it=ag.items[k]; var base=30+(ssHash(it.code||it.name)%150); it._base=base; st+=base; sc+='<td class="num">'+ssNum(base)+'</td>'; });
+    tb+='<tr class="r-stock"><td class="stick">재고량(기초)</td>'+sc+'<td class="num colsum">'+ssNum(st)+'</td></tr>';
+    // ★ 선택일(당일/기간) 출고 = 현재 선택 범위 집계 (colTot) — 강조
+    var selLbl=(from&&from===to)?(from===SS_TODAY?'당일 출고':'선택일 출고'):'기간 출고';
+    var nc='',nt=0;
+    keys.forEach(function(k){ var v=colTot[k]||0; nt+=v; nc+= v>0?'<td class="num">'+ssNum(v)+'</td>':'<td class="num zero">·</td>'; });
+    tb+='<tr class="r-sel"><td class="stick">▶ '+selLbl+'</td>'+nc+'<td class="num colsum">'+ssNum(nt)+'</td></tr>';
+    // 당월 출고 = 이번달 전체(선택범위와 무관, 월 기준)
+    var ym=SS_TODAY.slice(0,7), mTot={};
+    SHIP_DATA.forEach(function(r){ if(!r.zone) return; var d=(''+(r.date||SS_TODAY)); if(d.slice(0,7)!==ym) return; var c=(''+(r.code||'')).trim(), kk=c?c:('NM:'+r.item); mTot[kk]=(mTot[kk]||0)+(+r.qty||0); });
+    var mc2='', mAll=0;
+    keys.forEach(function(k){ var v=mTot[k]||0; mAll+=v; mc2+= v>0?'<td class="num">'+ssNum(v)+'</td>':'<td class="num zero">·</td>'; });
+    tb+='<tr class="r-now"><td class="stick">당월 출고('+ym+')</td>'+mc2+'<td class="num colsum">'+ssNum(mAll)+'</td></tr>';
+    // 현재고 = 기초 - 선택일 출고
+    var cc='',ct=0;
+    keys.forEach(function(k){ var it=ag.items[k]; var cur=(it._base||0)-(colTot[k]||0); ct+=cur; cc+='<td class="num'+(cur<0?' neg':'')+'">'+ssNum(cur)+'</td>'; });
+    tb+='<tr class="r-stock"><td class="stick">현재고</td>'+cc+'<td class="num colsum">'+ssNum(ct)+'</td></tr>';
+    // 월별(데모)
+    SS_MONTHS.forEach(function(mn){
+      var mc='',mt=0;
+      keys.forEach(function(k){ var it=ag.items[k]; var v=ssHash((it.code||it.name)+mn)%9; mt+=v; mc+= v>0?'<td class="num">'+ssNum(v)+'</td>':'<td class="num zero">·</td>'; });
+      tb+='<tr class="r-month"><td class="stick">'+mn+' 출고</td>'+mc+'<td class="num colsum">'+ssNum(mt)+'</td></tr>';
+    });
+
+    tbl.innerHTML='<thead>'+th1+th2+'</thead><tbody>'+tb+'</tbody>';
+  }
+
+  // 사업장(열 그룹) 숨기기/보이기 — 헤더 클릭으로 숨김, 복원바로 펼침
+  var ssBizHidden={};
+  function ssBizHideName(b){ if(b){ ssBizHidden[b]=true; ssRender(); } }
+  function ssBizShowName(b){ if(b){ delete ssBizHidden[b]; ssRender(); } }
+  function ssBizShowAll(){ ssBizHidden={}; ssRender(); }
+
+  // 존 그룹(A존~F존) 접기/펼치기 — 상태 유지(재렌더에도 보존)
+  var ssZoneCollapsed={};
+  function ssToggleZone(L){
+    ssZoneCollapsed[L]=!ssZoneCollapsed[L];
+    var col=ssZoneCollapsed[L];
+    var rows=document.querySelectorAll('#ssWideTbl tr.zg_'+L);
+    for(var i=0;i<rows.length;i++) rows[i].style.display = col?'none':'';
+    var c=document.getElementById('zc_'+L); if(c) c.textContent = col?'▶':'▼';
+  }
+  function ssAllZones(collapse){
+    (window.ssLetters||[]).forEach(function(L){
+      ssZoneCollapsed[L]=collapse;
+      var rows=document.querySelectorAll('#ssWideTbl tr.zg_'+L);
+      for(var i=0;i<rows.length;i++) rows[i].style.display = collapse?'none':'';
+      var c=document.getElementById('zc_'+L); if(c) c.textContent = collapse?'▶':'▼';
+    });
+  }
+
+  // 토스트
+  function ssToast(msg){
+    var t=document.getElementById('ssToast');
+    if(!t){ t=document.createElement('div'); t.id='ssToast'; t.className='ss-toast'; document.body.appendChild(t); }
+    t.innerHTML=msg; t.classList.add('on');
+    clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove('on'); }, 3200);
+  }
+
+  // ── 발주현황표 업로드: 파일선택 → 미리보기 모달(시트선택) → 작성
+  var ssPvWb=null, ssPvName='';
+
+  function ssUpload(input){
+    var f=input.files && input.files[0]; if(!f) return;
+    if(typeof XLSX==='undefined'){ ssToast('⚠️ 엑셀 파서를 불러오지 못했습니다(인터넷 필요).'); input.value=''; return; }
+    ssPvName=f.name;
+    var rd=new FileReader();
+    rd.onload=function(e){
+      try{
+        ssPvWb=XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+        var names=ssPvWb.SheetNames||[];
+        document.getElementById('ssPvFile').textContent=f.name;
+        var sel=document.getElementById('ssPvSheet');
+        sel.innerHTML=names.map(function(n,i){ return '<option value="'+i+'">'+n+'</option>'; }).join('');
+        sel.value='0';
+        document.getElementById('ssPvSheetWrap').style.display = names.length>1 ? '' : 'none';
+        ssPvRender();
+        ssPvOpen(true);
+      }catch(err){ ssToast('⚠️ 엑셀 처리 오류: '+err.message); }
+      input.value='';
+    };
+    rd.readAsArrayBuffer(f);
+  }
+
+  // 선택 시트의 2차원 배열
+  function ssPvAoa(){
+    var idx=+(document.getElementById('ssPvSheet').value||0);
+    var ws=ssPvWb.Sheets[ssPvWb.SheetNames[idx]];
+    return ws ? XLSX.utils.sheet_to_json(ws,{header:1,defval:''}) : [];
+  }
+
+  // 컬럼 자동 인식 (품목명/사업장명/존/수량/품목코드/입고장) — 매핑화면 없이 내부 처리
+  function ssMapCols(aoa){
+    var h=-1;
+    for(var i=0;i<Math.min(aoa.length,6);i++){
+      var row=(aoa[i]||[]).map(function(c){return (''+c).trim();});
+      if(row.indexOf('품목명')>=0 && row.indexOf('사업장명')>=0){ h=i; break; }
+    }
+    if(h<0) return null;
+    var h1=(aoa[h]||[]).map(function(s){return (''+s).trim();});
+    var h2=(aoa[h+1]||[]).map(function(s){return (''+s).trim();});
+    function findIn(arr,name){ for(var k=0;k<arr.length;k++){ if(arr[k]===name) return k; } return -1; }
+    var cInb=findIn(h2,'입고장'), cZone=findIn(h2,'존'), cQty=findIn(h2,'수량');
+    if(cZone<0){ cInb=findIn(h1,'입고장'); cZone=findIn(h1,'존'); cQty=findIn(h1,'수량'); }
+    return { h:h, cItem:findIn(h1,'품목명'), cBiz:findIn(h1,'사업장명'), cCode:findIn(h1,'품목코드'), cInb:cInb, cZone:cZone, cQty:cQty, cDate:findIn(h1,'납기일자') };
+  }
+
+  function ssExtractRows(aoa,m){
+    var rows=[];
+    for(var r=m.h+2; r<aoa.length; r++){
+      var row=aoa[r]||[]; var nm=(''+(row[m.cItem]||'')).trim(); if(!nm) continue;
+      rows.push({
+        code:(''+(m.cCode>=0?row[m.cCode]:'')).trim(),
+        item:nm,
+        biz:(''+(m.cBiz>=0?row[m.cBiz]:'')).trim(),
+        inb:(''+(m.cInb>=0?row[m.cInb]:'')).trim(),
+        zone:(''+(row[m.cZone]||'')).trim(),
+        qty:(+(''+(row[m.cQty]||'')).replace(/[^0-9.\-]/g,''))||0,
+        date:(m.cDate>=0?ssFmtDate(row[m.cDate]):'') || SS_TODAY
+      });
+    }
+    return rows;
+  }
+
+  var ssPvCur=null;
+
+  function ssPvOpen(show){ document.getElementById('ssPvOverlay').classList.toggle('on', !!show); }
+
+  // 미리보기 렌더 (엑셀 내용 그대로 + 인식컬럼 하이라이트)
+  function ssPvRender(){
+    var aoa=ssPvAoa();
+    var m=ssMapCols(aoa);
+    ssPvCur={aoa:aoa, map:m};
+    var info=document.getElementById('ssPvInfo');
+    var btn=document.getElementById('ssPvApplyBtn');
+    var hlCols={};
+    if(m){
+      [m.cItem,m.cBiz,m.cZone,m.cQty,m.cCode].forEach(function(c){ if(c>=0) hlCols[c]=1; });
+      var cnt=ssExtractRows(aoa,m).length;
+      info.className='ss-pvinfo';
+      info.innerHTML='✅ 인식 완료 — <span class="tag">품목명</span><span class="tag">사업장명</span><span class="tag">존(출고장)</span><span class="tag">수량</span>'
+        + (m.cCode>=0?'<span class="tag">품목코드</span>':'')
+        + ' · 데이터 <b>'+cnt+'</b>건 (노란 칸이 반영 대상)';
+      btn.removeAttribute('disabled'); btn.style.opacity='1';
+    } else {
+      info.className='ss-pvinfo warn';
+      info.innerHTML='⚠️ 발주현황표 형식이 아닙니다 — 헤더에 <b>품목명·사업장명·존·수량</b> 이 있어야 합니다. 시트를 바꿔 보세요.';
+      btn.setAttribute('disabled','disabled'); btn.style.opacity='.5';
+    }
+    // 미리보기 표 (앞 30행)
+    var maxR=Math.min(aoa.length,30), maxC=0;
+    for(var i=0;i<maxR;i++) maxC=Math.max(maxC,(aoa[i]||[]).length);
+    maxC=Math.min(maxC,40);
+    var html='';
+    for(var r=0;r<maxR;r++){
+      var isHdr = m && (r===m.h || r===m.h+1);
+      html+= isHdr ? '<tr class="hdr">' : '<tr>';
+      html+='<td class="rn">'+(r+1)+'</td>';
+      for(var c=0;c<maxC;c++){
+        var v=(aoa[r]&&aoa[r][c]!=null)?(''+aoa[r][c]):'';
+        html+='<td'+(hlCols[c]?' class="hl"':'')+' title="'+v.replace(/"/g,'&quot;')+'">'+v+'</td>';
+      }
+      html+='</tr>';
+    }
+    if(aoa.length>30) html+='<tr><td class="rn">…</td><td colspan="'+maxC+'" style="color:#9aa7b3">이하 '+(aoa.length-30)+'행 생략 (작성 시 전체 반영)</td></tr>';
+    document.getElementById('ssPvTbl').innerHTML=html;
+  }
+
+  // 앱 스타일 확인 메시지 박스 (native confirm 대체)
+  function ssConfirm(html, onYes){
+    var ov=document.getElementById('ssConfirmOv');
+    if(!ov){
+      ov=document.createElement('div'); ov.id='ssConfirmOv'; ov.className='ss-modal';
+      ov.innerHTML='<div class="box" style="width:min(480px,92vw)">'
+        +'<div class="mh"><h4>📋 반영 확인</h4><button class="x" onclick="ssConfirmClose()">&times;</button></div>'
+        +'<div class="mbody" id="ssConfirmMsg" style="font-size:14px; line-height:1.65; color:#37475a"></div>'
+        +'<div class="mfoot"><button class="btn-line" onclick="ssConfirmClose()">취소</button>'
+        +'<button class="btn-teal" id="ssConfirmYes">반영</button></div></div>';
+      document.body.appendChild(ov);
+    }
+    document.getElementById('ssConfirmMsg').innerHTML=html;
+    document.getElementById('ssConfirmYes').onclick=function(){ ssConfirmClose(); if(onYes) onYes(); };
+    ov.classList.add('on');
+  }
+  function ssConfirmClose(){ var ov=document.getElementById('ssConfirmOv'); if(ov) ov.classList.remove('on'); }
+
+  // 작성(반영): 확인 메시지 후 실행
+  function ssPvApply(){
+    if(!ssPvCur || !ssPvCur.map){ ssToast('⚠️ 인식 가능한 발주현황표가 아닙니다.'); return; }
+    var rows=ssExtractRows(ssPvCur.aoa, ssPvCur.map);
+    if(!rows.length){ ssToast('⚠️ 데이터 행이 없습니다.'); return; }
+    var sheetNm=ssPvWb.SheetNames[+(document.getElementById('ssPvSheet').value||0)];
+    ssConfirm('파일 <b>'+ssPvName+'</b> · 시트 "<b>'+sheetNm+'</b>"<br>발주 <b style="color:#137a6c">'+rows.length+'</b>건을 출고현황표에 반영하시겠습니까?'
+      +'<br><br><span style="color:#b3760f">※ 기존(이전 업로드/샘플) 데이터는 초기화되고 이 파일로 교체됩니다.</span>',
+      function(){ ssDoApply(rows, sheetNm); });
+  }
+
+  // 실제 반영 처리 (기존 데이터 초기화·교체)
+  function ssDoApply(rows, sheetNm){
+    SHIP_DATA=rows;                       // ★ 기존 데이터 완전 교체(초기화)
+    ssZoneCollapsed={};                   // 존 접힘 상태 초기화
+    var st=document.getElementById('ssBizSel'); if(st) st.value='__ALL__';
+    // 출고일자: 업로드 데이터의 최소~최대 일자로 기간 자동 설정(당일 발주면 그 날짜)
+    var allD=rows.map(function(r){ return r.date; }).filter(Boolean).sort();
+    if(allD.length){ ssSetVal('ssDateFrom', allD[0]); ssSetVal('ssDateTo', allD[allD.length-1]); }
+    var dlbl = allD.length ? (allD[0]===allD[allD.length-1]? allD[0] : allD[0]+'~'+allD[allD.length-1]) : '-';
+    window.ssSrcUp=true;
+    window.ssSrcInfo='✅ 업로드: '+ssPvName+' · '+rows.length+'건 · 출고일자 '+dlbl;
+    ssRender();
+    ssFlash();
+    ssPvOpen(false);
+    ssToast('✅ <b>'+ssPvName+'</b> · 시트["'+sheetNm+'"] — '+rows.length+'건으로 <b>초기화·반영</b> 완료');
+  }
+
+  // 출고현황표 → CSV 다운로드 (출고장 행 × 품목 열, 화면과 동일)
+  function ssDownload(){
+    var ag=ssAggregate();
+    var keys=Object.keys(ag.items).sort(function(a,b){
+      var A=ag.items[a],B=ag.items[b];
+      return A.brand.localeCompare(B.brand,'ko') || A.name.localeCompare(B.name,'ko');
+    });
+    var zones=Object.keys(ag.zoneSet).sort();
+    function esc(s){ return '"'+(''+s).replace(/"/g,'""')+'"'; }
+    var lines=[];
+    lines.push(['출고장'].concat(keys.map(function(k){ return esc(ag.items[k].brand); })).join(','));
+    lines.push(['(품목명)'].concat(keys.map(function(k){ return esc(ag.items[k].name); })).join(','));
+    lines.push(['(품목코드)'].concat(keys.map(function(k){ return ag.items[k].code||'-'; })).join(','));
+    var byL={}, letters=[];
+    zones.forEach(function(z){ var L=(z.charAt(0)||'').toUpperCase(); if(!byL[L]){ byL[L]=[]; letters.push(L); } byL[L].push(z); });
+    letters.sort();
+    var colTot={};
+    letters.forEach(function(L){
+      var lCol={};
+      byL[L].forEach(function(z){
+        var row=[z+' 존'];
+        keys.forEach(function(k){ var v=(ag.matrix[z]&&ag.matrix[z][k])||0; colTot[k]=(colTot[k]||0)+v; lCol[k]=(lCol[k]||0)+v; row.push(v); });
+        lines.push(row.join(','));
+      });
+      lines.push([L+'존합계'].concat(keys.map(function(k){ return lCol[k]||0; })).join(','));
+    });
+    lines.push(['전체출고장합계'].concat(keys.map(function(k){ return colTot[k]||0; })).join(','));
+    var blob=new Blob(['﻿'+lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download='출고현황표.csv';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  // ── 날짜 유틸 / 당일 기준
+  function ssPad(n){ return (n<10?'0':'')+n; }
+  function ssFmtDate(v){
+    if(v instanceof Date && !isNaN(v)) return v.getFullYear()+'-'+ssPad(v.getMonth()+1)+'-'+ssPad(v.getDate());
+    var s=''+(v==null?'':v); var m=s.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+    return m ? (m[1]+'-'+ssPad(+m[2])+'-'+ssPad(+m[3])) : '';
+  }
+  var SS_TODAY=(function(){ var d=new Date(); return d.getFullYear()+'-'+ssPad(d.getMonth()+1)+'-'+ssPad(d.getDate()); })();
+  function ssAllDates(){
+    var f={}; SHIP_DATA.forEach(function(r){ var d=r.date||SS_TODAY; f[d]=(f[d]||0)+1; });
+    return Object.keys(f).sort().map(function(d){ return {d:d, n:f[d]}; });
+  }
+  // 날짜 입력 클릭 시 달력 팝업 즉시 열기 (지원 브라우저)
+  function ssOpenCal(el){ try{ if(el && el.showPicker) el.showPicker(); }catch(e){} }
+  // 적용 시 KPI 깜빡임(갱신 알림)
+  function ssFlash(){ var s=document.querySelector('#panel-shipstatus .tb-stats'); if(s){ s.classList.remove('ss-flash'); void s.offsetWidth; s.classList.add('ss-flash'); } }
+  function ssSetVal(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
+  function ssToday(){ ssSetVal('ssDateFrom',SS_TODAY); ssSetVal('ssDateTo',SS_TODAY); ssRender(); }
+  function ssThisMonth(){
+    var d=new Date(), y=d.getFullYear(), m=d.getMonth(), last=new Date(y,m+1,0).getDate();
+    ssSetVal('ssDateFrom', y+'-'+ssPad(m+1)+'-01');
+    ssSetVal('ssDateTo',   y+'-'+ssPad(m+1)+'-'+ssPad(last));
+    ssRender();
+  }
+
+  // 초기 렌더 (AJAX 주입/직접 접근 모두 대응) — 내장 데이터는 금일자로 간주
+  function ssInit(){
+    if(!document.getElementById('ssWideTbl')) return;
+    if(!window.ssSrcInfo){ window.ssSrcInfo='내장 샘플 데이터 (당일 기준)'; window.ssSrcUp=false; }
+    SHIP_DATA.forEach(function(r){ if(!r.date) r.date=SS_TODAY; });
+    var f=document.getElementById('ssDateFrom'), t=document.getElementById('ssDateTo');
+    if(f && !f.value) f.value=SS_TODAY;
+    if(t && !t.value) t.value=SS_TODAY;
+    ssRender();
+  }
+  document.addEventListener('DOMContentLoaded', ssInit);
+  (function(){ ssInit(); })();
+</script>
 </head>
 <body>
 <div class="logi-wrap">
@@ -301,13 +886,16 @@
   <nav class="logi-side">
     <div class="side-tit">📦 물류관리<small>도매유통 · 입고/재고/발주/출고</small></div>
 
+    <div class="grp">출고관리 ★</div>
+    <a class="mi core on" data-key="shipstatus" onclick="logiGo('shipstatus', this)"><span class="ic">📋</span>출고현황표(데시보드)</a>
+
     <div class="grp">기준정보</div>
     <a class="mi" data-key="client"  onclick="logiGo('client', this)"><span class="ic">🤝</span>거래처관리</a>
     <a class="mi" data-key="item"    onclick="logiGo('item', this)"><span class="ic">📦</span>상품(품목)관리</a>
     <a class="mi" data-key="base"    onclick="logiGo('base', this)"><span class="ic">🏬</span>창고/로케이션</a>
 
     <div class="grp">매입 · 입고</div>
-    <a class="mi core on" data-key="inbound"     onclick="logiGo('inbound', this)"><span class="ic">📥</span>입고등록 (창고선정)</a>
+    <a class="mi core" data-key="inbound"     onclick="logiGo('inbound', this)"><span class="ic">📥</span>입고등록 (창고선정)</a>
     <a class="mi"      data-key="inboundList" onclick="logiGo('inboundList', this)"><span class="ic">📄</span>입고내역</a>
 
     <div class="grp">재고</div>
@@ -330,15 +918,85 @@
   <!-- ───────────── 우측 콘텐츠 ───────────── -->
   <main class="logi-main">
 
-    <!-- 핵심 업무 흐름 띠 (모든 화면 공통 안내) -->
-    <div class="flow">
-      <span style="font-weight:700;color:#1f2a37;margin-right:4px;">핵심 흐름</span>
-      <span class="step"><b>①</b> 입고 시 <b>3개 창고 중 위치 선정</b></span>
-      <span class="arr">→</span>
-      <span class="step"><b>②</b> <b>발주리스트 엑셀</b> 다운로드</span>
-      <span class="arr">→</span>
-      <span class="step"><b>③</b> 발주내용 <b>위치 찾아 정확히 출고</b></span>
-    </div>
+    <!-- ===== ★ 출고현황표 (엑셀 업로드 → 출고량 자동작성) ===== -->
+    <section id="panel-shipstatus" class="panel show">
+      <div class="logi-head">
+        <div><h2>출고현황표 <span class="badge b-done">핵심</span></h2>
+          <div class="sub">발주현황표(엑셀)를 업로드하면 <b>사업장·품목별 출고량</b> 과 <b>존(출고장)별 수량</b> 이 자동 작성됩니다. 기준일자 <b id="ssDate">2026.06.19</b></div></div>
+        <div class="actions">
+          <button class="btn-teal" onclick="document.getElementById('ssFile').click()">📤 발주현황표 엑셀 업로드</button>
+          <button class="btn-line" onclick="ssDownload()">📥 출고현황표 다운로드</button>
+        </div>
+      </div>
+      <input type="file" id="ssFile" class="ss-file" accept=".xlsx,.xls" onchange="ssUpload(this)">
+
+      <!-- 발주현황표 미리보기 모달 (파일선택 → 내용확인 → 시트선택 → 작성) -->
+      <div class="ss-modal" id="ssPvOverlay">
+        <div class="box">
+          <div class="mh">
+            <h4>📋 발주현황표 미리보기 — 내용 확인 후 작성</h4>
+            <button class="x" onclick="ssPvOpen(false)">&times;</button>
+          </div>
+          <div class="mbar">
+            <span>파일 <b id="ssPvFile">-</b></span>
+            <span id="ssPvSheetWrap" style="display:none">시트
+              <select id="ssPvSheet" onchange="ssPvRender()"></select>
+            </span>
+            <span style="margin-left:auto; color:#6b7a89">아래 내용이 맞으면 <b>작성(반영)</b> 을 누르세요</span>
+          </div>
+          <div class="mbody">
+            <div id="ssPvInfo"></div>
+            <div style="max-height:56vh; overflow:auto; border:1px solid var(--logi-border); border-radius:7px">
+              <table class="ss-pv" id="ssPvTbl"></table>
+            </div>
+          </div>
+          <div class="mfoot">
+            <button class="btn-line" onclick="ssPvOpen(false)">취소</button>
+            <button class="btn-teal" id="ssPvApplyBtn" onclick="ssPvApply()">✔ 작성 (대시보드 반영)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 출고일자 기간 + 요약(KPI) 한 줄 컴팩트 바 -->
+      <div class="ss-topbar">
+        <div class="tb-left">
+          <span class="db-ic">📅</span>
+          <label>출고일자</label>
+          <input type="date" id="ssDateFrom" class="ss-datepick" onchange="ssRender()" onclick="ssOpenCal(this)" onfocus="ssOpenCal(this)" title="클릭하여 달력 선택">
+          <span style="color:#9aa7b3; font-weight:600">~</span>
+          <input type="date" id="ssDateTo" class="ss-datepick" onchange="ssRender()" onclick="ssOpenCal(this)" onfocus="ssOpenCal(this)" title="클릭하여 달력 선택">
+          <button class="btn-line" style="padding:5px 10px" onclick="ssOpenCal(document.getElementById('ssDateFrom'))" title="시작일 달력">📅</button>
+          <button class="btn-teal" style="padding:5px 14px" onclick="ssToday()">당일</button>
+          <button class="btn-line" style="padding:5px 12px" onclick="ssThisMonth()">당월</button>
+        </div>
+        <span id="ssDateInfo" class="ss-dateinfo"></span>
+        <div class="tb-stats">
+          <div class="st"><span class="st-l"><span id="ssKpiPrefix">당일</span> 출고품목</span><span class="st-v" id="ssKpiItem">0</span></div>
+          <div class="st"><span class="st-l">출고수량(BOX)</span><span class="st-v" id="ssKpiQty">0</span></div>
+          <div class="st"><span class="st-l">출고장(존)</span><span class="st-v" id="ssKpiZone">0</span></div>
+          <div class="st"><span class="st-l">사업장</span><span class="st-v" id="ssKpiBiz">0</span></div>
+        </div>
+      </div>
+
+      <!-- 메인 출고현황표 (상단: 사업장·품목명 / 좌측: 출고장 행 / 하단: 출고내역·재고) -->
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+          <h3 style="margin:0">① 출고현황표 <span class="note">(상단=사업장·품목 / 좌측=출고장(존) / 하단=출고내역·재고량 · 품목코드 매칭)</span></h3>
+          <div style="display:flex; gap:6px; align-items:center">
+            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(false)">＋ 존 펼치기</button>
+            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(true)">－ 존 접기</button>
+            <label style="font-size:12px; color:#6b7a89; margin-left:6px">사업장 보기</label>
+            <select id="ssBizSel" onchange="ssRender()" style="height:32px; border:1px solid var(--logi-border); border-radius:6px; padding:0 8px; font-size:12.5px"></select>
+          </div>
+        </div>
+        <div id="ssHiddenBar" class="ss-hidden-bar" style="display:none"></div>
+        <div class="ss-scroll">
+          <table class="ss-tb sswide" id="ssWideTbl"></table>
+        </div>
+        <div class="note">※ 사업장 헤더(뜨돈·런던베이글 등)를 클릭하면 그 사업장 열이 <b>숨겨집니다</b>. 숨긴 사업장은 위 바에서 다시 펼칠 수 있습니다. 품목 많으면 가로 스크롤. 하단 월별/재고량은 데모용 가정값.</div>
+      </div>
+
+    </section>
 
     <!-- ===== 기준정보 : 거래처 ===== -->
     <section id="panel-client" class="panel">
@@ -396,7 +1054,7 @@
     </section>
 
     <!-- ===== ① 입고등록 : 3개 창고 위치선정 (핵심) ===== -->
-    <section id="panel-inbound" class="panel show">
+    <section id="panel-inbound" class="panel">
       <div class="logi-head">
         <div><h2>입고등록 <span class="badge b-done">핵심</span></h2>
           <div class="sub">입고 물품을 어느 창고에 적재할지 위치를 선정합니다. (창고 3개)</div></div>
