@@ -193,12 +193,30 @@
   table.sswide tbody td.stick { background:#f4f8f7; font-weight:600; color:#178074; }
   table.sswide tbody td.stick .sub2 { font-weight:400; color:#9aa7b3; font-size:10.5px; }
   table.sswide td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  /* 추가 항목 삭제 ✕ */
+  table.sswide .delx { display:inline-block; margin-left:4px; color:#ffd9d9; cursor:pointer; font-size:11px; font-weight:700; }
+  table.sswide .delx:hover { color:#fff; background:#c0392b; border-radius:8px; padding:0 4px; }
+  table.sswide tbody .delx { color:#c0392b; }
+  /* 직접 수정 칸 */
+  table.sswide td.edit { cursor:text; background:#fffdf0; }
+  table.sswide td.edit:hover { background:#fff8d8; }
+  table.sswide td.edit:focus { outline:2px solid #1f9b8e; background:#fff; color:#1f2a37; }
   /* 사업장(브랜드) 그룹 구분선 — 헤더부터 끝까지 진하게 이어짐 */
   table.sswide td.gstart, table.sswide th.gstart { border-left:2px solid #0e6657; }
   table.sswide thead th.bizh.gstart, table.sswide thead th.prodh.gstart { border-left:2px solid #0e6657; }
   table.sswide tr.sec td.gstart { border-left:2px solid #5fae9f; }
   table.sswide td.zero { color:#cdd6e0; }
-  table.sswide td.colsum, table.sswide th.colsum { background:#eef3f2; font-weight:700; color:#1f2a37; }
+  table.sswide td.colsum, table.sswide th.colsum { background:#eef3f2; font-weight:700; color:#1f2a37; min-width:60px; max-width:80px; width:70px; }
+  table.sswide thead th.colsum .sumcnt { display:block; font-size:9px; font-weight:600; color:#dff5f1; margin-top:2px; white-space:normal; line-height:1.15; }
+  /* 합계 맨뒤(끝)일 때는 고정 안 함 — 표와 함께 스크롤 */
+  /* 합계 맨앞: 출고장 바로 옆에 좌측 고정 */
+  table.sswide.sumfront td.colsum, table.sswide.sumfront th.colsum { position:sticky; left:var(--stickw,120px); z-index:2; }
+  table.sswide.sumfront thead th.colsum { z-index:4; }
+  table.sswide tr.ztot td.colsum { background:#1f2a37; }
+  table.sswide tr.sec td.colsum { background:#1f2a37; }
+  table.sswide tr.r-now td.colsum { background:#fffaf0; }
+  table.sswide tr.r-sel td.colsum { background:#e3f4ef; }
+  table.sswide tr.unrow td.colsum { background:#ffe0b0; }
   table.sswide tr.lgrp { cursor:pointer; }
   table.sswide tr.lgrp td { background:#eef3f2; color:#178074; font-weight:700; font-size:11.5px; }
   table.sswide tr.lgrp td.stick { background:#e3efec; }
@@ -238,8 +256,8 @@
   table.ss-tb td.st-ok { color:var(--logi-teal-dark); }
   table.ss-tb td.st-low { color:#c47f17; font-weight:700; }
   table.ss-tb td.st-neg { color:#c0392b; font-weight:700; }
-  .ss-toast { position:fixed; right:24px; bottom:24px; background:#1f2a37; color:#fff; padding:13px 18px; border-radius:9px; font-size:13.5px; box-shadow:0 6px 22px rgba(0,0,0,.25); opacity:0; transform:translateY(12px); transition:.25s; z-index:9999; }
-  .ss-toast.on { opacity:1; transform:translateY(0); }
+  .ss-toast { position:fixed; left:50%; top:50%; background:#1f2a37; color:#fff; padding:15px 22px; border-radius:9px; font-size:14px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.3); opacity:0; transform:translate(-50%,-50%) scale(.96); transition:.2s; z-index:9999; pointer-events:none; max-width:80vw; }
+  .ss-toast.on { opacity:1; transform:translate(-50%,-50%) scale(1); }
   .ss-toast b { color:#aef0e7; }
 
   /* 발주현황표 미리보기 모달 */
@@ -437,6 +455,9 @@
 
 <!-- 엑셀 파서 (xlsx) — CDN 지연/차단 시에도 화면이 먼저 뜨도록 defer -->
 <script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- PDF 출력 (jsPDF + html2canvas, 한글 안전 이미지 캡처) -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="text/javascript">
   /* ===================================================================
      출고현황표 — 발주현황표(엑셀) 업로드 → 출고량/재고량 자동작성
@@ -482,6 +503,10 @@
       matrix[r.zone]=matrix[r.zone]||{};
       matrix[r.zone][key]=(matrix[r.zone][key]||0)+q;
     });
+    // 직접 추가한 품목을 빈 열로 포함(데이터 없어도 열 표시)
+    (ssExtraItems||[]).forEach(function(e){ if(!items[e.key]) items[e.key]={code:e.code||'', name:e.name, brand:ssBrand(e.name), qty:0}; });
+    // 직접 추가한 존을 빈 행으로 포함
+    (ssExtraZones||[]).forEach(function(z){ z=(''+z).trim().toUpperCase(); if(!z) return; zoneSet[z]=1; if(!(z in zoneTot)) zoneTot[z]=0; if(!zoneInb[z]) zoneInb[z]=({A:'1',C:'2',D:'3',F:'4'})[z.charAt(0)]||''; });
     return {items:items,matrix:matrix,zoneTot:zoneTot,zoneInb:zoneInb,zoneSet:zoneSet,bizSet:bizSet,unassigned:unassigned,unassignedList:unassignedList,unMatrix:unMatrix,unCnt:unCnt,unNames:unNames,unTot:unTot,totQty:totQty};
   }
 
@@ -490,12 +515,32 @@
   function ssRender(){
     var tbl=document.getElementById('ssWideTbl'); if(!tbl) return;
     var ag=ssAggregate();
+    var _cb=document.getElementById('ssSumFront'); ssSumFront=!!(_cb&&_cb.checked);
+    // 합계 셀을 맨앞/끝 위치에 맞춰 배치
+    function wrapSum(stickHtml, dataCells, sumCell){ return stickHtml + (ssSumFront?sumCell:'') + dataCells + (ssSumFront?'':sumCell); }
+    // 칸 직접수정 → 해당 (일자·존·품목) 데이터 재작성 → 합계 자동 재계산
+    window.ssEditKey=function(e,td){ if(e.key==='Enter'){ e.preventDefault(); td.blur(); } };
+    window.ssEditCell=function(td){
+      var z=td.getAttribute('data-z'), k=td.getAttribute('data-k');
+      var v=parseFloat((td.textContent||'').replace(/[^0-9.\-]/g,''))||0; if(v<0) v=0;
+      var d=(document.getElementById('ssDateFrom')||{}).value||SS_TODAY;
+      var meta=ssItemMeta[k]||{name:k,code:''};
+      var inb=({A:'1',C:'2',D:'3',F:'4'})[(z.charAt(0)||'').toUpperCase()]||'';
+      SHIP_DATA=SHIP_DATA.filter(function(r){
+        var rk=(''+(r.code||'')).trim()?(''+(r.code||'')).trim():('NM:'+r.item);
+        return !(((r.date||SS_TODAY)===d) && r.zone===z && rk===k);
+      });
+      if(v>0) SHIP_DATA.push({code:(meta.code||''), item:meta.name, biz:'', inb:inb, zone:z, qty:v, date:d});
+      ssRender();
+    };
 
     // ── KPI (당일=선택일 기준) — 컴팩트 숫자
     ssSet('ssKpiItem', ssNum(Object.keys(ag.items).length));
     ssSet('ssKpiQty',  ssNum(ag.totQty));
     ssSet('ssKpiZone', ssNum(Object.keys(ag.zoneTot).length));
-    ssSet('ssKpiBiz',  ssNum(Object.keys(ag.bizSet).length));
+    // 사업장 = 헤더 그룹과 동일(브랜드 묶음) 기준
+    var _brs={}; Object.keys(ag.items).forEach(function(k){ _brs[ag.items[k].brand]=1; });
+    ssSet('ssKpiBiz',  ssNum(Object.keys(_brs).length));
 
     // ── 기간 정보 밴드
     var from=(document.getElementById('ssDateFrom')||{}).value||'';
@@ -521,7 +566,7 @@
     var info='<span class="ss-srcbadge'+(window.ssSrcUp?' up':'')+'">'+(window.ssSrcInfo||'내장 샘플')+'</span> 📅 '+range
       + (hasData ? '' : ' &nbsp;|&nbsp; <span style="color:#c0392b">해당 기간 데이터 없음</span>')
       + (dts.length>1 ? ' &nbsp;|&nbsp; 파일 출고일자 '+dts.length+'개: '+dts.map(function(x){return x.d+'('+x.n+')';}).join(', ') : '')
-      + (ag.unassigned>0 ? ' &nbsp;|&nbsp; <span style="color:#c0392b; cursor:help" title="존(출고장) 미지정 발주 — 출고장이 비어 집계 제외&#10;'+(ag.unassignedList||[]).join('&#10;').replace(/"/g,'&quot;')+'">미배정 '+ag.unassigned+'건 ⓘ</span>' : '');
+      + (ag.unassigned>0 ? ' &nbsp;|&nbsp; <span style="color:#c0392b; cursor:help" title="출고장 미지정 발주 — 출고장이 비어 집계 제외&#10;'+(ag.unassignedList||[]).join('&#10;').replace(/"/g,'&quot;')+'">미배정 '+ag.unassigned+'건 ⓘ</span>' : '');
     ssSet('ssDateInfo', info);
 
     // ── 사업장(브랜드) 선택 옵션
@@ -554,6 +599,7 @@
       } else { hb.style.display='none'; hb.innerHTML=''; }
     }
     var zones=Object.keys(ag.zoneSet).sort();
+    window.ssZoneList=zones.slice();
     var INB={'1':'1입고장','2':'2입고장','3':'3입고장','4':'4입고장'};
     var ncol=keys.length+2;
 
@@ -563,9 +609,16 @@
     var gstartKeys={}, _pb=null;
     keys.forEach(function(k){ var br=ag.items[k].brand; if(br!==_pb){ gstartKeys[k]=true; _pb=br; } });
     function gs(k){ return gstartKeys[k]?' gstart':''; }
+    // 직접 수정용 메타 + 편집가능 여부(당일 모드만)
+    ssItemMeta={}; keys.forEach(function(k){ ssItemMeta[k]={name:ag.items[k].name, code:ag.items[k].code}; });
+    var _bl={}; keys.forEach(function(k){ _bl[ag.items[k].brand]=1; }); window.ssBrandList=Object.keys(_bl).sort();
+    window.ssItemList=keys.map(function(k){ return {name:ssShortName(ag.items[k].name), full:ag.items[k].name, code:ag.items[k].code||'', brand:ag.items[k].brand}; });
+    var ssEditable = single;   // 시작=종료(당일)일 때만 칸 직접수정
 
     // ── thead : 1행 사업장 / 2행 품목명(코드)
-    var th1='<tr><th class="stick" rowspan="2">출고장 \\ 품목</th>';
+    var _itemCnt=keys.length, _brSet={}; keys.forEach(function(k){ _brSet[ag.items[k].brand]=1; }); var _brCnt=Object.keys(_brSet).length;
+    var sumTh='<th class="colsum" rowspan="2">합계<span class="sumcnt">사업장 '+_brCnt+'<br>품목 '+_itemCnt+'</span></th>';
+    var th1='<tr><th class="stick" rowspan="2">출고장 \\ 품목</th>'+(ssSumFront?sumTh:'');
     var th2='<tr>';
     var groupsArr=[];   // 그룹별 열 수 (배너행 구분선용)
     var i=0;
@@ -575,11 +628,13 @@
       groupsArr.push(j-i);
       th1+='<th class="bizh gstart" colspan="'+(j-i)+'" data-br="'+br.replace(/"/g,'&quot;')+'" onclick="ssBizHideName(this.getAttribute(\'data-br\'))" title="클릭 시 이 사업장 열 숨기기">'+br+' <span class="bx">✕</span></th>';
       for(var p=i;p<j;p++){ var it=ag.items[keys[p]];
-        th2+='<th class="prodh'+gs(keys[p])+'" title="'+it.name.replace(/"/g,'&quot;')+'">'+ssShortName(it.name)+'<span class="pc">'+(it.code||'-')+'</span></th>';
+        var _isEx=(ssExtraItems||[]).some(function(e){return e.key===keys[p];}), _q0=((it.qty||0)===0);
+        var _delx=(_isEx&&_q0)?'<span class="delx" data-dk="'+(''+keys[p]).replace(/"/g,'&quot;')+'" onclick="ssDelItem(event,this)" title="추가 품목 삭제(수량 없음)">✕</span>':'';
+        th2+='<th class="prodh'+gs(keys[p])+'" title="'+it.name.replace(/"/g,'&quot;')+'">'+ssShortName(it.name)+'<span class="pc">'+(it.code||'-')+'</span>'+_delx+'</th>';
       }
       i=j;
     }
-    th1+='<th class="colsum" rowspan="2">합계</th></tr>'; th2+='</tr>';
+    th1+=(ssSumFront?'':sumTh)+'</tr>'; th2+='</tr>';
     // 배너행(머리줄/구분줄): 그룹 경계마다 구분선이 지나가도록 분할 셀 생성
     function ssBannerCells(descHtml){
       var h='';
@@ -598,64 +653,78 @@
     var colTot={}, grand=0, tb='';
     letters.forEach(function(L){
       var col=!!ssZoneCollapsed[L];
-      var lgDesc=(LETTER_INB[L]?LETTER_INB[L]+' · ':'')+byL[L].length+'개 존 ('+byL[L].join(', ')+')'
-        + (col?' <span style="color:#9aa7b3">— 접힘(클릭하여 펼치기)</span>':'');
-      tb+='<tr class="lgrp" onclick="ssToggleZone(\''+L+'\')"><td class="stick"><span class="zcaret" id="zc_'+L+'">'+(col?'▶':'▼')+'</span> '+L+'존</td>'
-        + ssBannerCells(lgDesc) + '<td class="colsum"></td></tr>';
+      var lgDesc=byL[L].length+'개 출고장'+(col?' <span style="color:#9aa7b3">— 접힘(클릭하여 펼치기)</span>':'');
+      tb+='<tr class="lgrp" onclick="ssToggleZone(\''+L+'\')">'
+        + wrapSum('<td class="stick"><span class="zcaret" id="zc_'+L+'">'+(col?'▶':'▼')+'</span> '+L+'출고장</td>', ssBannerCells(lgDesc), '<td class="colsum"></td>') + '</tr>';
       var lCol={}, lSum=0;
       byL[L].forEach(function(z){
         var rowSum=0, cells='';
         keys.forEach(function(k){
           var v=(ag.matrix[z]&&ag.matrix[z][k])||0; rowSum+=v; colTot[k]=(colTot[k]||0)+v; lCol[k]=(lCol[k]||0)+v;
-          cells+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>';
+          if(ssEditable){
+            cells+='<td class="num edit'+gs(k)+(v>0?'':' zero')+'" contenteditable="true" data-z="'+z+'" data-k="'+(''+k).replace(/"/g,'&quot;')+'" onblur="ssEditCell(this)" onkeydown="ssEditKey(event,this)">'+(v>0?ssNum(v):'')+'</td>';
+          } else {
+            cells+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>';
+          }
         });
         grand+=rowSum; lSum+=rowSum;
-        tb+='<tr class="zg_'+L+'"'+(col?' style="display:none"':'')+'><td class="stick">&nbsp;&nbsp;'+z+' 존</td>'+cells+'<td class="num colsum">'+ssNum(rowSum)+'</td></tr>';
+        var _isExZ=(ssExtraZones||[]).indexOf(z)>=0, _zdelx=(_isExZ&&rowSum===0)?' <span class="delx" data-dz="'+z+'" onclick="ssDelZone(event,this)" title="추가 출고장 삭제(수량 없음)">✕</span>':'';
+        tb+='<tr class="zg_'+L+'"'+(col?' style="display:none"':'')+'>'+wrapSum('<td class="stick">&nbsp;&nbsp;'+z+' 출고장'+_zdelx+'</td>', cells, '<td class="num colsum">'+ssNum(rowSum)+'</td>')+'</tr>';
       });
       var lc=''; keys.forEach(function(k){ lc+='<td class="num'+gs(k)+'">'+ssNum(lCol[k]||0)+'</td>'; });
-      tb+='<tr class="lsub"><td class="stick">'+L+'존 합계</td>'+lc+'<td class="num colsum">'+ssNum(lSum)+'</td></tr>';
+      tb+='<tr class="lsub">'+wrapSum('<td class="stick">'+L+'출고장 합계</td>', lc, '<td class="num colsum">'+ssNum(lSum)+'</td>')+'</tr>';
     });
     // 전체 출고장 합계
     var ztc=''; keys.forEach(function(k){ ztc+='<td class="num'+gs(k)+'">'+ssNum(colTot[k]||0)+'</td>'; });
-    tb+='<tr class="ztot"><td class="stick">전체 출고장 합계</td>'+ztc+'<td class="num colsum">'+ssNum(grand)+'</td></tr>';
+    tb+='<tr class="ztot">'+wrapSum('<td class="stick">전체 출고장 합계</td>', ztc, '<td class="num colsum">'+ssNum(grand)+'</td>')+'</tr>';
     // 미배정(존 미지정) 행 — 존이 비어 집계에서 빠진 발주
     if(ag.unassigned>0){
-      var uTitle=('존(출고장) 미지정 발주\n'+(ag.unassignedList||[]).join('\n')).replace(/"/g,'&quot;');
+      var uTitle=('출고장 미지정 발주\n'+(ag.unassignedList||[]).join('\n')).replace(/"/g,'&quot;');
       var uLbl='⚠ 미배정 '+ag.unassigned+'건';
-      var uc=''; keys.forEach(function(k){ var c=ag.unCnt[k]||0, v=ag.unMatrix[k]||0; uc+= c>0?'<td class="num uhl'+gs(k)+'" title="미배정 '+c+'건 (존·수량 미지정)">'+(v>0?ssNum(v):'0')+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
-      tb+='<tr class="unrow"><td class="stick" title="'+uTitle+'">'+uLbl+'</td>'+uc+'<td class="num colsum">'+ssNum(ag.unTot)+'</td></tr>';
+      var uc=''; keys.forEach(function(k){ var c=ag.unCnt[k]||0, v=ag.unMatrix[k]||0; uc+= c>0?'<td class="num uhl'+gs(k)+'" title="미배정 '+c+'건 (출고장·수량 미지정)">'+(v>0?ssNum(v):'0')+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
+      tb+='<tr class="unrow">'+wrapSum('<td class="stick" title="'+uTitle+'">'+uLbl+'</td>', uc, '<td class="num colsum">'+ssNum(ag.unTot)+'</td>')+'</tr>';
     }
 
     // ── 하단 출고내역 · 재고량
-    tb+='<tr class="sec"><td class="stick">📦 출고내역·재고</td>'+ssBannerCells('<span style="font-weight:400;color:#aef0e7">선택일=선택기간 출고 / 당월=이번달 전체 / 월별·재고량 데모값</span>')+'<td class="colsum"></td></tr>';
+    tb+='<tr class="sec">'+wrapSum('<td class="stick">📦 출고내역·재고</td>', ssBannerCells('<span style="font-weight:400;color:#aef0e7">선택일=선택기간 출고 / 당월=이번달 전체 / 월별·재고량 데모값</span>'), '<td class="colsum"></td>')+'</tr>';
     // 재고량(기초)
     var sc='',st=0;
     keys.forEach(function(k){ var it=ag.items[k]; var base=30+(ssHash(it.code||it.name)%150); it._base=base; st+=base; sc+='<td class="num'+gs(k)+'">'+ssNum(base)+'</td>'; });
-    tb+='<tr class="r-stock"><td class="stick">재고량(기초)</td>'+sc+'<td class="num colsum">'+ssNum(st)+'</td></tr>';
+    tb+='<tr class="r-stock">'+wrapSum('<td class="stick">재고량(기초)</td>', sc, '<td class="num colsum">'+ssNum(st)+'</td>')+'</tr>';
     // ★ 선택일(당일/기간) 출고 = 현재 선택 범위 집계 (colTot) — 강조
     var selLbl=(from&&from===to)?(from===SS_TODAY?'당일 출고':'선택일 출고'):'기간 출고';
     var nc='',nt=0;
     keys.forEach(function(k){ var v=colTot[k]||0; nt+=v; nc+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
-    tb+='<tr class="r-sel"><td class="stick">▶ '+selLbl+'</td>'+nc+'<td class="num colsum">'+ssNum(nt)+'</td></tr>';
+    tb+='<tr class="r-sel">'+wrapSum('<td class="stick">▶ '+selLbl+'</td>', nc, '<td class="num colsum">'+ssNum(nt)+'</td>')+'</tr>';
     // 당월 출고 = 이번달 전체(선택범위와 무관, 월 기준)
     var ym=SS_TODAY.slice(0,7), mTot={};
     SHIP_DATA.forEach(function(r){ if(!r.zone) return; var d=(''+(r.date||SS_TODAY)); if(d.slice(0,7)!==ym) return; var c=(''+(r.code||'')).trim(), kk=c?c:('NM:'+r.item); mTot[kk]=(mTot[kk]||0)+(+r.qty||0); });
     var mc2='', mAll=0;
     keys.forEach(function(k){ var v=mTot[k]||0; mAll+=v; mc2+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
-    tb+='<tr class="r-now"><td class="stick">당월 출고('+ym+')</td>'+mc2+'<td class="num colsum">'+ssNum(mAll)+'</td></tr>';
+    tb+='<tr class="r-now">'+wrapSum('<td class="stick">당월 출고('+ym+')</td>', mc2, '<td class="num colsum">'+ssNum(mAll)+'</td>')+'</tr>';
     // 현재고 = 기초 - 선택일 출고
     var cc='',ct=0;
     keys.forEach(function(k){ var it=ag.items[k]; var cur=(it._base||0)-(colTot[k]||0); ct+=cur; cc+='<td class="num'+(cur<0?' neg':'')+gs(k)+'">'+ssNum(cur)+'</td>'; });
-    tb+='<tr class="r-stock"><td class="stick">현재고</td>'+cc+'<td class="num colsum">'+ssNum(ct)+'</td></tr>';
+    tb+='<tr class="r-stock">'+wrapSum('<td class="stick">현재고</td>', cc, '<td class="num colsum">'+ssNum(ct)+'</td>')+'</tr>';
     // 월별(데모)
     SS_MONTHS.forEach(function(mn){
       var mc='',mt=0;
       keys.forEach(function(k){ var it=ag.items[k]; var v=ssHash((it.code||it.name)+mn)%9; mt+=v; mc+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
-      tb+='<tr class="r-month"><td class="stick">'+mn+' 출고</td>'+mc+'<td class="num colsum">'+ssNum(mt)+'</td></tr>';
+      tb+='<tr class="r-month">'+wrapSum('<td class="stick">'+mn+' 출고</td>', mc, '<td class="num colsum">'+ssNum(mt)+'</td>')+'</tr>';
     });
 
     tbl.innerHTML='<thead>'+th1+th2+'</thead><tbody>'+tb+'</tbody>';
+    tbl.classList.toggle('sumfront', ssSumFront);   // 맨앞이면 합계를 출고장 옆 좌측고정
+    if(ssSumFront){ var swc=tbl.querySelector('thead th.stick'); if(swc) tbl.style.setProperty('--stickw', swc.offsetWidth+'px'); }
   }
+
+  // 합계 열 위치 (기본=끝)
+  var ssSumFront=false;
+  // 직접 수정용 품목 메타(키→이름/코드)
+  var ssItemMeta={};
+  // 직접 추가한 사업장·품목(빈 열) / 존(빈 행)
+  var ssExtraItems=[];
+  var ssExtraZones=[];
 
   // 사업장(열 그룹) 숨기기/보이기 — 헤더 클릭으로 숨김, 복원바로 펼침
   var ssBizHidden={};
@@ -734,7 +803,9 @@
     function findIn(arr,name){ for(var k=0;k<arr.length;k++){ if(arr[k]===name) return k; } return -1; }
     var cInb=findIn(h2,'입고장'), cZone=findIn(h2,'존'), cQty=findIn(h2,'수량');
     if(cZone<0){ cInb=findIn(h1,'입고장'); cZone=findIn(h1,'존'); cQty=findIn(h1,'수량'); }
-    return { h:h, cItem:findIn(h1,'품목명'), cBiz:findIn(h1,'사업장명'), cCode:findIn(h1,'품목코드'), cInb:cInb, cZone:cZone, cQty:cQty, cDate:findIn(h1,'납기일자') };
+    // 출고일자 = 엑셀의 '18차 가마감 일시'(처리일) 우선, 없으면 '납기일자'
+    var cDate=findIn(h1,'18차 가마감 일시'); if(cDate<0) cDate=findIn(h1,'납기일자'); if(cDate<0) cDate=findIn(h2,'18차 가마감 일시');
+    return { h:h, cItem:findIn(h1,'품목명'), cBiz:findIn(h1,'사업장명'), cCode:findIn(h1,'품목코드'), cInb:cInb, cZone:cZone, cQty:cQty, cDate:cDate };
   }
 
   function ssExtractRows(aoa,m){
@@ -758,6 +829,15 @@
 
   function ssPvOpen(show){ document.getElementById('ssPvOverlay').classList.toggle('on', !!show); }
 
+  // 셀 표시값 — 날짜는 엑셀처럼 YYYY-MM-DD(시간 있으면 포함)
+  function ssCellDisp(v){
+    if(v instanceof Date && !isNaN(v)){
+      var Y=v.getFullYear(), M=ssPad(v.getMonth()+1), D=ssPad(v.getDate());
+      var h=v.getHours(), m=v.getMinutes(), s=v.getSeconds();
+      return (h||m||s) ? (Y+'-'+M+'-'+D+' '+ssPad(h)+':'+ssPad(m)+':'+ssPad(s)) : (Y+'-'+M+'-'+D);
+    }
+    return (v==null?'':(''+v));
+  }
   // 미리보기 렌더 (엑셀 내용 그대로 + 인식컬럼 하이라이트)
   function ssPvRender(){
     var aoa=ssPvAoa();
@@ -789,7 +869,7 @@
       html+= isHdr ? '<tr class="hdr">' : '<tr>';
       html+='<td class="rn">'+(r+1)+'</td>';
       for(var c=0;c<maxC;c++){
-        var v=(aoa[r]&&aoa[r][c]!=null)?(''+aoa[r][c]):'';
+        var v=ssCellDisp(aoa[r]&&aoa[r][c]);
         html+='<td'+(hlCols[c]?' class="hl"':'')+' title="'+v.replace(/"/g,'&quot;')+'">'+v+'</td>';
       }
       html+='</tr>';
@@ -816,6 +896,79 @@
   }
   function ssConfirmClose(){ var ov=document.getElementById('ssConfirmOv'); if(ov) ov.classList.remove('on'); }
 
+  // 사업장·품목 직접 추가 (새 열 생성 → 칸에서 수량 입력)
+  function ssAddItem(){
+    var ov=document.getElementById('ssAddOv');
+    if(!ov){
+      ov=document.createElement('div'); ov.id='ssAddOv'; ov.className='ss-modal';
+      ov.innerHTML='<div class="box" style="width:min(440px,92vw)">'
+        +'<div class="mh"><h4>＋ 사업장·품목 추가</h4><button class="x" onclick="ssAddClose()">&times;</button></div>'
+        +'<div class="mbody" style="font-size:13px">'
+        +'<div style="margin-bottom:9px"><label style="display:block;color:#6b7a89;margin-bottom:3px">사업장(브랜드) — 기존 선택 또는 신규 입력</label><input id="ssAddBiz" list="ssAddBizDL" style="width:100%;height:34px;border:1px solid #dfe6e3;border-radius:6px;padding:0 10px;box-sizing:border-box" placeholder="기존 사업장 선택 또는 새 이름(비우면 기타·공통)"><datalist id="ssAddBizDL"></datalist></div>'
+        +'<div style="margin-bottom:9px"><label style="display:block;color:#6b7a89;margin-bottom:3px">품목명 * — 기존 검색 또는 신규 입력</label><input id="ssAddName" list="ssAddNameDL" oninput="ssAddNamePick(this.value)" style="width:100%;height:34px;border:1px solid #dfe6e3;border-radius:6px;padding:0 10px;box-sizing:border-box" placeholder="품목명 검색 또는 새 품목명"><datalist id="ssAddNameDL"></datalist></div>'
+        +'<div><label style="display:block;color:#6b7a89;margin-bottom:3px">품목코드(선택)</label><input id="ssAddCode" style="width:100%;height:34px;border:1px solid #dfe6e3;border-radius:6px;padding:0 10px;box-sizing:border-box" placeholder="없으면 품목명으로 매칭"></div>'
+        +'<div style="margin-top:8px;color:#9aa7b3;font-size:12px">추가하면 새 열이 생기고, 당일 모드에서 칸에 수량을 입력하면 합계에 자동 합산됩니다.</div>'
+        +'</div>'
+        +'<div class="mfoot"><button class="btn-line" onclick="ssAddClose()">취소</button><button class="btn-teal" onclick="ssAddSave()">추가</button></div></div>';
+      document.body.appendChild(ov);
+    }
+    document.getElementById('ssAddBiz').value=''; document.getElementById('ssAddName').value=''; document.getElementById('ssAddCode').value='';
+    document.getElementById('ssAddBizDL').innerHTML=(window.ssBrandList||[]).map(function(b){ return '<option value="'+(''+b).replace(/"/g,'&quot;')+'">'; }).join('');
+    document.getElementById('ssAddNameDL').innerHTML=(window.ssItemList||[]).map(function(it){ return '<option value="'+(''+it.name).replace(/"/g,'&quot;')+'">'+(it.brand||'')+(it.code?(' · '+it.code):'')+'</option>'; }).join('');
+    ov.classList.add('on');
+  }
+  // 품목명 검색 선택 시 코드·사업장 자동 채움
+  function ssAddNamePick(v){
+    v=(v||'').trim(); if(!v) return;
+    var hit=(window.ssItemList||[]).filter(function(it){ return it.name===v || it.full===v; })[0];
+    if(hit){ document.getElementById('ssAddCode').value=hit.code||''; document.getElementById('ssAddBiz').value=hit.brand||''; }
+  }
+  function ssAddClose(){ var ov=document.getElementById('ssAddOv'); if(ov) ov.classList.remove('on'); }
+  function ssAddSave(){
+    var biz=(document.getElementById('ssAddBiz').value||'').trim();
+    var name=(document.getElementById('ssAddName').value||'').trim();
+    var code=(document.getElementById('ssAddCode').value||'').trim();
+    if(!name){ ssToast('⚠️ 품목명을 입력하세요.'); return; }
+    var fullName = (biz && !/^\(/.test(name)) ? ('('+biz+')'+name) : name;   // 브랜드 접두로 그룹 매칭
+    var key = code ? code : ('NM:'+fullName);
+    // 중복 체크 — 품목코드(있으면) / 없으면 품목명 기준
+    var dup = (window.ssItemList||[]).some(function(it){ return code ? (it.code===code && code!=='') : (it.full===fullName); })
+            || ssExtraItems.some(function(e){ return e.key===key; });
+    if(dup){ ssToast('⚠️ 이미 등록된 품목입니다'+(code?(' (품목코드 '+code+')'):' (품목명 동일)')); return; }
+    ssExtraItems.push({name:fullName, code:code, key:key});
+    ssAddClose(); ssRender();
+    ssToast('＋ 품목 추가: '+name+(biz?(' ['+biz+']'):'')+' — 칸에 수량을 입력하세요(당일 모드)');
+  }
+
+  // 존(출고장) 직접 추가
+  function ssAddZone(){
+    var ov=document.getElementById('ssZoneOv');
+    if(!ov){
+      ov=document.createElement('div'); ov.id='ssZoneOv'; ov.className='ss-modal';
+      ov.innerHTML='<div class="box" style="width:min(400px,92vw)">'
+        +'<div class="mh"><h4>＋ 출고장 추가</h4><button class="x" onclick="ssZoneClose()">&times;</button></div>'
+        +'<div class="mbody" style="font-size:13px"><label style="display:block;color:#6b7a89;margin-bottom:3px">출고장 코드</label>'
+        +'<input id="ssZoneCode" style="width:100%;height:34px;border:1px solid #dfe6e3;border-radius:6px;padding:0 10px;box-sizing:border-box" placeholder="예) A5, B1, F9 (앞 글자=입고장 그룹)">'
+        +'<div style="margin-top:8px;color:#9aa7b3;font-size:12px">앞 글자(A·C·D·F)로 입고장 그룹에 들어갑니다. 당일 모드에서 칸에 수량 입력 → 합계 자동 합산.</div></div>'
+        +'<div class="mfoot"><button class="btn-line" onclick="ssZoneClose()">취소</button><button class="btn-teal" onclick="ssZoneSave()">추가</button></div></div>';
+      document.body.appendChild(ov);
+    }
+    document.getElementById('ssZoneCode').value='';
+    ov.classList.add('on');
+  }
+  function ssZoneClose(){ var ov=document.getElementById('ssZoneOv'); if(ov) ov.classList.remove('on'); }
+  // 추가 품목/존 삭제 (수량 없을 때만 ✕ 노출됨)
+  function ssDelItem(e, el){ if(e){e.stopPropagation();e.preventDefault();} var k=el.getAttribute('data-dk'); ssExtraItems=(ssExtraItems||[]).filter(function(x){return x.key!==k;}); ssRender(); ssToast('🗑 추가 품목 삭제'); }
+  function ssDelZone(e, el){ if(e){e.stopPropagation();e.preventDefault();} var z=el.getAttribute('data-dz'); ssExtraZones=(ssExtraZones||[]).filter(function(x){return x!==z;}); ssRender(); ssToast('🗑 추가 출고장 삭제: '+z); }
+  function ssZoneSave(){
+    var z=(document.getElementById('ssZoneCode').value||'').trim().toUpperCase();
+    if(!z){ ssToast('⚠️ 출고장 코드를 입력하세요.'); return; }
+    if((window.ssZoneList||[]).indexOf(z)>=0 || ssExtraZones.indexOf(z)>=0){ ssToast('⚠️ 이미 있는 출고장입니다: '+z); return; }
+    ssExtraZones.push(z);
+    ssZoneClose(); ssRender();
+    ssToast('＋ 출고장 추가: '+z+' — 칸에 수량을 입력하세요(당일 모드)');
+  }
+
   // 작성(반영): 확인 메시지 후 실행
   function ssPvApply(){
     if(!ssPvCur || !ssPvCur.map){ ssToast('⚠️ 인식 가능한 발주현황표가 아닙니다.'); return; }
@@ -828,6 +981,8 @@
   }
 
   // 실제 반영 처리 (기존 데이터 초기화·교체)
+  //  ※ 전제: 발주현황표는 "당일 1회" 제공 → 업로드 시 그날 데이터를 헤더부터 전부 재작성(누적 아님)
+  //         (누적/병합·재업로드 덮어쓰기 정책은 추후 고객 협의 후 변경 가능)
   function ssDoApply(rows, sheetNm){
     SHIP_DATA=rows;                       // ★ 기존 데이터 완전 교체(초기화)
     ssZoneCollapsed={};                   // 존 접힘 상태 초기화
@@ -865,30 +1020,108 @@
       });
   }
 
-  // 출고현황표 → 엑셀(.xlsx) : 화면의 표를 그대로 출력 (상단 KPI/날짜/버튼 등 제외) — 기간에도 가능
+  // 출고현황표 → 엑셀(.xlsx) : 데이터 모델에서 깔끔한 숫자표로 재구성(날짜 오인 방지) + 상단 출고일자
   function ssDownload(){
     if(typeof XLSX==='undefined'){ ssToast('⚠️ 엑셀 모듈을 불러오지 못했습니다(인터넷 필요).'); return; }
+    var ag=ssAggregate();
+    var keys=Object.keys(ag.items).sort(function(a,b){ var A=ag.items[a],B=ag.items[b]; return A.brand.localeCompare(B.brand,'ko')||A.name.localeCompare(B.name,'ko'); });
+    if(!keys.length){ ssToast('⚠️ 출력할 데이터가 없습니다.'); return; }
+    var zones=Object.keys(ag.zoneSet).sort();
+    var f=(document.getElementById('ssDateFrom')||{}).value||'', t=(document.getElementById('ssDateTo')||{}).value||'';
+    var dlab=(f&&f===t)?f:(f+' ~ '+t);
+    var colTot={}; zones.forEach(function(z){ keys.forEach(function(k){ colTot[k]=(colTot[k]||0)+((ag.matrix[z]&&ag.matrix[z][k])||0); }); });
+    function cv(v){ return v?v:''; }                 // 0은 공백(숫자형 유지)
+    function row(label, getv){
+      var cells=[], sum=0;
+      keys.forEach(function(k){ var v=getv(k)||0; sum+=v; cells.push(cv(v)); });
+      return ssSumFront ? [label, sum].concat(cells) : [label].concat(cells, [sum]);
+    }
+    var aoa=[];
+    aoa.push(['출고현황표']);
+    aoa.push(['출고일자', dlab]);
+    aoa.push([]);
+    // 헤더 2행 (사업장 / 품목(코드))
+    var h1=ssSumFront?['출고장 \\ 품목','합계']:['출고장 \\ 품목'];
+    var h2=ssSumFront?['','']:[''];
+    for(var i=0;i<keys.length;){
+      var br=ag.items[keys[i]].brand, j=i; while(j<keys.length && ag.items[keys[j]].brand===br) j++;
+      h1.push(br); for(var x=i+1;x<j;x++) h1.push('');
+      for(var p=i;p<j;p++){ var it=ag.items[keys[p]]; h2.push(ssShortName(it.name)+(it.code?(' ('+it.code+')'):'')); }
+      i=j;
+    }
+    if(!ssSumFront){ h1.push('합계'); h2.push(''); }
+    aoa.push(h1); aoa.push(h2);
+    // 출고장 그룹별
+    var byL={}, letters=[]; zones.forEach(function(z){ var L=(z.charAt(0)||'').toUpperCase(); if(!byL[L]){ byL[L]=[]; letters.push(L); } byL[L].push(z); }); letters.sort();
+    letters.forEach(function(L){
+      aoa.push([L+'출고장']);
+      byL[L].forEach(function(z){ aoa.push(row(z+' 출고장', function(k){ return (ag.matrix[z]&&ag.matrix[z][k])||0; })); });
+      aoa.push(row(L+'출고장 합계', function(k){ var s=0; byL[L].forEach(function(z){ s+=(ag.matrix[z]&&ag.matrix[z][k])||0; }); return s; }));
+    });
+    aoa.push(row('전체 출고장 합계', function(k){ return colTot[k]||0; }));
+    if(ag.unassigned>0) aoa.push(row('미배정('+ag.unassigned+'건)', function(k){ return ag.unMatrix[k]||0; }));
+    aoa.push([]);
+    aoa.push(['■ 출고내역 · 재고량']);
+    var base={}; keys.forEach(function(k){ var it=ag.items[k]; base[k]=30+(ssHash(it.code||it.name)%150); });
+    aoa.push(row('재고량(기초)', function(k){ return base[k]; }));
+    var selLbl=(f&&f===t)?(f===SS_TODAY?'당일 출고':'선택일 출고'):'기간 출고';
+    aoa.push(row(selLbl, function(k){ return colTot[k]||0; }));
+    var ym=SS_TODAY.slice(0,7), mTot={};
+    SHIP_DATA.forEach(function(r){ if(!r.zone) return; if((''+(r.date||SS_TODAY)).slice(0,7)!==ym) return; var c=(''+(r.code||'')).trim(), kk=c?c:('NM:'+r.item); mTot[kk]=(mTot[kk]||0)+(+r.qty||0); });
+    aoa.push(row('당월 출고('+ym+')', function(k){ return mTot[k]||0; }));
+    aoa.push(row('현재고', function(k){ return base[k]-(colTot[k]||0); }));
+    SS_MONTHS.forEach(function(mn){ aoa.push(row(mn+' 출고', function(k){ var it=ag.items[k]; return ssHash((it.code||it.name)+mn)%9; })); });
+
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=[{wch:16}].concat(keys.map(function(){ return {wch:11}; })).concat([{wch:9}]);
+    if(ssSumFront) ws['!cols'].splice(1,0,{wch:9});
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '출고현황표');
+    XLSX.writeFile(wb, '출고현황표_'+(f||'')+((t&&t!==f)?'~'+t:'')+'.xlsx');
+    ssToast('📥 출고현황표 엑셀 저장 완료 (출고일자 '+dlab+')');
+  }
+
+  // 출고현황표 → PDF 파일 저장 (jsPDF + html2canvas, 한글 안전)
+  function ssPdf(){
+    var jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if(!jsPDF || !window.html2canvas){ ssToast('⚠️ PDF 라이브러리 로딩 중입니다(인터넷 필요). 잠시 후 다시 시도하세요.'); return; }
     var tbl=document.getElementById('ssWideTbl'); if(!tbl){ ssToast('⚠️ 표가 없습니다.'); return; }
+    var f=(document.getElementById('ssDateFrom')||{}).value||'', t=(document.getElementById('ssDateTo')||{}).value||'';
+    var dlab=(f&&f===t)?f:(f+' ~ '+t);
     var clone=tbl.cloneNode(true);
-    // 화면 그대로: 접힌(숨김) 존 상세행 제외
     [].slice.call(clone.querySelectorAll('tr')).forEach(function(tr){ if(tr.style && tr.style.display==='none' && tr.parentNode) tr.parentNode.removeChild(tr); });
-    // 헤더 장식문자(✕ 등) 제거
-    [].slice.call(clone.querySelectorAll('.bx, .caret, .zcaret')).forEach(function(e){ if(e.parentNode) e.parentNode.removeChild(e); });
-    var ws=XLSX.utils.table_to_sheet(clone);
-    // 상단에 출고일자 행 추가
-    var f=document.getElementById('ssDateFrom'), t=document.getElementById('ssDateTo');
-    var fv=(f&&f.value)||'', tv=(t&&t.value)||'';
-    var dlab=(fv&&fv===tv)?fv:(fv+' ~ '+tv);
-    var aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    aoa.unshift([]);                               // 빈 줄
-    aoa.unshift(['출고일자', dlab]);                // ★ 출고일자 상단
-    aoa.unshift(['출고현황표']);                     // 제목
-    ws=XLSX.utils.aoa_to_sheet(aoa);
-    var wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '출고현황표');
-    var fn='출고현황표_'+(fv||'')+((tv&&tv!==fv)?'~'+tv:'')+'.xlsx';
-    XLSX.writeFile(wb, fn);
-    ssToast('📥 화면의 출고현황표를 엑셀로 내려받았습니다. (상단 출고일자 '+dlab+')');
+    [].slice.call(clone.querySelectorAll('.bx,.caret,.zcaret,.delx')).forEach(function(e){ if(e.parentNode) e.parentNode.removeChild(e); });
+    [].slice.call(clone.querySelectorAll('[contenteditable]')).forEach(function(e){ e.removeAttribute('contenteditable'); });
+    [].slice.call(clone.querySelectorAll('td,th')).forEach(function(c){ c.style.position='static'; });   // sticky 해제(캡처 정확)
+    clone.style.width='auto';
+    var wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-100000px;top:0;background:#fff;padding:14px;font-family:\"Malgun Gothic\",sans-serif;';
+    wrap.innerHTML='<div style="font-size:18px;font-weight:700;margin-bottom:4px">출고현황표</div>'
+      +'<div style="font-size:12px;color:#555;margin-bottom:8px">출고일자 : '+dlab+'</div>';
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
+    ssToast('📄 PDF 생성 중…');
+    window.html2canvas(wrap, {scale:2, backgroundColor:'#ffffff'}).then(function(canvas){
+      if(wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      var pdf=new jsPDF('l','mm','a4');
+      var mg=8, pw=pdf.internal.pageSize.getWidth()-mg*2, ph=pdf.internal.pageSize.getHeight()-mg*2;
+      var iw=pw, ih=canvas.height*iw/canvas.width;
+      if(ih<=ph){
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',mg,mg,iw,ih);
+      } else {
+        // 세로로 페이지 분할
+        var sliceHpx=Math.floor(canvas.width*ph/pw), y=0, page=0;
+        while(y<canvas.height){
+          var hpx=Math.min(sliceHpx, canvas.height-y);
+          var c2=document.createElement('canvas'); c2.width=canvas.width; c2.height=hpx;
+          c2.getContext('2d').drawImage(canvas,0,y,canvas.width,hpx,0,0,canvas.width,hpx);
+          if(page>0) pdf.addPage();
+          pdf.addImage(c2.toDataURL('image/png'),'PNG',mg,mg,iw,hpx*iw/canvas.width);
+          y+=hpx; page++;
+        }
+      }
+      pdf.save('출고현황표_'+(f||'')+((t&&t!==f)?'~'+t:'')+'.pdf');
+      ssToast('📄 PDF 저장 완료 (출고일자 '+dlab+')');
+    }).catch(function(e){ if(wrap.parentNode) wrap.parentNode.removeChild(wrap); ssToast('⚠️ PDF 생성 오류: '+e.message); });
   }
 
   // ── 날짜 유틸 / 당일 기준
@@ -973,11 +1206,12 @@
     <section id="panel-shipstatus" class="panel show">
       <div class="logi-head">
         <div><h2>출고현황표 <span class="badge b-done">핵심</span></h2>
-          <div class="sub">발주현황표(엑셀)를 업로드하면 <b>사업장·품목별 출고량</b> 과 <b>존(출고장)별 수량</b> 이 자동 작성됩니다. 기준일자 <b id="ssDate">2026.06.19</b></div></div>
+          <div class="sub">발주현황표(엑셀)를 업로드하면 <b>사업장·품목별 출고량</b> 과 <b>출고장별 수량</b> 이 자동 작성됩니다. 기준일자 <b id="ssDate">2026.06.19</b></div></div>
         <div class="actions">
           <button class="btn-teal" id="ssBtnUpload" onclick="document.getElementById('ssFile').click()">📤 발주현황표 엑셀 업로드</button>
           <button class="btn-line" id="ssBtnSave" onclick="ssSaveData()">💾 출고데이타저장</button>
           <button class="btn-line" id="ssBtnDownload" onclick="ssDownload()">📥 출고현황표 다운로드</button>
+          <button class="btn-line" id="ssBtnPdf" onclick="ssPdf()">📄 PDF 출력</button>
         </div>
       </div>
       <input type="file" id="ssFile" class="ss-file" accept=".xlsx,.xls" onchange="ssUpload(this)">
@@ -1025,7 +1259,7 @@
         <div class="tb-stats">
           <div class="st"><span class="st-l"><span id="ssKpiPrefix">당일</span> 출고품목</span><span class="st-v" id="ssKpiItem">0</span></div>
           <div class="st"><span class="st-l">출고수량(BOX)</span><span class="st-v" id="ssKpiQty">0</span></div>
-          <div class="st"><span class="st-l">출고장(존)</span><span class="st-v" id="ssKpiZone">0</span></div>
+          <div class="st"><span class="st-l">출고장 수</span><span class="st-v" id="ssKpiZone">0</span></div>
           <div class="st"><span class="st-l">사업장</span><span class="st-v" id="ssKpiBiz">0</span></div>
         </div>
       </div>
@@ -1033,10 +1267,13 @@
       <!-- 메인 출고현황표 (상단: 사업장·품목명 / 좌측: 출고장 행 / 하단: 출고내역·재고) -->
       <div class="card">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
-          <h3 style="margin:0">① 출고현황표 <span class="note">(상단=사업장·품목 / 좌측=출고장(존) / 하단=출고내역·재고량 · 품목코드 매칭)</span></h3>
+          <h3 style="margin:0">① 출고현황표 <span class="note">(상단=사업장·품목 / 좌측=출고장 / 하단=출고내역·재고량 · 품목코드 매칭)</span></h3>
           <div style="display:flex; gap:6px; align-items:center">
-            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(false)">＋ 존 펼치기</button>
-            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(true)">－ 존 접기</button>
+            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(false)">＋ 출고장 펼치기</button>
+            <button class="btn-line" style="padding:5px 11px" onclick="ssAllZones(true)">－ 출고장 접기</button>
+            <button class="btn-teal" style="padding:5px 11px" onclick="ssAddItem()">＋ 품목 추가</button>
+            <button class="btn-line" style="padding:5px 11px" onclick="ssAddZone()">＋ 출고장 추가</button>
+            <label style="font-size:12px; color:#37475a; margin-left:6px; cursor:pointer"><input type="checkbox" id="ssSumFront" onchange="ssRender()" style="vertical-align:-1px"> 합계 맨앞</label>
             <label style="font-size:12px; color:#6b7a89; margin-left:6px">사업장 보기</label>
             <select id="ssBizSel" onchange="ssRender()" style="height:32px; border:1px solid var(--logi-border); border-radius:6px; padding:0 8px; font-size:12.5px"></select>
           </div>
@@ -1045,7 +1282,7 @@
         <div class="ss-scroll">
           <table class="ss-tb sswide" id="ssWideTbl"></table>
         </div>
-        <div class="note">※ 사업장 헤더(뜨돈·런던베이글 등)를 클릭하면 그 사업장 열이 <b>숨겨집니다</b>. 숨긴 사업장은 위 바에서 다시 펼칠 수 있습니다. 품목 많으면 가로 스크롤. 하단 월별/재고량은 데모용 가정값.</div>
+        <div class="note">※ <b>당일</b> 모드에서 출고장 행의 노란 칸을 클릭해 수량을 직접 입력하면(엔터/포커스아웃) <b>합계가 자동 재계산</b>됩니다. 사업장 헤더(뜨돈 등) 클릭 시 그 열 숨김(위 바에서 펼치기). 품목 많으면 가로 스크롤. 하단 월별/재고량은 데모용 가정값.</div>
       </div>
 
     </section>
