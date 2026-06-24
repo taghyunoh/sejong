@@ -608,10 +608,8 @@
     var isMonth = (from===monFrom && to===monLast);
     var bt=document.getElementById('ssBtnToday'); if(bt) bt.className = isToday?'btn-teal':'btn-line';
     var bm=document.getElementById('ssBtnMonth'); if(bm) bm.className = isMonth?'btn-teal':'btn-line';
-    // 업로드는 항상 가능(출고장별 병합 업로드 — 납기일자가 여러 날이어도 OK)
-    var bu=document.getElementById('ssBtnUpload'); if(bu){ bu.disabled=false; bu.title=''; }
-    // 저장만 일자별(시작=종료 단일 일자)에서 가능
-    ['ssBtnSave'].forEach(function(id){
+    // 업로드/매출·매입/저장 버튼: 일자별(시작=종료 단일 일자)일 때만 활성 — 당월·기간(시작≠종료) 모드면 비활성
+    ['ssBtnUpload','ssBtnSales','ssBtnCost','ssBtnSave'].forEach(function(id){
       var b=document.getElementById(id); if(!b) return;
       b.disabled=!single; b.title = single ? '' : '일자별(시작=종료 단일 일자) 조건에서만 가능합니다';
     });
@@ -786,11 +784,14 @@
     var cc='',ct=0;
     keys.forEach(function(k){ var it=ag.items[k]; var cur=(it._base||0)-(colTot[k]||0); ct+=cur; cc+='<td class="num'+(cur<0?' neg':'')+gs(k)+'">'+ssNum(cur)+'</td>'; });
     tb+='<tr class="r-stock">'+wrapSum('<td class="stick">현재고</td>', cc, '<td class="num colsum">'+ssNum(ct)+'</td>')+'</tr>';
-    // 월별(데모)
+    // 월별(데모) — 접기/펼치기 가능 (헤더 클릭 토글)
+    var _mcol=ssMonthCollapsed;
+    tb+='<tr class="lgrp" onclick="ssToggleMonth()">'
+      + wrapSum('<td class="stick"><span class="zcaret" id="zc_month">'+(_mcol?'▶':'▼')+'</span> 월별 출고(데모)'+(_mcol?' <span style="color:#9aa7b3">— 접힘(클릭하여 펼치기)</span>':'')+'</td>', ssBannerCells(SS_MONTHS.length+'개월'), '<td class="colsum"></td>') + '</tr>';
     SS_MONTHS.forEach(function(mn){
       var mc='',mt=0;
       keys.forEach(function(k){ var it=ag.items[k]; var v=ssHash((it.code||it.name)+mn)%9; mt+=v; mc+= v>0?'<td class="num'+gs(k)+'">'+ssNum(v)+'</td>':'<td class="num zero'+gs(k)+'">·</td>'; });
-      tb+='<tr class="r-month">'+wrapSum('<td class="stick">'+mn+' 출고</td>', mc, '<td class="num colsum">'+ssNum(mt)+'</td>')+'</tr>';
+      tb+='<tr class="r-month"'+(_mcol?' style="display:none"':'')+'>'+wrapSum('<td class="stick">'+mn+' 출고</td>', mc, '<td class="num colsum">'+ssNum(mt)+'</td>')+'</tr>';
     });
 
     tbl.innerHTML='<thead>'+th1+th2+'</thead><tbody>'+tb+'</tbody>';
@@ -871,6 +872,14 @@
   function ssBizShowName(b){ if(b){ delete ssBizHidden[b]; ssRender(); } }
   function ssBizShowAll(){ ssBizHidden={}; ssRender(); }
 
+  // 월별(데모) 출고 접기/펼치기 — 상태 유지(재렌더에도 보존)
+  var ssMonthCollapsed=false;   // 기본 펼침
+  function ssToggleMonth(){
+    ssMonthCollapsed=!ssMonthCollapsed;
+    var rows=document.querySelectorAll('#ssWideTbl tr.r-month');
+    for(var i=0;i<rows.length;i++) rows[i].style.display = ssMonthCollapsed?'none':'';
+    var c=document.getElementById('zc_month'); if(c) c.textContent = ssMonthCollapsed?'▶':'▼';
+  }
   // 존 그룹(A존~F존) 접기/펼치기 — 상태 유지(재렌더에도 보존)
   var ssZoneCollapsed={}, ssZoneDefaultCollapsed=false;   // 출고장 기본 펼침
   function ssToggleZone(L){
