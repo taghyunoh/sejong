@@ -448,11 +448,13 @@
 		WITH COMM AS ( SELECT *
     					 FROM T_BLDINF_TRAN
    		 				WHERE USER_UUID = #{userId}
-      					  AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s') 
-		)SELECT  COALESCE(SUM(CASE WHEN UPT_VALUE >= 150 THEN 1 ELSE 0 END) ,0) AS HIGHT
-    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 70 AND UPT_VALUE < 150 THEN 1 ELSE 0 END),0) AS NORMAL
-    			,COALESCE(SUM(CASE WHEN UPT_VALUE > 54 AND UPT_VALUE < 70 THEN 1 ELSE 0 END),0) AS LOW
-    			,COALESCE(SUM(CASE WHEN UPT_VALUE <= 54 THEN 1 ELSE 0 END),0) AS LOWEST
+   		 				  AND ifnull(UPT_VALUE,0) > 0
+      					  AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+		)SELECT  COALESCE(SUM(CASE WHEN UPT_VALUE > 250 THEN 1 ELSE 0 END) ,0) AS HIGHTEST
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE > 180 AND UPT_VALUE <= 250 THEN 1 ELSE 0 END),0) AS HIGHT
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 70 AND UPT_VALUE <= 180 THEN 1 ELSE 0 END),0) AS NORMAL
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE >= 54 AND UPT_VALUE < 70 THEN 1 ELSE 0 END),0) AS LOW
+    			,COALESCE(SUM(CASE WHEN UPT_VALUE < 54 THEN 1 ELSE 0 END),0) AS LOWEST
 		   FROM COMM
 		]]>
 	</select>
@@ -475,31 +477,30 @@
 	</select>
 	
 	<select id="calcBlood" parameterType="String" resultType="map">
-	<![CDATA[
-		-- 특정 기간 동안의 GMI 계산
-		SELECT COALESCE(AVG(UPT_VALUE),0) AS AvgBlood  									
-    		  ,COALESCE(ROUND(STDDEV_SAMP(UPT_VALUE), 1),0) AS stdBlood  					
-    		  ,COALESCE(ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1),0) AS CV  
-    		  ,COALESCE(ROUND((0.023 * AVG(UPT_VALUE)) + 3.312, 1),0) AS GMI  		 
-    		  ,(SELECT COALESCE(AVG(a.UPT_VALUE),0) 
+		<![CDATA[
+		SELECT COALESCE(AVG(UPT_VALUE),0) AS AvgBlood
+    		  ,COALESCE(ROUND(STDDEV_SAMP(UPT_VALUE), 1),0) AS stdBlood
+    		  ,COALESCE(ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1),0) AS CV
+    		  ,COALESCE(ROUND((0.02392 * AVG(UPT_VALUE)) + 3.31, 1),0) AS GMI
+    		  ,(SELECT COALESCE(AVG(a.UPT_VALUE),0)
 		  		FROM T_BLDINF_TRAN a
 		 		WHERE a.USER_UUID = #{userId}
-    	   		AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')  AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
-    	   		AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' 
+    	   		AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+    	   		AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00'
     	   		AND COALESCE(
-    				 	( SELECT MIN(TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') ))
+    				 	( SELECT MIN(TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')))
          					FROM T_FOOD_TRAN b
          			       WHERE b.USER_UUID = a.USER_UUID
-           				 	 AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-           				 	 AND TIME(DATE_FORMAT(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), '%Y-%m-%d %H:%i:%s')) 
-           				 	 BETWEEN '03:00:00' AND '06:00:00')
-        				, '06:00:00')
+           				 	 AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+           				 	 AND TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) BETWEEN '03:00:00' AND '06:00:00')
+        				, '06:00:00'
+    				)
     			) AS FASTING
 		  FROM T_BLDINF_TRAN
 		 WHERE USER_UUID = #{userId}
-           AND CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
-		   AND CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)
-	]]>	   		
+			AND CGM_DTM >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
+		    AND CGM_DTM <= STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+	]]>
 	</select>
 	<select id="analysisBlood" parameterType="map" resultType="map">
 	  <![CDATA[
