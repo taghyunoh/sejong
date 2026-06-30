@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">sejong_health</string>
+    <string name="retry">재시도</string>
+    <string name="app_start">시작하기</string>
+    <string name="app_finish">앱종료</string>
+    <string name="confirm">확인</string>
+    <string name="cancel">취소</string>
+    <string name="update">업데이트</string>
+    <string name="str_app_finish_confirm">뒤로 버튼을 한번 더 누르시면 종료됩니다.</string>
+    <string name="str_rooting_title">루팅 감지</string>
+    <string name="str_rooting_content">기기가 루팅되었습니다.</string>
+    <string name="str_network_error_title">네트워크 연결이 불안정합니다.</string>
+    <string name="str_network_error_content">모바일 또는 무선인터넷 연결상태를 확인하신 후\n이용해 주시기 바랍니다.</string>
+    <string name="str_service_error_title">서비스 이용에 불편을\n드려서 죄송합니다.</string>
+    <string name="str_service_error_content">일시적인 오류로 인해 해당 기능을\n사용할 수 없습니다.\n잠시 후 다시 한 번 시도해주십시오</string>
+    <string name="str_difference_app_ver_title">앱 버전이 다릅니다.</string>
+    <string name="str_difference_app_ver_content">앱을 업데이트 하시겠습니까?</string>
+    <string name="str_server_error_title">서버 오류</string>
+    <string name="str_server_error_content">서버와 통신하는 중에 오류가 발생하였습니다.</string>
+
+    <string name="str_permission_title">앱 접근권한 안내</string>
+    <string name="str_permission_content">헬스케어 앱을 더 편리하게 이용하시려면\n아래 권한을 허용해주세요.</string>
+    <string name="str_permission_optional">선택적 접근권한</string>
+    <string name="str_permission_alarm_title">알림(선택)</string>
+    <string name="str_permission_alarm_content">건강정보,건강소식,공지 등 정보 전송</string>
+    <string name="str_permission_tel_title">전화(선택)</string>
+    <string name="str_permission_tel_content">보건소 전화연결</string>
+    <string name="str_permission_camera_title">카메라(선택)</string>
+    <string name="str_permission_camera_content">처방전 등록을 위한 QR코드 스캔</string>
+
+    <string name="default_notification_group_id" translatable="false">sejong_helath</string>
+    <string name="default_notification_channel_id" translatable="false">sejong_helath</string>
+    <string name="default_notification_channel_name" translatable="false">sejong 헬스케어</string>
+    <string name="foodlens_app_token">cdf4015f0bad4d9cb9a878558a77409f</string>
+    <string name="foodlens_company_token">fc9463157ccd47a2b00bdbde9a843cf0</string>
+</resources>

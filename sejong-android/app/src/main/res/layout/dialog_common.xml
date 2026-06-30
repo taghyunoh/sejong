@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.dca.sejong.common.dialog.AppDialog"
+    android:background="#00000000">
+
+    <com.ssomai.android.scalablelayout.ScalableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:scale_base_height="192"
+        app:scale_base_width="108">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/dialog_common_background"
+            app:scale_height="70"
+            app:scale_width="94" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/icon_network"
+            app:scale_height="16"
+            app:scale_left="13"
+            app:scale_top="67"
+            app:scale_width="16" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_title_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:text="@string/str_network_error_title"
+            android:textColor="@color/color_dialog_title"
+            android:textStyle="bold"
+            app:scale_height="16"
+            app:scale_left="32"
+            app:scale_textsize="4.5"
+            app:scale_top="67"
+            app:scale_width="67" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#FFDDDDDD"
+            app:scale_height="0.3"
+            app:scale_left="12"
+            app:scale_top="90"
+            app:scale_width="85" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_msg_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:text="@string/str_network_error_content"
+            android:textColor="@color/color_dialog_content"
+            app:scale_height="16"
+            app:scale_left="13"
+            app:scale_textsize="3.2"
+            app:scale_top="95"
+            app:scale_width="83" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#FFDDDDDD"
+            app:scale_height="0.3"
+            app:scale_left="7"
+            app:scale_top="115.8"
+            app:scale_width="47" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btn_neg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/dialog_common_btn"
+            app:scale_height="15.3"
+            app:scale_left="54"
+            app:scale_top="115.8"
+            app:scale_width="47" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/btn_positive_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/app_finish"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            app:scale_height="15.3"
+            app:scale_left="7"
+            app:scale_textsize="4.5"
+            app:scale_top="115.8"
+            app:scale_width="47" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/btn_negative_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/retry"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:scale_height="15.3"
+            app:scale_left="54"
+            app:scale_textsize="4.5"
+            app:scale_top="115.8"
+            app:scale_width="47" />
+
+    </com.ssomai.android.scalablelayout.ScalableLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
