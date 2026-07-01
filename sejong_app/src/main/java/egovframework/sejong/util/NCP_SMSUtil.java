@@ -46,7 +46,7 @@ public class NCP_SMSUtil {
     @Value("${ncp.sms.sender}")
     private String phone;
 
-    public void sendSMS(String phone) {
+    public boolean sendSMS(String phone) {
     	try {
     		ServletRequestAttributes servletRequestAttribute = (ServletRequestAttributes)RequestContextHolder.currentRequestAttributes();//Request 가지고 오기 
     		HttpServletRequest httpRequest = servletRequestAttribute.getRequest();//Session 가지고 오기 
@@ -111,11 +111,21 @@ public class NCP_SMSUtil {
                 response.append(inputLine);
             }
             br.close();
+            // NCP 실제 응답 로깅 (실패사유: 발신번호 미승인/자격증명/serviceId 등 확인용)
+            System.out.println("NCP SMS 응답코드=" + responseCode + " / 응답본문=" + response.toString());
+
+            // 202(요청 접수)가 아니면 실제 발송 실패 → false 반환
+            if (responseCode != 202) {
+                return false;
+            }
+            // 발송 접수 성공 시에만 인증코드/시간 세션 저장
             session.setAttribute("time", timestamp);
 		    session.setAttribute("authCode", authCode);
-            
+            return true;
+
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
 	}
     
