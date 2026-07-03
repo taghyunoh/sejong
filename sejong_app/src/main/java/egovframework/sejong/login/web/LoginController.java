@@ -58,7 +58,10 @@ public class LoginController {
 	
 	@Autowired
 	NCP_SMSUtil smsUtil;
-	
+
+	@Autowired
+	egovframework.sejong.util.Gabia_SMSUtil gabiaSmsUtil;   // 가비아 문자 API (현재 인증 발송에 사용)
+
 	
 	// 로그인
 	
@@ -195,7 +198,7 @@ public class LoginController {
 		ResponseObject obj = new ResponseObject();
 		try {
 			if(session.getAttribute("time") == null) {
-				boolean sent = smsUtil.sendSMS(phone);
+				boolean sent = gabiaSmsUtil.sendSMS(phone);
 				obj.IsSucceed = sent;
 				obj.Message = sent ? "인증번호 발송 성공하였습니다."
 				                   : "인증번호 발송에 실패했습니다. 잠시 후 다시 시도하거나 관리자에게 문의해 주세요.";
@@ -208,7 +211,7 @@ public class LoginController {
 			long time2 = Long.parseLong(timestamp);
 			// 3분(180000밀리초) 차이가 나는지 확인
 			if (Math.abs(time2 - time1) >= 3 * 60 * 1000) {
-				boolean sent = smsUtil.sendSMS(phone);
+				boolean sent = gabiaSmsUtil.sendSMS(phone);
 				obj.IsSucceed = sent;
 				obj.Message = sent ? "인증번호 발송 성공하였습니다."
 				                   : "인증번호 발송에 실패했습니다. 잠시 후 다시 시도하거나 관리자에게 문의해 주세요.";
