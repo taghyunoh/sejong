@@ -8,6 +8,7 @@
 <link href="${pageContext.request.contextPath}/asset/css/blood_fahr.css?v=123" rel="stylesheet"> <!-- ASQ 스타일   -->
 <title>Insert title here</title>
 </head>
+
 <body>
     <!-- contents : s -->
     <div class="contents">
