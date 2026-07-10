@@ -16,6 +16,7 @@
 			BLOD_GB = #{blodGb}
 		WHERE
 			USER_UUID = #{userUuid}
+			
 	</update>
 	<!-- 질의응답 -->
 	<insert id="updateAsq" parameterType="AsqDTO">

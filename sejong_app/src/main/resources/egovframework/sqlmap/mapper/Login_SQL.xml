@@ -11,6 +11,7 @@
 		SELECT COUNT(*) FROM T_USER_TRAN WHERE PHONE = #{phone}
 	</select>	
 	
+	
 	<!--  신규 유저 등록 -->
 	<insert id="registerUser" parameterType="UserDTO" >
 	    INSERT INTO T_USER_TRAN (
