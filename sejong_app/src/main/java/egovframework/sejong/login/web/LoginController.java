@@ -242,12 +242,13 @@ public class LoginController {
 			session.setAttribute("userUuid", user.getUserUuid());
 			obj.IsSucceed = true;
 		}catch(Exception e) {
+			e.printStackTrace();
 			obj.IsSucceed = false;
 		}
 		obj.Data = "";
 		return obj;
 	}
-	//회원정보수정 
+	//회원정보수정
 	@RequestMapping(value = "/updateUser.do", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseObject updateUser(HttpSession session, HttpServletRequest request,
@@ -261,12 +262,13 @@ public class LoginController {
 			session.setAttribute("userUuid", user.getUserUuid());
 			obj.IsSucceed = true;
 		}catch(Exception e) {
+			e.printStackTrace();
 			obj.IsSucceed = false;
 		}
 		obj.Data = "";
 		return obj;
-	}	
-    //회원여부 전화번호 조회 
+	}
+    //회원여부 전화번호 조회
 	@RequestMapping(value = "/User.do", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseObject User(HttpSession session, HttpServletRequest request,
