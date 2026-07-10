@@ -27,6 +27,7 @@
   white-space: nowrap;        /* 내부 인라인 줄바꿈 방지 */
 }
 
+
 .metric-label {
   display: inline-block;
   color: #ffffff !important;

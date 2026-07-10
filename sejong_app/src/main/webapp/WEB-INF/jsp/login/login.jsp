@@ -37,6 +37,7 @@
               </div>
             </div>
             
+            
             <p class="comment mt15 pl15">* 수신 문자를 확인 후 6자리 인증번호(숫자)를 입력 <br> 하세요</p>
             <div class="checkboxWrap pt15" >
 	             <span class="inputCheckbox">

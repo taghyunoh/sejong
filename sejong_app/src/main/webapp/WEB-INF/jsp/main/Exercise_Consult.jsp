@@ -104,6 +104,7 @@
   overflow: hidden;
 }
 
+
 /* 셀 기본 */
 .grid-header span,
 .grid-row span { white-space: nowrap; }
