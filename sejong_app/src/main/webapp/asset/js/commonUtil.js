@@ -26,7 +26,9 @@
 				},
 				error: function(xhr,status,errorThrown){
 					if(xhr.status == 200){
-						location.href = CommonUtil.getContextPath + "/index.do";
+						// getContextPath 는 함수다. 괄호 없이 쓰면 함수 소스코드가 문자열로 붙어
+						// `/function () {return sessionStorage.getItem("contextPath");}/index.do` 로 이동한다.
+						location.href = CommonUtil.getContextPath() + "/index.do";
 						return false;
 					}
 					
@@ -55,7 +57,9 @@
 				},
 				error: function(xhr,status,errorThrown){
 					if(xhr.status == 200){
-						location.href = CommonUtil.getContextPath + "/index.do";
+						// getContextPath 는 함수다. 괄호 없이 쓰면 함수 소스코드가 문자열로 붙어
+						// `/function () {return sessionStorage.getItem("contextPath");}/index.do` 로 이동한다.
+						location.href = CommonUtil.getContextPath() + "/index.do";
 						return false;
 					}
 					

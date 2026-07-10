@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <!-- CSS -->
-<link href="/asset/css/comm_blood.css?v=123" rel="stylesheet"> 
+<link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet"> 
 <style>
 .tab-container, 
 .header, 
@@ -64,6 +64,9 @@
 .unit-display { color: #000; }
 .left-align { text-align: left; }
 .title-text { font-size: 0.9rem; margin: 0 0 8px 0; }
+/* 카드 사이 간격을 조금 좁힌다 (comm_blood.css 기본 10px) — 식사연관과 동일 */
+.top2-card,
+.top3-card { margin-bottom: 6px; }
 .red-text { color: red; }
 
 /* ===== 랭킹 그리드 ===== */
@@ -74,12 +77,16 @@
   width: 100%;
 }
 
-/* 공통 행: 좌우 패딩 0으로 왼쪽 붙임 */
+/* 공통 행
+   고정폭(60px 50px 70px 1fr)이라 '운동시간(분)' 과 '운동후혈당' 이 좁아 붙어 보였다.
+   비율(fr)로 바꿔 카드 폭을 고르게 나눈다.
+   minmax(0,·) 가 없으면 그리드 항목이 내용 크기 아래로 못 줄어 넘친다. */
 .grid-header,
 .grid-row {
   display: grid;
-  grid-template-columns: 60px 50px 70px 1fr;  /* 시간 | 종류 | 분 | 값 */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.3fr);
   gap: 8px;
+  column-gap: 12px;
   align-items: center;
   font-size: 13px;
   padding: 6px 0;    /* 좌우 0 (중요) */
@@ -91,8 +98,9 @@
   border-radius: 8px;  /* 둥근 정도 그대로 유지 */
   font-weight: 700;
   padding: 8px calc(var(--card-pad));
-  margin-left: calc(var(--card-pad) * -0.1);  /* -1 → -0.7로 줄임 */
-  margin-right: calc(var(--card-pad) * -0.7);
+  /* 음수 마진으로 헤더만 좌우로 삐져나가 본문 열과 어긋났다. 제거. */
+  margin-left: 0;
+  margin-right: 0;
   overflow: hidden;
 }
 
@@ -109,21 +117,21 @@
 .grid-row { border-bottom: 1px solid #eee; }
 .grid-row:last-child { border-bottom: none; }
 
+/* 예전에는 여기서 헤더와 각 span 에 음수 마진(-16px, -2px, -12px)을 걸어
+   열 위치를 억지로 맞췄다. 그리드 비율을 제대로 잡았으므로 모두 제거한다. */
 .grid-header {
   background-color: #e0f0ff;
   border-radius: 6px;
   font-weight: 700;
-
-  /* 좌측만 조금 붙이기 */
-  margin-left: -16px;   /* 원하는 만큼 조정 (-2px ~ -6px 정도) */
+  margin-left: 0;
 }
 .grid-header span {
   display: inline-block;
-  margin-left: -2px;   /* 원하는 만큼 이동 (-2px ~ -6px 정도 조정 가능) */
+  margin-left: 0;
 }
 .grid-header span.title-type {
   display: inline-block;
-  margin-left: -12px;  /* -2px ~ -6px 사이로 조정 */
+  margin-left: 0;
 }
 .grid-header-wrap {
   position: relative;
@@ -135,11 +143,12 @@
   font-weight: 700;
   padding: 8px;
   position: relative;
-  left: 2px;   /* 배경만 우측으로 5px 이동 */
+  left: 0;     /* `left: 2px` 로 배경만 밀어 본문 열과 어긋났다 */
 }
+/* `margin-left: 10px` 로 3·4번째 열만 밀던 것도 제거 — 그리드가 위치를 잡는다 */
 #grid-rows span:nth-child(3),
 #grid-rows span:nth-child(4) {
-  margin-left: 10px;  /* 두 번째 컬럼만 우측으로 */
+  margin-left: 0;
 }
 #grid-rows-max span:nth-child(3),
 #grid-rows-max span:nth-child(4) {
@@ -148,8 +157,10 @@
 .date-range {
   display: flex;
   align-items: center;
-  gap: 0;                 /* 완전히 붙이기 */
-  margin-left: -13px;
+  gap: 8px;
+  margin-left: 0;         /* 음수 마진 제거 — 좌우가 어긋났다 */
+  width: 100%;
+  justify-content: space-between;   /* 화살표를 양 끝으로, 날짜가 가운데를 넓게 씀 */
 }
 
 .date-range button {
@@ -159,6 +170,14 @@
   padding: 0 4px;
   cursor: pointer;
   color: #555;
+
+  /* common.css 의 `.btn { width: 100%; height: 10.56vw }` 가 화살표를 부풀려
+     날짜 입력칸을 찌그러뜨린다. 내용 크기만 차지하게 되돌린다. */
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  justify-content: center;
 }
 
 .date-range button:hover {
@@ -166,10 +185,13 @@
 }
 
 .date-range input[type="date"] {
-  width: 120px;           /* 글자가 커지면 폭 약간 늘림 */
-  padding: 6px 6px;       /* 내부 여백 확대 */
-  font-size: 12px;        /* 날짜 폰트 크게 */
-  font-weight: 400;       /* 글씨 약간 두껍게 */
+  flex: 1;                /* 남는 폭을 날짜가 가져감 — 120px 고정이라 좁았다 */
+  min-width: 0;
+  width: auto;
+  max-width: 220px;
+  padding: 7px 6px;       /* 내부 여백 */
+  font-size: 13px;        /* 날짜 폰트 */
+  font-weight: 400;
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -196,7 +218,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 	<!-- 메인 콘텐츠 -->
 	<main class="main-content">
-		<div class="top2-card decrease-card" style="margin-top:-30px;">
+		<!-- -30px 은 헤더에 너무 붙어 있었다. 살짝 아래로 -->
+		<div class="top2-card decrease-card" style="margin-top:-10px;">
 		  <div class="date-range">
 		    <button id="prev7" class="btn" type="button" aria-label="이전 1일">◀</button>
 		    <input type="date" id="startDate" aria-label="시작일" readonly>

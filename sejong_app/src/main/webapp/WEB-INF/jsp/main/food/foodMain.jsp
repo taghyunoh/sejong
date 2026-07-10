@@ -31,7 +31,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/main.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <link href="/asset/css/comm_style.css?v=123" rel="stylesheet">
+  <link href="${pageContext.request.contextPath}/asset/css/comm_style.css?date=<%= nowTime %>" rel="stylesheet">
 <!-- Select2 라이브러리 예시 -->
 
 <style>
@@ -92,12 +92,10 @@
     padding: 1px 3px;
     width: 118px;
 }
-#historyTab {
-  margin-left: -9px; /* 원하는 만큼 조정 (-값은 왼쪽으로 당김) */
-}
-#inputTab {
-  margin-left: -9px; /* 원하는 만큼 조정 (-값은 왼쪽으로 당김) */
-}
+/* 예전에 있던 `#historyTab / #inputTab { margin-left: -9px }` 를 제거했다.
+   본문을 왼쪽으로 끌어당겨 좌우가 어긋났고, id 선택자라
+   comm_style.css 의 `.tab-content` 정렬 규칙까지 눌러버렸다.
+   좌우 여백은 이제 comm_style.css 의 .tab-content 가 탭 바와 함께 관리한다. */
 
 
 /* 패널 전체 흰 배경 */

@@ -10,7 +10,10 @@
 <style>
 .swipeTab {
     position: fixed;
-    top: 38px;          /* header 바로 아래 */
+    /* .header 높이(layout.css: 12.04vw)를 그대로 따라간다.
+       38px 로 박아 두면 헤더보다 위로 올라와 제목을 덮는다.
+       PC 에서는 --vwu 가 프레임 폭 기준이라 프레임 안에서도 정확히 헤더 아래에 붙는다. */
+    top: calc(12.04 * var(--vwu, 1vw));
     left: 0;
     width: 100%;
     background-color: #005b8e;
@@ -18,7 +21,9 @@
 }
 
 .contents.faq {
-    margin-top: 50px;  /* header(60px) + swipeTab 높이만큼 밀어줌 */
+    /* .contents 는 이미 padding-top:12.04vw 로 헤더를 비켜 있다.
+       여기서는 swipeTab 높이만큼만 더 밀어준다. */
+    margin-top: 50px;
 }
 </style>
 <!-- contents : s -->

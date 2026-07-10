@@ -65,13 +65,16 @@
     </select>
 	<!-- 자주하는질문 -->
 	<select id="getFaqList" parameterType="map" resultType="FaqDTO">
-	   SELECT FAQ_SEQ   
+	   <!-- FAQ_ITEM_GB 는 T_FAQ_TRAN 에 없는 컬럼이라
+	        `Unknown column 'FAQ_ITEM_GB' in 'field list'` 로 조회 전체가 실패했다.
+	        화면(faq.jsp)은 qstnConts / ansrConts 만 사용하므로 SELECT 에서 제거.
+	        DTO 의 faqItemGb 필드는 그대로 두되 항상 null 이다. -->
+	   SELECT FAQ_SEQ
 	        , QSTN_CONTS
 	        , ANSR_CONTS
 		    , FAQ_GB
-	        , FAQ_ITEM_GB       
-		FROM  T_FAQ_TRAN 
+		FROM  T_FAQ_TRAN
 		WHERE 1=1
-    	ORDER BY FAQ_SEQ ASC 
-    </select>    	 	
+    	ORDER BY FAQ_SEQ ASC
+    </select>
 </mapper>

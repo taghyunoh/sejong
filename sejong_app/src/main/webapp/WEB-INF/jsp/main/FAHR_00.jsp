@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="/asset/css/blood_fahr.css?v=123" rel="stylesheet"> <!-- ASQ 스타일   -->
+<link href="${pageContext.request.contextPath}/asset/css/blood_fahr.css?v=123" rel="stylesheet"> <!-- ASQ 스타일   -->
 <title>Insert title here</title>
 </head>
 <body>
@@ -73,12 +73,12 @@
 		    <h6>평균 혈당 </h6>
 		    <div class="bl_color_stable ft40" id="avgUpt" data-value="-">-</div>
 		  </div>
-		  <div class="line_col" style="height: 10vw;"></div>
+		  <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		  <div class="center_wrap aval_wrap">
 		    <h6>공복 평균</h6>
 		    <div class="bl_color_low ft40" id="avgFastingBlood" data-value="-">-</div>
 		  </div>
-		  <div class="line_col" style="height: 10vw;"></div>
+		  <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		  <div class="center_wrap aval_wrap">
 		    <h6>식후 평균</h6>
 		    <div class="bl_color_high ft40" id="after2hBlood" data-value="-">-</div>
@@ -92,14 +92,14 @@
             <h6> GMI지수(%)</h6>
             <span class="bl_color_stable ft40" id="gmi" data-value="-">-</span>
           </div>
-          <div class="line_col" style="height: 10vw;"></div>
+          <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
     	  <div class="center_wrap aval_wrap">
 	        <h6>TIR(%)</h6>
 	        <div>
 	           <span class="bl_color_stable ft40" id="tir" data-value="-">-</span>
 	         </div>
 	      </div>
-	      <div class="line_col" style="height: 10vw;"></div>
+	      <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
         </div>      
       </section>
       <!-- //혈당 수치 패널 -->

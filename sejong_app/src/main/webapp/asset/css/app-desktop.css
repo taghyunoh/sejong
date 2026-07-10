@@ -1,0 +1,155 @@
+@charset "utf-8";
+
+/* ============================================================
+   PC 대응 셸 — 모바일 전용 vw 레이아웃을 데스크톱에서도 정상으로
+
+   layout/common/swiper/comm_blood.css 의 모든 `Nvw` 는
+   `calc(N * var(--vwu, 1vw))` 로 치환되어 있다.
+   --vwu 를 바꾸면 앱 전체 크기의 기준이 함께 바뀐다.
+     - 모바일: --app-w = 100vw  →  --vwu = 1vw  (기존과 완전히 동일)
+     - PC    : --app-w = 휴대폰 프레임 폭  →  앱이 그 폭에 맞춰 축소
+
+   이 파일을 빼도 폴백(1vw)이 있어 모바일 화면은 깨지지 않는다.
+   ============================================================ */
+
+:root {
+  --app-w: 100vw;                   /* 앱 폭 */
+  --app-h: 100vh;                   /* 앱 높이 */
+  --vwu: calc(var(--app-w) / 100);  /* 1vw 대체 단위 */
+  --app-bg: #e9edf2;                /* 프레임 바깥 배경 */
+  --app-edge: rgba(15, 23, 42, 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --app-bg: #14171c; --app-edge: rgba(0, 0, 0, 0.55); }
+}
+
+/* ------------------------------------------------------------
+   태블릿 이상 — 앱을 휴대폰 비율(약 1:2.05) 프레임으로 만들어
+   화면 정중앙에 띄운다. 창을 넓혀도 앱은 커지지 않는다.
+   ------------------------------------------------------------ */
+@media (min-width: 600px) {
+  :root {
+    /* [중요] 프레임 폭은 창 크기와 무관한 고정값이다.
+       예전에는 `clamp(340px, (100vh - 40px) / 2.05, 480px)` 처럼 창 높이로 폭을 뽑았다.
+       그러면 브라우저 UI(주소창·번역바·개발자도구 배너)가 뜨고 지거나 창을 살짝만 조절해도
+       --app-w 가 바뀌고, 거기 비례하는 --vwu 때문에 글자·버튼·카드가 통째로 커졌다 작아졌다 했다.
+       (입력칸을 클릭하면 글자가 갑자기 커지는 것처럼 보였던 원인)
+       휴대폰 기준 폭(390px)으로 고정해 앱 크기를 항상 일정하게 만든다. */
+    --app-w: 390px;
+
+    /* 높이만 창에 맞춘다. 창이 짧으면 프레임이 줄어들 뿐, 글자 크기는 변하지 않는다. */
+    --app-h: min(calc(var(--app-w) * 2.05), calc(100vh - 24px));
+
+    /* 프레임 좌상단 좌표 — .wrap 바깥의 fixed 요소를 맞추는 데 쓴다 */
+    --app-left: calc(50% - var(--app-w) / 2);
+    --app-top: calc(50% - var(--app-h) / 2);
+  }
+
+  /* svh 는 브라우저 UI 가 접히고 펴져도 변하지 않는 "가장 작은 뷰포트" 높이다.
+     높이 계산에만 쓰므로 폭(=글자 크기)에는 영향이 없다. */
+  @supports (height: 100svh) {
+    :root { --app-h: min(calc(var(--app-w) * 2.05), calc(100svh - 24px)); }
+  }
+
+  html { background: var(--app-bg); }
+  body {
+    background: var(--app-bg);
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 앱 본체 = 휴대폰 프레임.
+     `.wrap.wrap` 으로 명시도를 (0,2,0) 으로 올린다 —
+     common.css 의 `.splash.login { height:103%; min-height:103vh }` 가
+     같은 명시도라서, 뒤에 오는 이 규칙이 이긴다. */
+  .wrap.wrap {
+    flex: none;
+    width: var(--app-w);
+    min-width: var(--app-w);
+    max-width: var(--app-w);
+    height: var(--app-h);
+    min-height: var(--app-h);
+    overflow: hidden;             /* 프레임 밖으로 넘치는 것 잘라냄 */
+    border-radius: 20px;
+    /* 프레임 안이 비쳐 보이지 않도록 흰 바탕을 깔되, 페이지가 지정한 배경은 덮지 않는다.
+       `background: #fff` 로 주면 `.main { background: linear-gradient(...) }` 처럼
+       페이지가 정한 배경을 명시도(0,2,0)로 이겨 버려, 흰 글자가 흰 바탕에 묻힌다.
+       background-color 만 지정하면 페이지의 background(=단축) 선언이 뒤에서 덮어쓴다. */
+    background-color: #fff;
+    box-shadow: 0 0 0 1px var(--app-edge), 0 24px 70px -26px rgba(15, 23, 42, 0.55);
+
+    /* 핵심: transform 이 걸린 요소는 자손 `position: fixed` 의 컨테이닝 블록이 된다.
+       덕분에 .header, .btnArea.fix, .menuWrap, 각 페이지가 인라인으로 박아 둔
+       `.tab-menu { position:fixed; top:14px; left:17px; width:90% }` 같은 것까지
+       전부 뷰포트가 아니라 "프레임" 기준이 된다. 위 overflow:hidden 이 클리핑도 해 준다.
+       fixed 요소를 하나씩 찾아 좌표를 고치지 않아도 되는 이유. */
+    transform: translateZ(0);
+  }
+
+  /* 본문만 스크롤. min-height:0 이 없으면 flex 자식이 줄지 않아 스크롤이 안 생긴다. */
+  .contents {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Blood_Consult / Food_Consult / Exercise_Consult / FAHR_01F_1 등은 인라인에
+     `.main-content { min-height: 100vh }` 를 갖고 있다. 프레임 안에서 100vh 는
+     여전히 "창 높이"라 프레임(--app-h)보다 커져 아래가 잘리고,
+     comm_blood.css 의 `overflow: hidden` 때문에 스크롤조차 막힌다.
+     명시도 (0,2,0) 으로 페이지 인라인 규칙을 이겨 프레임 높이에 맞추고 본문만 스크롤시킨다. */
+  .wrap .main-content {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* 남는 높이를 본문이 모두 차지해야 하단 내비게이션이 프레임 바닥에 붙는다.
+       페이지가 `margin: 0 auto` 같은 교차축 auto 마진을 걸면 flex stretch 가 꺼져
+       본문이 내용 크기로 줄고, 그 아래가 빈 채로 내비게이션이 중간에 뜬다. */
+    flex: 1 1 auto;
+    margin-left: 0;
+    margin-right: 0;
+    align-self: stretch;
+  }
+
+  /* 하단 내비게이션은 항상 프레임 맨 아래 */
+  .wrap .footerNav {
+    margin-top: auto;
+  }
+
+  /* --------------------------------------------------------
+     .wrap 바깥(body 직계)에 있는 오버레이만 좌표를 직접 맞춘다.
+     로그인 페이지의 popupWrap 이 여기 해당한다 — .wrap 의 transform
+     컨테이닝 블록 밖이라 여전히 뷰포트 기준으로 잡히기 때문이다.
+     -------------------------------------------------------- */
+  body > .popupWrap,
+  body > .popupWrap:after,
+  body > .loadingWrap,
+  body > .loadingWrap:after,
+  body > .guidePopupWrap,
+  body > .menuWrap {
+    left: var(--app-left);
+    top: var(--app-top);
+    right: auto;
+    bottom: auto;
+    width: var(--app-w);
+    max-width: var(--app-w);
+    height: var(--app-h);
+  }
+
+  /* body 직계 슬라이드 메뉴는 클리핑해 줄 프레임이 없으므로,
+     닫힘 위치를 화면 밖으로 밀어낸다.
+       요소 왼쪽 = 50vw - w/2  →  100vw 로 보내려면 50vw + w/2 만큼 이동 */
+  body > .menuWrap {
+    transform: translateX(calc(50vw + var(--app-w) / 2));
+    -webkit-transform: translateX(calc(50vw + var(--app-w) / 2));
+  }
+  body > .menuWrap.open {
+    transform: translateX(0);
+    -webkit-transform: translateX(0);
+  }
+}

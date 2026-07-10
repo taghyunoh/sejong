@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <title>시간대별 통계</title>
 
-<link href="/asset/css/comm_blood.css?v=123" rel="stylesheet">
+<link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet">
 
 <!-- (선택) Spring Security CSRF 메타 -->
 <meta name="_csrf" content="${_csrf.token}">

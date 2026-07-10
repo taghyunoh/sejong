@@ -3,10 +3,30 @@ body {
   font-family: sans-serif;
 }
 
+/* [좌우 정렬 기준]
+   탭 바와 본문이 좌우 48px 씩 안쪽으로 밀려 있던 원인은 조상들의 여백이었다.
+     .contents (좌우 마진 24 + 패딩 10)  >  .lyInner (좌우 패딩 14)
+   자식에게 음수 마진을 주는 방식은 쓰면 안 된다.
+   .contents 는 flex 항목인데 `margin:auto` 때문에 stretch 가 꺼져 "내용 크기"로 줄어든다.
+   자식 폭이 음수 마진으로 상쇄되면 부모가 28px 로 붕괴한다(실제로 그렇게 깨졌다).
+   그래서 조상들의 좌우 여백을 직접 0 으로 만들고, 탭·본문에 같은 패딩만 준다. */
 .contents {
-  max-width: 720px;
-  margin: auto;
-  padding: 10px;
+  max-width: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 0;      /* margin:auto → flex stretch 복구 (폭이 프레임에 꽉 참) */
+  margin-right: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* layout.css 의 `.contents .lyInner { padding: 5.56vw 3.7vw }` 중 좌우만 제거.
+   선택자 명시도가 (0,2,0) 이라 `.lyInner` 로는 못 이긴다 → 같은 형태로 맞춘다. */
+.contents .lyInner {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* 탭 메뉴 */
@@ -18,6 +38,15 @@ body {
   z-index: 10;
   background: #f9f9f9;
   border-bottom: 1px solid #ccc;
+
+  /* 조상 여백이 사라졌으므로 폭은 그대로 두고 좌우 패딩(약 10px)만 준다 */
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: calc(2.56 * var(--vwu, 1vw));    /* 390px 기준 약 10px */
+  padding-right: calc(2.56 * var(--vwu, 1vw));
 }
 
 .tab-btn {
@@ -37,6 +66,15 @@ body {
 
 .tab-content {
   display: none;
+
+  /* 탭 바와 똑같은 기준. 조상 여백이 제거됐으므로 좌우 패딩만 준다. */
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: calc(2.56 * var(--vwu, 1vw));    /* 390px 기준 약 10px */
+  padding-right: calc(2.56 * var(--vwu, 1vw));
 }
 
 .tab-content.active {
@@ -159,7 +197,10 @@ button {
 }
 .date-range {
   display: flex;
-  justify-content: center;
+  /* 예전에는 center 였다. 행 폭이 내용과 거의 같아 왼쪽에 붙어 보였을 뿐인데,
+     .tab-content 를 넓히자 입력칸이 가운데로 몰렸다.
+     아래 표와 시작점을 맞추기 위해 왼쪽 정렬로 고정한다. */
+  justify-content: flex-start;
   align-items: center;
   margin: 16px 0;
   font-weight: bold;
@@ -201,21 +242,21 @@ button {
 
 .exercise-table {
   width: 100%;
-  max-height: 400px; /* 10행 정도 높이로 맞춰줌 (상황에 맞게 조절 가능) */
   border-collapse: collapse;
   font-size: 1.0rem;
-  overflow-y: auto;
-  display: block;
-}  
+  /* `display:block; overflow-y:auto; max-height` 를 제거했다.
+     block 이 되면 표 레이아웃이 풀려 width:100% 가 셀에 전달되지 않고
+     열이 왼쪽으로 몰린 채 오른쪽이 텅 비었다.
+     세로 스크롤은 바깥 래퍼(.exer-table-wrap / .table-wrapper)가 담당한다. */
+}
 
 
 .food-table {
   width: 100%;
-  max-height: 400px; /* 10행 정도 높이로 맞춰줌 (상황에 맞게 조절 가능) */
   border-collapse: collapse;
   font-size: 1.0rem;
-  overflow-y: auto;
-  display: block;
+  /* exercise-table 과 같은 이유로 display:block / overflow-y / max-height 제거.
+     세로 스크롤은 바깥 래퍼(.food-table-wrap)가 담당한다. */
 }
 
 .food-table th,

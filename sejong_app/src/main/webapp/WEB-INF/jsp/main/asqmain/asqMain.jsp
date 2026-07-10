@@ -35,8 +35,8 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/main.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <link href="/asset/css/comm_style.css?v=123" rel="stylesheet">
-  <link href="/asset/css/asq_style.css?v=123" rel="stylesheet">
+  <link href="${pageContext.request.contextPath}/asset/css/comm_style.css?date=<%= nowTime %>" rel="stylesheet">
+  <link href="${pageContext.request.contextPath}/asset/css/asq_style.css?date=<%= nowTime %>" rel="stylesheet">
 
 <style>
 /* 안내 박스 */
@@ -126,7 +126,9 @@
 }
 
 /* 자잘한 UI */
-#historyTab { margin-left: -9px; background:#fff !important; color:#000 !important; }
+/* 예전에 있던 margin-left:-9px 를 제거했다. 본문이 왼쪽으로 끌려갔고,
+   id 선택자라 comm_style.css 의 .tab-content 정렬 규칙까지 눌렀다. */
+#historyTab { background:#fff !important; color:#000 !important; }
 .btn-small { height: 30px; font-size: 13px; padding: 2px 8px; }
 .label-bold { font-weight: bold; }
 
@@ -161,9 +163,20 @@
   overflow-x: hidden;
   white-space: nowrap;
   position: fixed;
-  top: 14px;
-  left: 17px;
-  width: 90%;
+  /* .header 높이(layout.css: 12.04vw)를 그대로 따라간다.
+     14px 로 박아 두면 헤더보다 위로 올라와 제목을 덮는다.
+     PC 에서는 --vwu 가 프레임 폭 기준이라 프레임 안에서도 정확히 헤더 아래에 붙는다. */
+  top: calc(12.04 * var(--vwu, 1vw));
+  /* comm_style.css 의 `.tab-menu { margin-top: 30px }` 가 fixed 요소를 30px 더 밀어낸다.
+     예전엔 top:14px + margin 30px = 44px 이 되어 헤더(47px) 아래에 우연히 맞았을 뿐이다. */
+  margin-top: 0;
+  /* left:17px + width:90% 는 좌우가 어긋났다(왼쪽 17px, 오른쪽 22px).
+     양쪽을 0 으로 잡아 대칭을 만들고, 좌우에 같은 여백만 준다. */
+  left: 0;
+  right: 0;
+  width: auto;
+  padding: 0 calc(2.56 * var(--vwu, 1vw));   /* 390px 기준 약 10px */
+  box-sizing: border-box;
   z-index: 999;
 }
 

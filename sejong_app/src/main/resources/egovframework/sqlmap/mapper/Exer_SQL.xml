@@ -81,27 +81,36 @@
 		      
 	</select>
 	<select id="getTodayExecs" parameterType="ExerciseDTO"  resultType="ExerciseDTO">
-		SELECT 
+		SELECT
 		    USER_UUID ,
 		    DATE_FORMAT(STR_TO_DATE(EXER_DATE, '%Y%m%d'), '%Y-%m-%d') AS EXER_DATE ,
 		    EXER_STIME ,
 		    EXER_ETIME ,
-		    EXER_NAME , 
-		    EXER_INT , 
+		    EXER_NAME ,
+		    EXER_INT ,
 		    EXER_CNT ,
 		    REG_DTTM  ,
-		    MOD_DTTM 
-		FROM T_EXER_TRAN 
+		    MOD_DTTM ,
+		    <!-- 화면(renderExerciseList)이 exerMinutes 로 '분단위' 칸을 그린다.
+		         여기서 안 내려 주면 `null분` 으로 표시된다. getExercise 와 동일한 계산. -->
+		    TIMESTAMPDIFF(
+		        MINUTE,
+		        STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+		        STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+		    ) AS EXER_MINUTES
+		FROM T_EXER_TRAN
 		WHERE EXER_DATE = DATE_FORMAT(NOW(), '%Y%m%d')
    		  AND USER_UUID = #{userUuid}
 	</select>
 	<select id="getTodaysumExecs" parameterType="String"  resultType="map">
-		SELECT 
+		SELECT
+		    <!-- LPAD 없이 쓰면 시간 문자열이 6자리가 아닐 때 STR_TO_DATE 가 NULL 을 돌려
+		         합계가 통째로 NULL 이 된다. 다른 쿼리들과 동일하게 맞춘다. -->
 		    SUM(
 		        TIMESTAMPDIFF(
 		            MINUTE,
-		            STR_TO_DATE(EXER_STIME, '%H%i%s'),
-		            STR_TO_DATE(EXER_ETIME, '%H%i%s')
+		            STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+		            STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
 		        )
 		    ) AS minutes
 		FROM T_EXER_TRAN

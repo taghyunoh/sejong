@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <!-- CSS -->
-<link href="/asset/css/comm_blood.css?v=123" rel="stylesheet"> 
+<link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet"> 
 <style>
 .tab-container, 
 .header, 
@@ -61,6 +61,23 @@
 .note-text,
 .unit-display { color: #000; }
 .left-align { text-align: left; }
+/* '* 오늘의 평균 혈당(24시간 기준)은 0 mg/dL 입니다' 줄.
+   마크업의 <br> 을 없앴다(그게 두 줄로 보이던 이유).
+   폭이 모자라 접힐 때는 단어 중간이 아니라 어절에서 끊기게 한다. */
+.avg-blood-line {
+  /* <br> 을 지워도 .font-large(=4.1vwu ≈ 16px) 로는 폭이 모자라 두 줄로 접혔다.
+     한 줄을 보장하도록 크기를 낮추고 줄바꿈을 막는다.
+     --vwu 기준이라 프레임/화면 폭이 달라져도 비율이 유지된다. */
+  font-size: calc(3.5 * var(--vwu, 1vw));   /* 390px 기준 약 13.7px */
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1.45;
+  margin: 4px 0;      /* 위아래 간격 축소 */
+}
+/* 카드 사이 간격도 조금 좁힌다 (comm_blood.css 기본 10px) */
+.top2-card,
+.top3-card { margin-bottom: 6px; }
 .title-text { font-size: 0.9rem; margin: 0 0 8px 0; }
 .red-text { color: red; }
 
@@ -72,12 +89,15 @@
   width: 100%;
 }
 
-/* 공통 행: 좌우 패딩 0으로 왼쪽 붙임 */
+/* 공통 행
+   고정폭(60px 50px 70px 1fr)이라 뒤쪽 열이 좁아 붙어 보였다.
+   비율(fr)로 바꿔 카드 폭을 고르게 나눈다. Exercise_Consult 와 동일 기준. */
 .grid-header,
 .grid-row {
   display: grid;
-  grid-template-columns: 60px 50px 70px 1fr;  /* 시간 | 종류 | 분 | 값 */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.3fr);
   gap: 8px;
+  column-gap: 12px;
   align-items: center;
   font-size: 13px;
   padding: 6px 0;    /* 좌우 0 (중요) */
@@ -89,8 +109,9 @@
   border-radius: 8px;  /* 둥근 정도 그대로 유지 */
   font-weight: 700;
   padding: 8px calc(var(--card-pad));
-  margin-left: calc(var(--card-pad) * -0.1);  /* -1 → -0.7로 줄임 */
-  margin-right: calc(var(--card-pad) * -0.7);
+  /* 음수 마진으로 헤더만 좌우로 삐져나가 본문 열과 어긋났다. 제거. */
+  margin-left: 0;
+  margin-right: 0;
   overflow: hidden;
 }
 
@@ -107,17 +128,19 @@
 .grid-row { border-bottom: 1px solid #eee; }
 .grid-row:last-child { border-bottom: none; }
 
+/* 예전에는 헤더와 각 span 에 음수 마진(-18px, -2px)과 `left: 10px` 로
+   열 위치를 억지로 맞췄다. 게다가 `margin-left: -8` 처럼 단위 없는 값도 섞여 있는데,
+   이 페이지는 쿼크 모드라 그것들이 실제로 적용되어 열이 어긋났다.
+   그리드 비율을 제대로 잡았으므로 전부 제거한다. */
 .grid-header {
   background-color: #e0f0ff;
   border-radius: 6px;
   font-weight: 700;
-
-  /* 좌측만 조금 붙이기 */
-  margin-left: -18px;   /* 원하는 만큼 조정 (-2px ~ -6px 정도) */
+  margin-left: 0;
 }
 .grid-header span {
   display: inline-block;
-  margin-left: -2px;   /* 원하는 만큼 이동 (-2px ~ -6px 정도 조정 가능) */
+  margin-left: 0;
 }
 .grid-header-wrap {
   position: relative;
@@ -129,46 +152,29 @@
   font-weight: 700;
   padding: 8px;
   position: relative;
-  left: 10px;   /* 배경만 우측으로 5px 이동 */
+  left: 0;
 }
 #grid-rows span:nth-child(3),
-#grid-rows span:nth-child(4) {
-  margin-left: 10px;  /* 두 번째 컬럼만 우측으로 */
-}
+#grid-rows span:nth-child(4),
 #grid-rows-max span:nth-child(3),
 #grid-rows-max span:nth-child(4) {
-  margin-left: 10px;  /* 두 번째 컬럼만 우측으로 */
+  margin-left: 0;
 }
 
 /* 헤더 */
-.grid-header span:nth-child(2) {
-  text-align: left;
-  margin-left: -8;
-}
-/* 헤더 */
-.grid-header span:nth-child(3) {
-  text-align: left;
-  margin-left: 10;
-}
+.grid-header span:nth-child(2),
+.grid-header span:nth-child(3),
 .grid-header span:nth-child(4) {
   text-align: left;
-  margin-left: -6;
+  margin-left: 0;
 }
 
 /* 데이터 행 */
-#grid-rows span:nth-child(2) {
-  text-align: left;
-  margin-left: -8;
-}
-/* 데이터 행 */
-#grid-rows-max span:nth-child(1) {
-  text-align: left;
-  margin-left: 3;
-}
-/* 데이터 행 */
+#grid-rows span:nth-child(2),
+#grid-rows-max span:nth-child(1),
 #grid-rows-max span:nth-child(2) {
   text-align: left;
-  margin-left: -8;
+  margin-left: 0;
 }
 /* 데이터 행 */
 /* 데이터 행 */
@@ -180,7 +186,10 @@
   text-align: left;
   margin-left: 24;
 }
-.main-content { max-width: 960px; margin: 0 auto; }
+/* `margin: 0 auto` 는 이 요소가 .wrap(flex column)의 자식이라 교차축 auto 마진이 되어
+   stretch 를 꺼버린다. 그러면 폭이 내용 크기로 줄고 flex:1 도 무력해져
+   하단 내비게이션이 프레임 바닥에 붙지 못한다. 프레임이 이미 폭을 잡아 주므로 제거. */
+.main-content { max-width: 960px; margin: 0; }
 .date-nav {
   position: sticky; bottom: 0; /* 스크롤 내려도 하단에 고정 */
   background: #fff;
@@ -205,8 +214,10 @@
 .date-range {
   display: flex;
   align-items: center;
-  gap: 0;                 /* 완전히 붙이기 */
-  margin-left: -13px;
+  gap: 8px;
+  margin-left: 0;         /* 음수 마진 제거 — 좌우가 어긋났다 */
+  width: 100%;
+  justify-content: space-between;   /* 화살표를 양 끝으로, 날짜가 가운데를 넓게 씀 */
 }
 
 .date-range button {
@@ -216,6 +227,14 @@
   padding: 0 4px;
   cursor: pointer;
   color: #555;
+
+  /* common.css 의 `.btn { width: 100%; height: 10.56vw }` 가 화살표를 부풀려
+     날짜 입력칸을 찌그러뜨린다. 내용 크기만 차지하게 되돌린다. */
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  justify-content: center;
 }
 
 .date-range button:hover {
@@ -223,10 +242,13 @@
 }
 
 .date-range input[type="date"] {
-  width: 120px;           /* 글자가 커지면 폭 약간 늘림 */
-  padding: 6px 6px;       /* 내부 여백 확대 */
-  font-size: 12px;        /* 날짜 폰트 크게 */
-  font-weight: 400;       /* 글씨 약간 두껍게 */
+  flex: 1;                /* 남는 폭을 날짜가 가져감 — 120px 고정이라 좁았다 */
+  min-width: 0;
+  width: auto;
+  max-width: 220px;
+  padding: 7px 6px;       /* 내부 여백 */
+  font-size: 13px;        /* 날짜 폰트 */
+  font-weight: 400;
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -254,7 +276,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 	<!-- 메인 콘텐츠 -->
 	<main class="main-content">
-		<div class="top2-card decrease-card" style="margin-top:-30px;">
+		<!-- -30px 은 헤더에 너무 붙어 있었다. 살짝 아래로 -->
+		<div class="top2-card decrease-card" style="margin-top:-10px;">
 		  <div class="date-range">
 		    <button id="prev7" class="btn" type="button" aria-label="이전 1일">◀</button>
 		    <input type="date" id="startDate" aria-label="시작일" readonly>
@@ -279,10 +302,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		</div>
 	  </div>
 	
-	    <div class="note-text font-large left-align">
-		  * 오늘의 평균 혈당(24시간 기준)은 <br>
+	    <%-- `<br>` 이 강제로 줄을 나눠 두 줄로 보였다. 제거하고 한 줄로 둔다. --%>
+	    <div class="note-text font-large left-align avg-blood-line">
+		  * 오늘의 평균 혈당(24시간 기준)은
 		  <span class="detail-box_small" id="avg_blood">-</span>
-		  <span class="unit-label">mg/dL</span> 입니다  
+		  <span class="unit-label">mg/dL</span> 입니다
 		</div>
 		<br> <!-- 줄바꿈으로 공간 확보 -->
 		

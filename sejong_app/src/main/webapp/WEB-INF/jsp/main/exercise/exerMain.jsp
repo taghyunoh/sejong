@@ -40,7 +40,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <!-- CSS -->
-  <link href="/asset/css/comm_style.css?v=123" rel="stylesheet"> <!-- exercise 스타일   -->
+  <link href="${pageContext.request.contextPath}/asset/css/comm_style.css?date=<%= nowTime %>" rel="stylesheet"> <!-- exercise 스타일   -->
 <style>
 /* 입력 폼 전체 간격 줄이기 */
 #exerciseForm .input-group { margin: 6px 0; }
@@ -87,9 +87,10 @@
     padding: 1px 3px;
     width: 118px;
 }
-#historyTab {
-  margin-left: -11px; /* 원하는 만큼 조정 (-값은 왼쪽으로 당김) */
-}
+/* 예전에 있던 `#historyTab { margin-left: -11px }` 를 제거했다.
+   본문을 왼쪽으로 끌어당겨 좌우가 어긋났고(왼쪽 37px / 오른쪽 48px),
+   id 선택자라 comm_style.css 의 `.tab-content` 정렬 규칙까지 눌러버렸다.
+   좌우 여백은 이제 comm_style.css 의 .tab-content 가 탭 바와 함께 관리한다. */
 .custom-select-options {
   max-height: 800px;     /* 5개 정도 보이도록 적절히 조정 */
   overflow-y: auto;      /* 세로 스크롤 가능 */
@@ -403,7 +404,9 @@ function getExerciseList(gubun) {
 	    }
     
 	    const tdDuration = document.createElement('td');
-	    tdDuration.textContent = item.exerMinutes + '분';
+	    // 값이 없으면 'null분' / 'undefined분' 이 그대로 찍혔다.
+	    tdDuration.textContent = (item.exerMinutes == null || item.exerMinutes === '')
+	                             ? '-' : item.exerMinutes + '분';
 
 	    const tdDelete = document.createElement('td');
 	    tdDelete.textContent = '🗑️';

@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <!-- CSS -->
-<link href="/asset/css/comm_blood.css?v=123" rel="stylesheet"> 
+<link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet"> 
 <style>
 .tab-container, 
 .header, 

@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <title>시간대별 통계</title>
 
-<link href="/asset/css/comm_blood.css?v=123" rel="stylesheet">
+<link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet">
 
 <!-- (선택) Spring Security CSRF 메타 -->
 <meta name="_csrf" content="${_csrf.token}">
@@ -73,7 +73,7 @@
 
   /* 범례 (글자 표시 개선) */
   .legend {
-    display:flex; gap:16px; margin-top:2px; font-size:10px; color:#333; align-items:center;
+    display:flex; gap:16px; margin-top:2px; font-size:12px; color:#333; align-items:center;
   }
   .legend .item { display:flex; align-items:center; gap:6px }
   .legend .box { width:14px; height:14px; display:inline-block; border-radius:2px }
@@ -91,8 +91,12 @@
 .legend {
   margin-top: -5px; /* legend 위쪽 여백 */
   display: flex;
-  gap: 12px; /* 항목 간 간격 */
-  font-size: 10px;
+  font-size: 12px;  /* 10px 은 너무 작아 안 읽힘 */
+  /* space-between 은 남는 폭을 전부 사이에 몰아넣어 간격이 너무 벌어졌다.
+     고정 간격으로 두되, 예전(12px)보다는 넓게 잡아 오른쪽 여백을 줄인다. */
+  gap: 24px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 .main-content {
   background-color: #f8f9fa;
@@ -107,17 +111,21 @@
   gap: 8px; 
 }
 
-/* 공통 레이아웃 */
+/* 공통 레이아웃
+   고정폭(60px 60px 50px 60px)이라 카드 폭을 다 못 쓰고 오른쪽이 남았고,
+   "음식종류/운동종류" 가 좁아 잘렸다. 비율(fr)로 바꿔 카드 폭을 채운다.
+   minmax(0,·) 가 없으면 그리드 항목이 내용 크기 아래로 못 줄어 넘친다. */
 .grid-header,
 .grid-row {
   display: grid;
-  grid-template-columns: 60px 60px 50px 60px; /* 시간 | 음식 | 수량 | 혈당 */
+  grid-template-columns: 40px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.3fr);
   gap: 8px;
+  column-gap: 14px;   /* '순위' 와 다음 열 사이가 붙어 보여 간격을 조금 더 준다 */
   align-items: center;
   font-size: 14px;
   padding: 4px 8px;
   box-sizing: border-box;        /* 패딩 포함 폭 계산 */
-  margin-left: -7px;   /* 원하는 만큼 조정 */
+  margin-left: 0;                /* 음수 마진 제거 — 좌우가 어긋났다 */
 }
 
 /* 한 줄 처리 */
@@ -127,7 +135,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
-  /* 🔧 음수 여백 제거 */
   padding-left: 0;
   margin-left: 0;
 }
@@ -139,24 +146,9 @@
   font-weight: bold;          /* 강조 */
   overflow: hidden;            /* 🔒 둥근 모서리 밖으로 내용이 안 새게 */
 }
-
-.grid-header span {
-  margin-left: -10px;   /* 원하는 만큼 조정 */
-}
-/* 수량, 혈당 컬럼만 우측으로 이동 */
-/* 행 데이터 */
-.grid-row > :nth-child(2),
-.grid-row > :nth-child(2) {
-  transform: translateX(-6px); /* 필요 시 값 조정 */
-}
-.grid-header > :nth-child(2),
-.grid-header > :nth-child(3),
-.grid-header > :nth-child(4){
-  padding-left: -4px;
-}
-.grid-header > :nth-child(1){
-  padding-left: 8px;
-}
+/* 예전에는 여기서 span 에 margin-left:-10px, 2번째 열에 translateX(-6px),
+   그리고 유효하지 않은 padding-left:-4px 로 위치를 억지로 맞추고 있었다.
+   그리드 비율을 제대로 잡았으므로 모두 제거한다. */
 .left-align {
   text-align: left;
 }
@@ -213,47 +205,44 @@
   text-align: left;
   margin-left: 24;
 }
-#grid-rows-food span:nth-child(1) {
-  text-align: left;
-  margin-left: 5;
-}  
-#grid-rows-exer span:nth-child(1) {
-  text-align: left;
-  margin-left: 5;
-}
-#grid-rows-food span:nth-child(2) {
-  text-align: left;
-  margin-left: -7;
-}  
-#grid-rows-exer span:nth-child(2) {
-  text-align: left;
-  margin-left: -7;
-}
-
-#grid-rows-food span:nth-child(3) {
-  text-align: left;
-  margin-left: 5;
-}  
+/* 예전에는 여기서 `margin-left: 5` / `-7` 처럼 단위 없는 값으로 열 위치를 억지로 맞췄다.
+   표준 모드에서는 무시되지만 이 페이지는 쿼크 모드라 실제로 적용되어 열이 어긋났다.
+   그리드 비율을 제대로 잡았으므로 모두 제거한다. */
+#grid-rows-food span:nth-child(1),
+#grid-rows-exer span:nth-child(1),
+#grid-rows-food span:nth-child(2),
+#grid-rows-exer span:nth-child(2),
+#grid-rows-food span:nth-child(3),
 #grid-rows-exer span:nth-child(3) {
   text-align: left;
-  margin-left: 5;
+  margin-left: 0;
 }
 
 #grid-rows-food span:nth-child(4),
 #grid-rows-exer span:nth-child(4) {
-  text-align: right;
-  transform: translateX(-20px); /* 왼쪽으로 8px 이동 */
+  text-align: right;   /* 혈당변동폭은 우측 정렬 */
 }
+/* `display:block` + `margin-top:14px` 이라 '단위 : mg/dL' 가 제목 아래 줄을 차지했고,
+   그 탓에 카드 헤더가 좁아져 '*주의할음식TOP3(주간)' 이 두 줄로 접혔다.
+   제목과 같은 줄 오른쪽에 두고, 둘 다 줄바꿈을 막는다. */
 .unit-display {
-  display: block;       /* 줄바꿈 */
-  margin-top: 14px;      /* 제목과 간격 */
-  text-align: right;    /* 우측 정렬 */
+  display: inline-block;
+  margin-top: 0;
+  margin-left: auto;    /* 헤더가 flex 라 오른쪽 끝으로 */
+  text-align: right;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.card-header h5 {
+  white-space: nowrap;
+  margin: 0;
 }
 
-/* 헤더 */
+/* 헤더 — `margin-left: -18` (단위 없음) 이 쿼크 모드에서 먹혀
+   '음식종류/운동종류' 열만 18px 왼쪽으로 밀려 '순위' 와 겹쳤다. 제거. */
 .grid-header span:nth-child(2) {
   text-align: left;
-  margin-left: -18;
+  margin-left: 0;
 }
 .range-buttons .btn {
   font-size: 15px;   /* 기본보다 살짝 크게 */
@@ -332,8 +321,27 @@
 .date-range {
   display: flex;
   align-items: center;
-  gap: 0;                  /* 완전히 붙이기 */
-  margin-left: -13px;
+  gap: 8px;
+  margin-left: 0;          /* 음수 마진 제거 — 좌우가 어긋났다 */
+  width: 100%;
+  justify-content: space-between;   /* 화살표를 양 끝으로, 날짜는 남는 폭을 나눠 씀 */
+}
+
+/* TAR / TBR / CV 설명줄 — 인라인 12px 대신 클래스로 관리. 카드 폭을 끝까지 쓰고 필요하면 줄바꿈 */
+.row_item.metric-note {
+  display: block;
+}
+.row_item.metric-note label {
+  display: block;
+  width: 100%;
+  /* 15px 에서는 한 줄에 322px 이 필요한데 카드 안쪽은 305px 뿐이라 두 줄로 접혔다.
+     13px + 자간 축소로 한 줄에 들어가게 한다. */
+  font-size: 13px;
+  letter-spacing: -0.2px;
+  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .date-range button {
@@ -344,6 +352,14 @@
   cursor: pointer;
   color: #555;
   letter-spacing: -0.3px;  /* 글자 간격 살짝 좁힘 */
+
+  /* common.css 의 `.btn { width: 100%; height: 10.56vw }` 가 화살표 버튼을 부풀려
+     날짜 입력이 12px 로 찌그러졌다. 화살표는 내용 크기만 차지하게 되돌린다. */
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  justify-content: center;
 }
 
 .date-range button:hover {
@@ -351,9 +367,11 @@
 }
 
 .date-range input[type="date"] {
-  width: 110px;            /* 폭 살짝 줄임 */
-  padding: 5px 5px;        /* 내부 여백 축소 */
-  font-size: 12px;         /* 날짜 폰트 동일 */
+  flex: 1;                 /* 남는 폭을 두 날짜가 나눠 가짐 */
+  min-width: 0;
+  width: auto;
+  padding: 6px 5px;        /* 내부 여백 */
+  font-size: 13px;         /* 날짜 폰트 */
   font-weight: 400;
   text-align: center;
   border: 1px solid #ccc;
@@ -377,16 +395,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   transform: scale(1.2);  /* 아이콘 크기 살짝 키움 */
 }
 
+/* [AI 분석 리포트] 접힘/펼침
+   예전에는 기본이 `display:none` 인데 `.show` 가 opacity/max-height 만 바꿔서
+   버튼 텍스트만 '닫기' 로 변할 뿐 카드는 계속 display:none 이라 내용이 영영 안 보였다.
+   (display 는 transition 대상도 아니라 애니메이션에도 쓸모가 없었다.)
+   `.show` 에서 display 를 열어 준다. */
 .recommendation-card {
   display: none;
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: all 0.6s ease; /* 부드럽게 전환 */  
 }
 .recommendation-card.show {
+  display: block;
   opacity: 1;
-  max-height: 2000px; /* 내용이 충분히 들어갈 수 있게 큰 값 */
+  max-height: none;
+  overflow: visible;
 }
 #showRecommendationBtn {
   font-size: 16px;           /* 글자 크게 */
@@ -424,6 +445,82 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 </head>
 <body>
 
+<!-- [임시 진단] 주소에 ?dbg=1 을 붙였을 때만 뜬다. 원인 확인 후 이 블록은 삭제한다.
+     안드로이드 웹뷰에서 스크롤이 안 되는 이유(CSS 미적용 / 미디어쿼리 불일치 / 높이 고정)를 화면에서 직접 읽기 위한 것. -->
+<script>
+(function () {
+  // ?dbg=1 로 열거나, 안드로이드 WebView(UA 에 'wv')로 열면 뜬다.
+  // 앱은 고정 URL 로 진입해 쿼리를 붙일 수 없어 UA 조건을 함께 둔다.
+  var isWebView = / wv\b|; wv\)/.test(navigator.userAgent);
+  if (location.search.indexOf('dbg=1') < 0 && !isWebView) return;
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var mc = document.querySelector('.main-content');
+      var de = document.documentElement, b = document.body;
+      var cs = mc ? getComputedStyle(mc) : {};
+      function L(k, v) { return k + ': ' + v; }
+      var wrap = document.querySelector('.wrap');
+      var ws = wrap ? getComputedStyle(wrap) : {};
+      var lines = [
+        L('UA', navigator.userAgent.slice(-40)),
+        L('CSS폭', innerWidth + ' x ' + innerHeight),
+        L('599이하 매치', matchMedia('(max-width:599px)').matches),
+        L('mc overflowY', cs.overflowY),
+        L('mc minHeight', cs.minHeight),
+        L('mc client/scroll', mc ? (mc.clientHeight + ' / ' + mc.scrollHeight) : '-'),
+        L('wrap h/overflow', wrap ? (Math.round(wrap.getBoundingClientRect().height) + ' / ' + ws.overflowY) : '-'),
+        L('html client/scroll', de.clientHeight + ' / ' + de.scrollHeight),
+        L('body client/scroll', b.clientHeight + ' / ' + b.scrollHeight),
+        L('scrollingElement', document.scrollingElement === de ? 'html' : 'body'),
+        L('body touchAction', getComputedStyle(b).touchAction),
+        L('mc touchAction', cs.touchAction)
+      ];
+      // 차트 캔버스가 touch-action:none 이면 그 위에서 손가락 스크롤이 먹지 않는다
+      [].forEach.call(document.querySelectorAll('canvas'), function (cv, i) {
+        var r = cv.getBoundingClientRect();
+        lines.push(L('canvas' + i + ' ta/크기',
+          getComputedStyle(cv).touchAction + ' / ' + Math.round(r.width) + 'x' + Math.round(r.height)));
+      });
+      // 실제로 스크롤이 먹는지 시도해 본다
+      scrollTo(0, 300); lines.push(L('window.scrollTo(300)', scrollY));
+      if (mc) { mc.scrollTop = 300; lines.push(L('mc.scrollTop=300', mc.scrollTop)); mc.scrollTop = 0; }
+      scrollTo(0, 0);
+
+      var box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:#000;color:#0f0;'
+        + 'font:11px/1.5 monospace;padding:6px 8px;white-space:pre;';
+      box.textContent = lines.join('\n');
+      document.body.appendChild(box);
+
+      // ── 터치가 페이지까지 오는지 실측 ──────────────────────────────
+      // start/move 카운트가 0 이면 네이티브(WebView/부모 뷰)가 터치를 먹고 있다는 뜻 → 앱 문제.
+      // move 는 늘어나는데 scrollY 가 안 변하면 웹(CSS/합성) 문제.
+      var t = { start: 0, move: 0, cancel: 0, prevented: 0, maxY: 0 };
+      var live = document.createElement('div');
+      live.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#300;color:#ff0;'
+        + 'font:12px/1.6 monospace;padding:6px 8px;white-space:pre;';
+      document.body.appendChild(live);
+      function paint() {
+        live.textContent = '손가락으로 위아래 쓸어보세요\n'
+          + 'touchstart=' + t.start + '  touchmove=' + t.move + '  cancel=' + t.cancel + '\n'
+          + 'preventDefault된 move=' + t.prevented + '\n'
+          + 'scrollY(최대)=' + Math.round(t.maxY) + '   현재=' + Math.round(scrollY || b.scrollTop);
+      }
+      paint();
+      addEventListener('touchstart', function () { t.start++; paint(); }, true);
+      addEventListener('touchmove', function (e) {
+        t.move++;
+        if (e.defaultPrevented) t.prevented++;
+        t.maxY = Math.max(t.maxY, scrollY || b.scrollTop);
+        paint();
+      }, true);
+      addEventListener('touchcancel', function () { t.cancel++; paint(); }, true);
+      addEventListener('scroll', function () { t.maxY = Math.max(t.maxY, scrollY || b.scrollTop); paint(); }, true);
+    }, 800);
+  });
+})();
+</script>
+
 <main class="main-content">
   <!-- 시간대별 스택 막대 차트 -->
 	<div class="top2-card decrease-card" style="margin-top:40px;">
@@ -448,12 +545,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		      <h6>평균 혈당</h6>
 		      <div class="bl_color_low ft40" id="avgUpt" data-value="-">-</div>
 		    </div>
-		    <div class="line_col" style="height: 10vw;"></div>
+		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		    <div class="center_wrap aval_wrap">
 		      <h6>공복 평균</h6>
 		      <div class="bl_color_low ft40" id="avgFastingBlood" data-value="-">-</div>
 		    </div>
-		    <div class="line_col" style="height: 10vw;"></div>
+		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		    <div class="center_wrap aval_wrap">
 		      <h6>식후 평균</h6>
 		      <div class="bl_color_high ft40" id="after2hBlood" data-value="-">-</div>
@@ -465,14 +562,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		      <h6>GMI지수(%)</h6>
 		      <span class="bl_color_low ft40" id="gmi" data-value="-">-</span>
 		    </div>
-		    <div class="line_col" style="height: 10vw;"></div>
+		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		    <div class="center_wrap aval_wrap">
 		      <h6>TIR(%)</h6>
 		      <div>
 		        <span class="bl_color_low ft40" id="tir" data-value="-">-</span>
 		      </div>
 		    </div>
-		    <div class="line_col" style="height: 10vw;"></div>
+		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 		  </div>
 		</section>
 		<br>
@@ -503,14 +600,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	      <h6>TAR(%)</h6>
 	      <span class="bl_color_low ft24" id="tar" data-value="-">-</span>
 	    </div>
-	    <div class="line_col" style="height: 10vw;"></div>
+	    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 	    <div class="center_wrap aval_wrap">
 	      <h6>TBR(%)</h6>
 	      <div>
 	        <span class="bl_color_low ft24" id="tbr" data-value="-">-</span>
 	      </div>
 	    </div>
-	    <div class="line_col" style="height: 10vw;"></div>
+	    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
 	    <div class="center_wrap aval_wrap">
 	      <h6>CV(%)</h6>
 	      <div>
@@ -519,14 +616,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    </div>
 	  </div>
 	  <br>
-	  <div class="row_item">
-	    <label style="font-size: 12px;">TAR(%):목표혈당범위(70-180mg/dl)초과시간비율</label>
+	  <div class="row_item metric-note">
+	    <label>TAR(%):목표혈당범위(70-180mg/dl)초과시간비율</label>
 	  </div>
-	  <div class="row_item">
-	    <label style="font-size: 12px;">TBR(%):목표혈당범위 미만(70미만 저혈당)시간비율</label>
+	  <div class="row_item metric-note">
+	    <label>TBR(%):목표혈당범위 미만(70미만 저혈당)시간비율</label>
 	  </div>
-	  <div class="row_item">
-	    <label style="font-size: 12px;">CV(%) :혈당 변동계수(36% 미만 안정적)</label>
+	  <div class="row_item metric-note">
+	    <label>CV(%) :혈당 변동계수(36% 미만 안정적)</label>
 	  </div>
 
    </div> 
