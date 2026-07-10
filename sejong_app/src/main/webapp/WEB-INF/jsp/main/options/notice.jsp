@@ -27,7 +27,6 @@
 
      <p class="filterTxt" id="notiCnt"></p>
 
-
      <!-- 시스템 공지 -->
      <ul class="noticeList" id="notiSection">
      </ul>
