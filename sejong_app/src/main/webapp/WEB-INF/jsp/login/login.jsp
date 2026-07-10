@@ -534,7 +534,7 @@ function checkAuth_out(){
 				  };
 				  if (confirm(`${phone} 개인 관련정보를 삭제하시겠습니까?`)) {
 				      $.ajax({
-					      url: "/alldelete.do",
+					      url: CommonUtil.getContextPath() + "/alldelete.do",
 					      type: "POST",
 					      contentType: "application/json",
 					      data: JSON.stringify([data]), // 배열로 전송
@@ -633,18 +633,20 @@ function registerUser() {
   const $btn = $("#btnRegister"); // 실제 버튼 id로 변경
   $btn.prop("disabled", true);
 
+  // 주의: JS 템플릿리터럴 `${ctx}` 는 JSP EL(isELIgnored=false)이 서버에서 먼저
+  // 빈 문자열로 치환해 /app 컨텍스트가 사라진다. 반드시 문자열 결합으로 URL을 만든다.
   const ctx = CommonUtil.getContextPath();
 
   // 3) 1차 호출: /User.do
-  CommonUtil.callSyncAjax(`${ctx}/User.do`, "POST", data, function (res1) {
+  CommonUtil.callSyncAjax(ctx + "/User.do", "POST", data, function (res1) {
     if (res1 && res1.IsSucceed) {
       // 3-1) 성공 → updateUser
-      CommonUtil.callSyncAjax(`${ctx}/updateUser.do`, "POST", data, function (res2) {
+      CommonUtil.callSyncAjax(ctx + "/updateUser.do", "POST", data, function (res2) {
         finalizeRegister(res2);
       });
     } else {
       // 3-2) 실패 → registerUser
-      CommonUtil.callSyncAjax(`${ctx}/registerUser.do`, "POST", data, function (res3) {
+      CommonUtil.callSyncAjax(ctx + "/registerUser.do", "POST", data, function (res3) {
         finalizeRegister(res3);
       });
     }
@@ -656,7 +658,7 @@ function registerUser() {
       if (resp && resp.IsSucceed) {
         saveUserInfo();
         alert("회원가입 성공 하였습니다.");
-        location.href = `${ctx}/mainPage.do`;
+        location.href = ctx + "/mainPage.do";
       } else {
         alert("회원 가입 실패. 관리자에게 문의 부탁드립니다.");
         $btn.prop("disabled", false);
@@ -805,7 +807,7 @@ function loginWithKakao() {
 	  let param = {
 		  termsGb :  termsGb
       };
-	  fetch('/getSignList.do', {
+	  fetch(CommonUtil.getContextPath() + '/getSignList.do', {
 	    method: 'POST',
 	    headers: {
 	      'Content-Type': 'application/json'
