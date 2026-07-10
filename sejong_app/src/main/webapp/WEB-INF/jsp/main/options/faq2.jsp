@@ -7,6 +7,7 @@
 	Date nowTime = new Date();
 	SimpleDateFormat sf = new SimpleDateFormat("yyyyMMdd");
 %>
+
 <!-- contents : s -->
     <div class="contents">
       <ul class="swipeTab">

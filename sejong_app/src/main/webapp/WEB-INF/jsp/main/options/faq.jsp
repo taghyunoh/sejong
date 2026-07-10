@@ -7,6 +7,7 @@
 	Date nowTime = new Date();
 	SimpleDateFormat sf = new SimpleDateFormat("yyyyMMdd");
 %>
+
 <style>
 .swipeTab {
     position: fixed;
