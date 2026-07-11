@@ -28,7 +28,9 @@
 					if(xhr.status == 200){
 						// getContextPath 는 함수다. 괄호 없이 쓰면 함수 소스코드가 문자열로 붙어
 						// `/function () {return sessionStorage.getItem("contextPath");}/index.do` 로 이동한다.
-						location.href = CommonUtil.getContextPath() + "/index.do";
+						// [2026-07-11 근본UX] 200인데 JSON 파싱실패 시 index.do(→홈) 자동 튕김 제거.
+						//   튕기지 않고 로그만 남겨 화면 유지. (연속혈당 등에서 홈/빈화면 튕김의 뿌리)
+						console.warn("[commonUtil] 200 non-JSON 응답 — 자동 이동 억제. url=", url);
 						return false;
 					}
 					
@@ -59,7 +61,9 @@
 					if(xhr.status == 200){
 						// getContextPath 는 함수다. 괄호 없이 쓰면 함수 소스코드가 문자열로 붙어
 						// `/function () {return sessionStorage.getItem("contextPath");}/index.do` 로 이동한다.
-						location.href = CommonUtil.getContextPath() + "/index.do";
+						// [2026-07-11 근본UX] 200인데 JSON 파싱실패 시 index.do(→홈) 자동 튕김 제거.
+						//   튕기지 않고 로그만 남겨 화면 유지. (연속혈당 등에서 홈/빈화면 튕김의 뿌리)
+						console.warn("[commonUtil] 200 non-JSON 응답 — 자동 이동 억제. url=", url);
 						return false;
 					}
 					

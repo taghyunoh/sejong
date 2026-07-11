@@ -334,7 +334,7 @@ $(document).ready(function() {
 	$("#name").text(userNm+"님");
 	$("#subName").text(userNm);
 
-	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/tokenYn.do","POST",'',function(response){
+	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/tokenYn.do","POST",'',function(response){ window.__hasToken = !!(response && response.IsSucceed); /* [2026-07-11] 연동(토큰) 상태 저장 → 안내문구 분기용 */
 		if(response.IsSucceed){
 			getBloodUserData();
 			getBloodData();
@@ -454,9 +454,11 @@ function todayBlod() {
                 $("#diff").text(0);
             }
 
-            // 값이 0일 때만 에러메시지 출력
+            // [2026-07-11] 값이 0일 때: 연동(토큰) 상태로 안내 구분 (연동됨 → 센서착용 / 미연동 → 연동필요)
             if (data[0].UPT_VALUE == 0) {
-                $("#errormsg").html("연속혈당값이 0입니다.<br/>케어센서 에어에 로그인 해주세요.");
+                $("#errormsg").html(window.__hasToken
+                    ? "혈당기(CGM)를 착용하면 측정값이 표시됩니다"
+                    : "케어센서 에어(i-Sens) 연동이 필요합니다.<br/>연속혈당 메뉴에서 로그인해 주세요.");
             }
 
         } else {
@@ -464,7 +466,10 @@ function todayBlod() {
             $("#nowVal").text(0);
             $("#diff").text(0);
 
-            $("#errormsg").html("연속혈당값이 전달되지 않고 있습니다.<br/>케어센서 에어에 로그인 해주세요.");
+            // [2026-07-11] 데이터 없음: 연동됨이면 센서착용 안내, 미연동이면 연동필요 안내 (오표시 '로그인 해주세요' 방지)
+            $("#errormsg").html(window.__hasToken
+                ? "혈당기(CGM)를 착용하면 측정값이 표시됩니다"
+                : "케어센서 에어(i-Sens) 연동이 필요합니다.<br/>연속혈당 메뉴에서 로그인해 주세요.");
         }
     });
 }
@@ -489,7 +494,7 @@ function todayExecs() {
             var exerName = "";
 
             if (response && response.Data && Array.isArray(response.Data) && response.Data.length > 0 &&
-                response.Data[0].minutes != null
+                response.Data[0] && response.Data[0].minutes != null
             ) {
                 exerName = response.Data[0].minutes + "분";
             }
@@ -510,7 +515,7 @@ function todayFood(){
         var stanCal = "";
 
         if (response && response.Data && Array.isArray(response.Data) && response.Data.length > 0 &&
-            response.Data[0].kCal != null
+            response.Data[0] && response.Data[0].kCal != null
         ) {
         	stanCal = response.Data[0].kCal ;
         }

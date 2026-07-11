@@ -170,6 +170,26 @@
 		    slowDn:  "<c:url value='/asset/images/blood/blood_arrow_slow_l.png'/>"
 		  };
   
+  // [2026-07-11 근본UX] i-Sens 연동/재연동 안내 배너 (자동 리다이렉트·리로드 대신 화면에 표시).
+  //   메시지 + "연동하기" 버튼 → 버튼 클릭 시에만 getAuth() 실행. 튕김/루프 없음.
+  function showConnectGuide(msg){
+    try {
+      var box = document.getElementById('isensReauthBox');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'isensReauthBox';
+        box.style.cssText = 'margin:14px 12px;padding:16px;border:1px solid #ffd08a;background:#fff8ec;border-radius:10px;text-align:center;color:#8a5a00;';
+        box.innerHTML = '<div id="isensReauthMsg" style="font-size:14px;font-weight:600;margin-bottom:10px;"></div>'
+                      + '<button type="button" id="isensReauthBtn" style="padding:10px 18px;border:0;border-radius:8px;background:#2b6cb0;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">케어센스(i-Sens) 연동하기</button>';
+        var host = document.querySelector('.contents') || document.body;
+        host.insertBefore(box, host.firstChild);
+        document.getElementById('isensReauthBtn').addEventListener('click', function(){ getAuth(); });
+      }
+      document.getElementById('isensReauthMsg').textContent = msg;
+      box.style.display = 'block';
+    } catch(e) { console.log('showConnectGuide error', e); }
+  }
+
   $(document).ready(function() {
 	    // 토큰 정보 
  	    const urlParams = new URLSearchParams(window.location.search);
@@ -178,8 +198,11 @@
 			if(!response.IsSucceed){
 				// token 가져오는 로직
 				if(urlParams.get('code') == null){
-					alert("i-sens에서 혈당 정보를 가져오기 위해 로그인 정보가 필요합니다.");
+					// [2026-07-11] 최초 미연동(토큰 없음) → i-Sens 로그인으로 "자동" 이동(자동 연동).
+					//   재연동(토큰 있으나 만료)은 아래 getBloodData 실패 시 배너+버튼으로 안내.
+					//   ※ 예전의 '홈 튕김'은 commonUtil 의 자동 index.do 이동이 원인이었고 그건 별도 제거됨.
 					getAuth();
+					return;
 				}else{
 		    		getToken();
 		    	}
@@ -498,7 +521,8 @@
 					const result = JSON.parse(response);
 					console.log(result);
 						if(!result.IsSucceed){
-							refreshToken();
+							// [2026-07-11 근본UX] 서버측 갱신까지 실패(REAUTH)면 튕김(deleteToken→reload) 대신 재연동 안내 배너
+							if (result.Data === 'REAUTH') { showConnectGuide("i-Sens(케어센스) 재연동이 필요합니다."); }
 						}
 				    },
 			error: function(xhr, status, error) {
@@ -579,7 +603,8 @@
 		      	 		document.getElementById('nowBloodUpt').textContent = nowUpt;
 		      	 		document.getElementById('nowBloodDtm').textContent = nowDtm; 
 		      	 		
-		      	 		document.getElementById('avgUpt').textContent = Math.round(response.aveUpt)|| 0;
+		      	 		// [2026-07-11] avgUpt 요소가 없으면 null → textContent 설정에서 에러(함수 중단) → null-safe 처리
+		      	 		var _avgUptEl = document.getElementById('avgUpt'); if (_avgUptEl) _avgUptEl.textContent = Math.round(response.aveUpt)|| 0;
 		      	 		 			      	 		
 		      	 		document.getElementById('diff').textContent = (parseInt(nowUpt, 10) - parseInt(prevUpt, 10));	  
 		      	 		
