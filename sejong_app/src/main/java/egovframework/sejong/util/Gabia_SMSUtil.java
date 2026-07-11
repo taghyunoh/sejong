@@ -78,6 +78,7 @@ public class Gabia_SMSUtil {
                 .append("&refkey=").append(enc(refkey));
 
             HttpURLConnection con = (HttpURLConnection) new URL(SEND_URL).openConnection();
+            con.setConnectTimeout(5000); con.setReadTimeout(8000);
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             con.setUseCaches(false);
@@ -113,6 +114,7 @@ public class Gabia_SMSUtil {
                     .encodeToString((smsId + ":" + apiKey).getBytes(StandardCharsets.UTF_8));
 
             HttpURLConnection con = (HttpURLConnection) new URL(TOKEN_URL).openConnection();
+            con.setConnectTimeout(5000); con.setReadTimeout(8000);
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             con.setUseCaches(false);

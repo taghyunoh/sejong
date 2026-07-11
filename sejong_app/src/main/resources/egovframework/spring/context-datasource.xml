@@ -24,7 +24,21 @@
         <property name="url" value="jdbc:mysql://211.47.75.102:3306/dbhannetit02" />
         <property name="username" value="hannetit02"/>
         <property name="password" value="hjko884803!"/>
-    </bean>  
+        <!-- [2026-07-11] 원격 DB 지연 대비: 연결/소켓 타임아웃 (연결 5s, 쿼리 60s) — 무한 대기 방지 -->
+        <property name="connectionProperties" value="connectTimeout=5000;socketTimeout=60000"/>
+        <!-- 커넥션풀 튜닝: 검증쿼리(SELECT 1)로 죽은 커넥션 회수 + 유휴 정리 + 누수 회수 -->
+        <property name="initialSize" value="2"/>
+        <property name="maxTotal" value="20"/>
+        <property name="maxIdle" value="10"/>
+        <property name="minIdle" value="2"/>
+        <property name="maxWaitMillis" value="5000"/>
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="testOnBorrow" value="true"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="timeBetweenEvictionRunsMillis" value="30000"/>
+        <property name="removeAbandonedOnBorrow" value="true"/>
+        <property name="removeAbandonedTimeout" value="120"/>
+    </bean>
     
     <!-- oracle (POM에서 commons-dbcp, ojdbc(라이센스 사항으로 별도로 배포되지 않음) 관련 라이브러리 설정)
     <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">

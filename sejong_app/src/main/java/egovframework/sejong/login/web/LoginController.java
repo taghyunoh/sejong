@@ -74,18 +74,17 @@ public class LoginController {
 		result.IsSucceed = true;
 		return result;
 	}
-	// 메인 페이지 이동
+	// 메인 페이지 진입
+	//   [2026-07-11] index.jsp 는 미완성 스텁(<h1>Main Page</h1>)이라 그대로 렌더하면 빈화면.
+	//   로그인 상태면 홈 대시보드(mainPage.do), 아니면 로그인 화면(loginPage.do)으로 리다이렉트해 빈화면 차단.
+	//   (mainPage.do 는 세션 user 가 null 이면 NPE 이므로 user 존재 시에만 이동)
 	@RequestMapping("/index.do")
 	public String index(HttpSession session) {
-		System.out.println("TEST");
-		//
-		try {
-			int i = loginService.connectionTest();
-			System.out.println(i);
-		} catch (Exception ex) {
-			System.out.println("SQLException" + ex);
+		Object loginUser = session.getAttribute("user");
+		if (loginUser != null) {
+			return "redirect:/mainPage.do";
 		}
-		return ".main/index";
+		return "redirect:/loginPage.do";
 	}
 	// 로그인 페이지 이동 
 	//application.properties

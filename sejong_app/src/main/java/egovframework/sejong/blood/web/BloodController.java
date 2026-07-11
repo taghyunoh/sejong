@@ -141,7 +141,7 @@ public class BloodController {
 
 	    try {
 	        URL url = new URL(tokenUrl);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
 	        connection.setRequestMethod("POST");
 	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 	        connection.setDoOutput(true);
@@ -162,7 +162,7 @@ public class BloodController {
 	            }
 	        }
 
-	        System.out.println("Token Response: " + response.toString());
+	        /* [2026-07-11 보안] 토큰 응답 콘솔출력 제거 */
 	        
 	        // Gson을 사용하여 응답 파싱
 	        Gson gson = new Gson();
@@ -199,7 +199,7 @@ public class BloodController {
 	    
 	    try {
 	        URL url = new URL(tokenUrl);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
 	        connection.setRequestMethod("GET");  
 	        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
 	        connection.setDoOutput(true);
@@ -218,7 +218,7 @@ public class BloodController {
 	            }
 	        }
 
-	        System.out.println("Token Response: " + response.toString());
+	        /* [2026-07-11 보안] 토큰 응답 콘솔출력 제거 */
 	        
 	        return response.toString();
 
@@ -234,14 +234,14 @@ public class BloodController {
 	@RequestMapping(value = "/creSampleData.do", method = RequestMethod.POST)
 	public @ResponseBody ResponseEntity<String> creSampleData(HttpSession session, @RequestBody HashMap<String, Object> params) {
 		System.out.println("연속 혈당 샘플 데이터 생성 test");
-	    System.out.println(params.get("accessToken"));
+	    /* [2026-07-11 보안] accessToken 콘솔출력 제거 */
 	    
 	    String tokenUrl = SAMPLE_URL;
 
         try {
         
             URL url = new URL(tokenUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             connection.setRequestProperty("Authorization", "Bearer " + params.get("accessToken"));
@@ -274,7 +274,8 @@ public class BloodController {
 	public @ResponseBody ResponseEntity<String> getData(HttpSession session,@RequestParam String start, @RequestParam String end,  @RequestParam String accessToken , @RequestParam String goTokenUrl) {
 		System.out.println();
 		System.out.println("토큰검증 + 센서 데이터 받아오기test");
-		System.out.println("Start: " + start + ", End: " + end + ", AccessToken: " + accessToken);
+		// [2026-07-11 보안] accessToken 콘솔출력 제거 (기간만 필요시 로깅)
+		System.out.println("Start: " + start + ", End: " + end);
 		System.out.println();
 		
 	    String tokenUrl = goTokenUrl;
@@ -285,7 +286,7 @@ public class BloodController {
         
             URL url = new URL(tokenUrl + "?" + query);
             System.out.println("URL :" + url);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", "Bearer " + accessToken);
             
@@ -320,7 +321,8 @@ public class BloodController {
 			            , @RequestParam String goTokenUrl) {
 		System.out.println();
 		System.out.println(" 혈당 데이터 받아오기 test");
-		System.out.println("Start: " + start + ", End: " + end + ", AccessToken: " + accessToken);
+		// [2026-07-11 보안] accessToken 콘솔출력 제거 (기간만 필요시 로깅)
+		System.out.println("Start: " + start + ", End: " + end);
 		System.out.println();
 		
 	   // String tokenUrl = goTokenUrl; 
@@ -334,7 +336,7 @@ public class BloodController {
         
             URL url = new URL(tokenUrl + "?" + query);
             System.out.println("URL : "+ url);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", "Bearer " + accessToken);
             UserDTO user = (UserDTO) session.getAttribute("user");
@@ -343,26 +345,44 @@ public class BloodController {
             System.out.println("Response Code: " + responseCode);
 
             
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            // [2026-07-11] 서버측 자동 갱신: access token 만료(401/403)면 refresh_token 으로 재발급 후 1회 재시도
+            //   (sejong-web 방식 이식 — 클라이언트 refresh 루프/재로그인 없이 투명하게 갱신)
+            if (responseCode == 401 || responseCode == 403) {
+                String refTok = bloodService.refreshToken(user.getUserUuid());
+                String newAcc = (refTok != null && !refTok.isEmpty()) ? refreshAndSaveToken(user.getUserUuid(), refTok) : null;
+                if (newAcc == null) { json.IsSucceed = false; json.Data = "REAUTH"; return json; }  // refresh 토큰도 만료 → 재연동 필요
+                connection = (HttpURLConnection) new URL(tokenUrl + "?" + query).openConnection();
+                connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("Authorization", "Bearer " + newAcc);
+                responseCode = connection.getResponseCode();
+                System.out.println("Response Code(refresh): " + responseCode);
+            }
+            InputStream cgmIn = (responseCode >= 200 && responseCode < 300) ? connection.getInputStream() : connection.getErrorStream();
+            BufferedReader in = new BufferedReader(new InputStreamReader(cgmIn));
             StringBuilder response = new StringBuilder();
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 response.append(inputLine);
             }
             in.close();
-            System.out.println("Blood Data Response: " + response.toString());       
+            if (responseCode < 200 || responseCode >= 300) { json.IsSucceed = false; return json; }  // 갱신 후에도 실패
+            System.out.println("Blood Data Response: " + response.toString());
             String jsonResponse = response.toString();
             Gson gson = new Gson();
             JsonArray jsonArray = gson.fromJson(jsonResponse, JsonArray.class);
             
             List<BloodDTO> bloodDataList = new ArrayList<>();
-            for (JsonElement element : jsonArray) {
+            if (jsonArray != null) for (JsonElement element : jsonArray) {
                 BloodDTO bloodData = gson.fromJson(element, BloodDTO.class);
                 bloodData.setUserId(user.getUserUuid()); 
                 bloodDataList.add(bloodData); 
                 
             }
-            bloodService.insertBloodData(bloodDataList);
+            // [2026-07-11] CGM이 0건 반환 시 빈 목록 INSERT → 'VALUES  ON DUPLICATE' 문법오류 방지 (+ IsSucceed=false로 인한 refresh 루프 차단)
+            if (bloodDataList != null && !bloodDataList.isEmpty()) {
+                bloodService.insertBloodData(bloodDataList);
+            }
             System.out.println(bloodDataList.toString());
            
   
@@ -377,6 +397,45 @@ public class BloodController {
         } 
         
 	}	
+	/** [2026-07-11] refresh_token 으로 access_token 재발급 + T_BLDCON_MST 저장. 성공 시 새 access_token, 실패 시 null.
+	 *   getBloodData 서버측 자동 갱신에서 사용 (getToken 과 동일하게 Content-Type 지정 — 갱신 실패 원인 방지). */
+	private String refreshAndSaveToken(String userUuid, String refreshTokenStr) {
+		try {
+			String requestBody = "grant_type=refresh_token"
+					+ "&client_id=" + CLIENT_ID
+					+ "&client_secret=" + CLIENT_SECRET
+					+ "&refresh_token=" + refreshTokenStr;
+			HttpURLConnection conn = (HttpURLConnection) new URL(TOKEN_URL).openConnection();
+			conn.setConnectTimeout(5000); conn.setReadTimeout(8000);
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			conn.setDoOutput(true);
+			try (OutputStream os = conn.getOutputStream()) { os.write(requestBody.getBytes("UTF-8")); os.flush(); }
+			int code = conn.getResponseCode();
+			InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+			StringBuilder sb = new StringBuilder();
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+				String line; while ((line = in.readLine()) != null) sb.append(line);
+			}
+			if (code < 200 || code >= 300) { System.out.println("refreshAndSaveToken HTTP " + code); return null; }
+			JsonObject jr = new Gson().fromJson(sb.toString(), JsonObject.class);
+			String newAcc = (jr != null && jr.has("access_token")) ? jr.get("access_token").getAsString() : null;
+			if (newAcc == null) return null;
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("accessToken", newAcc);
+			map.put("refresh_token", jr.has("refresh_token") ? jr.get("refresh_token").getAsString() : refreshTokenStr);
+			map.put("token_type",   jr.has("token_type")   ? jr.get("token_type").getAsString()   : null);
+			map.put("expires_in",   jr.has("expires_in")   ? jr.get("expires_in").getAsString()   : null);
+			map.put("user_id",      jr.has("user_id")      ? jr.get("user_id").getAsString()      : null);
+			map.put("userUuid", userUuid);
+			bloodService.insertToken(map);
+			return newAcc;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	@RequestMapping(value = "/refreshToken.do", method = RequestMethod.POST)
 	public @ResponseBody ResponseObject refreshToken(HttpSession session) {
 		
@@ -390,8 +449,10 @@ public class BloodController {
                 "&refresh_token=" + refreshToken;
 	    try {
 	        URL url = new URL(TOKEN_URL);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setRequestMethod("POST");  
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection(); connection.setConnectTimeout(5000); connection.setReadTimeout(8000);
+	        connection.setRequestMethod("POST");
+	        // [2026-07-11] ★토큰 갱신 실패(→재로그인 반복)의 원인: 폼 Content-Type 누락. getToken 과 동일하게 추가.
+	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 	        connection.setDoOutput(true);
 	        try (OutputStream os = connection.getOutputStream()) {
 	            os.write(requestBody.getBytes());
@@ -399,7 +460,7 @@ public class BloodController {
 	        }
 	        int responseCode = connection.getResponseCode();
 	        System.out.println("refreshToken Response Code: " + responseCode);
-	        System.out.println(refreshToken);
+	        /* [2026-07-11 보안] refresh_token 콘솔출력 제거 */
 	        InputStream inputStream = (responseCode == HttpURLConnection.HTTP_OK) ?
 	            connection.getInputStream() : connection.getErrorStream();
 	        
@@ -411,7 +472,7 @@ public class BloodController {
 	            }
 	        }
 
-	        System.out.println("Token Response: " + response.toString());
+	        /* [2026-07-11 보안] 토큰 응답 콘솔출력 제거 */
 	        // Gson을 사용하여 응답 파싱
 	        Gson gson = new Gson();
 	        JsonObject jsonResponse = gson.fromJson(response.toString(), JsonObject.class);
@@ -446,6 +507,8 @@ public class BloodController {
 	    List<Map<String, Object>> list = bloodService.getBloodUserData(userId);
 	    
 	    Map<String, Object> result = new HashMap<>();
+	    // [2026-07-11] 토큰 미보유 사용자 방어 — 기존 list.get(0) 는 빈 리스트 시 크래시
+	    if (list == null || list.isEmpty()) { result.put("userId", userId); result.put("accToken", null); return result; }
 	    result.put("userId" , list.get(0).get("USER_UUID"));
 	    result.put("accToken" , list.get(0).get("ACC_TOKEN"));
 	

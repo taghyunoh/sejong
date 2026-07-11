@@ -402,7 +402,7 @@ function getBloodData(){
 	  $.ajax({
 		    url: CommonUtil.getContextPath() + '/getBloodData.do',
 			type: 'GET',
-			async: false,
+			async: true,   /* [2026-07-11] 외부 CGM 재수집을 비동기로 — 화면 로딩이 외부응답을 기다리지 않음(완료 시 todayBlod/todayBlodAvg로 갱신) */
 			data: {
 	            start : start,
 		        end: end,
