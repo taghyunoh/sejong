@@ -604,8 +604,29 @@ public class BloodController {
 		
 		List<Map<String, Object>> result = bloodService.getBloodChartData(map);
 		System.out.println("chart result"+ result);
-			   
+
 		return result;
+	}
+
+	// [2026-07-11] 오늘 데이터가 없을 때, 데이터가 있는 가장 마지막 측정 일시를 반환(화면 폴백용)
+	@RequestMapping(value = "/getLastBloodDate.do", method = RequestMethod.POST)
+	public @ResponseBody ResponseObject getLastBloodDate(@RequestBody HashMap<String, Object> params) {
+		ResponseObject json = new ResponseObject();
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("userId", params.get("userId"));
+
+		String lastDtm = bloodService.getLastBloodDate(map);
+
+		if (lastDtm != null && !lastDtm.isEmpty()) {
+			json.Data = lastDtm;   // 'YYYY-MM-DDTHH:mm:ss'
+			json.IsSucceed = true;
+		} else {
+			json.IsSucceed = false; // 데이터 자체가 전혀 없음
+			json.Message = "데이터가 없습니다.";
+		}
+
+		return json;
 	}
 	
 	@RequestMapping(value = "/drawBloodBarChart.do", method = RequestMethod.POST)	

@@ -21,6 +21,8 @@ public interface BloodService {
 
 	List<Map<String, Object>> getBloodChartData(Map<String, Object> map);
 
+	String getLastBloodDate(Map<String, Object> map);
+
 	Map<String, Object> drawBloodBarChart(Map<String, Object> map);
 	Map<String, Object> BloodLowHigh(Map<String, Object> map);
 

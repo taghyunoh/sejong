@@ -141,8 +141,10 @@
            			  		  ,UPT_VALUE
       					 FROM T_BLDINF_TRAN 
      					WHERE USER_UUID = #{userId}
-       					  AND CAST(CGM_DTM AS DATETIME) BETWEEN CAST(#{start} AS DATETIME) AND CAST(#{end} AS DATETIME)
-		) SELECT CGM_DTM AS DTM
+       					  <!-- [2026-07-11] #{start}/#{end} 는 'yyyy-MM-ddTHH:mm:ss'(T 구분자). CAST(... AS DATETIME)는 'T'를 파싱 못해 NULL→0건이 됨.
+       					       getBloodChartData 와 동일하게 STR_TO_DATE 로 파싱해 평균혈당이 정상 집계되도록 수정. -->
+       					  AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+		) SELECT DATE_FORMAT(CGM_DTM, '%Y-%m-%dT%H:%i:%s') AS DTM   <!-- [2026-07-11] 프론트 timeFormatFunc 가 문자열을 기대 -->
        			,UPT_VALUE AS UPT
        			,(SELECT AVG(UPT_VALUE) FROM COMM) AS AVG_UPT
   			FROM COMM
@@ -433,12 +435,22 @@
 		  ]]>
 	</select>	
 	<select id="getBloodChartData" parameterType="String" resultType="map">
+		<!-- [2026-07-11] CGM_DTM 이 DATETIME 이면 JSON 직렬화 시 epoch(숫자)로 내려가 프론트 parseTime 의 .replace 에서 크래시.
+		     프론트가 기대하는 문자열('yyyy-MM-ddTHH:mm:ss')로 포맷해서 전달(타임존 변환 없이 저장된 벽시계 값 그대로). -->
 		SELECT UPT_VALUE as UPT
-		     , CGM_DTM as DTM
+		     , DATE_FORMAT(CGM_DTM, '%Y-%m-%dT%H:%i:%s') as DTM
   		  FROM T_BLDINF_TRAN
 		 WHERE USER_UUID = #{userId}
-		   AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s') 
+		   AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
 		 ORDER BY CGM_DTM ASC
+	</select>
+
+	<!-- [2026-07-11] 오늘 데이터가 없을 때 폴백용: 해당 사용자의 가장 마지막 혈당 측정 일시 -->
+	<select id="getLastBloodDate" parameterType="String" resultType="String">
+		SELECT DATE_FORMAT(MAX(CGM_DTM), '%Y-%m-%dT%H:%i:%s')
+  		  FROM T_BLDINF_TRAN
+		 WHERE USER_UUID = #{userId}
+		   AND IFNULL(UPT_VALUE, 0) > 0
 	</select>
 	
 	

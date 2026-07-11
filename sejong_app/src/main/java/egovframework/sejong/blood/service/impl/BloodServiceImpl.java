@@ -50,6 +50,11 @@ public class BloodServiceImpl implements BloodService {
 	}
 
 	@Override
+	public String getLastBloodDate(Map<String, Object> map) {
+		return bloodMapper.getLastBloodDate(map);
+	}
+
+	@Override
 	public Map<String, Object> drawBloodBarChart(Map<String, Object> map) {
 		return bloodMapper.drawBloodBarChart(map);
 	}

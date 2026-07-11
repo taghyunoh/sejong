@@ -45,6 +45,8 @@
             <div id="nowDTM"></div>
             <a href="#"><span class="material-symbols-outlined icon" id="nextDay">chevron_right</span></a>
           </div>
+          <!-- [2026-07-11] 오늘 데이터가 없어 마지막 측정일로 이동했을 때만 표시 -->
+          <div id="lastMeasureNotice" class="ft14" style="display:none; text-align:center; color:#1f7aed; margin-top:6px; font-weight:600;"></div>
           <div class="time_wrap mt20" id="btnHours">
             <button class="btn btn_sm btnLine05"  value="3">3시간</button>
             <button class="btn btn_sm btnLine05"  value="6">6시간</button>
@@ -159,6 +161,9 @@
   var now = new Date();
   var halfNow = new Date();
   halfNow.setHours(halfNow.getHours() - 24);
+
+  // [2026-07-11] 오늘 데이터가 없을 때 이동한 '마지막 측정일'(없으면 null)
+  var lastMeasureDate = null;
   
   const BLOOD_IMG = {
 		    fastUp:  "<c:url value='/asset/images/blood/blood_arrow_sspeeh_h.png'/>",
@@ -196,9 +201,62 @@
 		
 		todayExecs();
 	    getBloodUserData();
+	    // [2026-07-11] 오늘 데이터가 없으면 데이터가 있는 마지막 일자로 화면을 이동(어느 날 끝났는지 알 수 있게).
+	    //   getBloodUserData()로 userId가 세팅된 뒤 호출해야 함(동기).
+	    adjustToLastDataDate();
 	    getBloodData();
 	    orderby();
 	});
+
+	// [2026-07-11] 오늘 데이터가 없을 때, 데이터가 있는 마지막 측정 일자로 now/halfNow 를 이동시킴.
+	//   - 오늘 데이터가 있으면 아무것도 안 함(오늘 유지)
+	//   - 데이터가 전혀 없으면 아무것도 안 함(기존 '데이터가 없습니다' 표시 유지)
+	function adjustToLastDataDate(){
+		try {
+			CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do", "POST", { userId: userId },
+				function(response){
+					if (!response || !response.IsSucceed || !response.Data) return; // 데이터 자체가 없음 → 그대로
+
+					// 서버 포맷 'YYYY-MM-DDTHH:mm:ss' → Date
+					var last = new Date(String(response.Data));
+					if (isNaN(last.getTime())) return;
+
+					var today = new Date();
+					if (last.toDateString() === today.toDateString()) return; // 오늘 데이터 있음 → 그대로
+
+					// 오늘 데이터 없음 → 마지막 데이터 날짜(하루 범위)로 이동. (전날 버튼과 동일한 방식)
+					lastMeasureDate = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+					now = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+					now.setHours(23, 59, 59, 999);
+					halfNow = new Date(now);
+					halfNow.setHours(0, 0, 0, 0);
+
+					updateButtonState(); // 과거일자이므로 시간 버튼 상태 갱신(24시간만 활성)
+					console.log("오늘 데이터 없음 → 마지막 데이터 일자로 이동:", now);
+				}
+			);
+		} catch (e) {
+			console.error("adjustToLastDataDate 오류:", e);
+		}
+	}
+
+	// [2026-07-11] 현재 보고 있는 날짜가 '마지막 측정일'(오늘 아님)일 때만 최종 측정일 안내를 표시.
+	//   날짜를 다른 날로 넘기면 자동으로 숨김.
+	function updateLastMeasureNotice(){
+		var el = document.getElementById('lastMeasureNotice');
+		if (!el) return;
+
+		var isFallbackDay = lastMeasureDate
+			&& now.toDateString() === lastMeasureDate.toDateString()
+			&& lastMeasureDate.toDateString() !== new Date().toDateString();
+
+		if (isFallbackDay) {
+			el.textContent = "당일 혈당 측정이 없어 최종 측정일을 표시합니다.";
+			el.style.display = "";
+		} else {
+			el.style.display = "none";
+		}
+	}
   function todayExecs(){
 		CommonUtil.callAjax(CommonUtil.getContextPath() + "/getTodayExecs.do","POST",'',function(response){
 			console.log(response);
@@ -339,7 +397,8 @@
 	    console.log("혈당 데이터가져오기 성공 ");
 	    console.log("now :", now, "/halfNow :",halfNow );
 		document.getElementById('nowDTM').textContent = dateFormatFunc(now);
-		
+		updateLastMeasureNotice();
+
 		drawBloodSugarChart(now, halfNow);
 	    showBloodData(now, halfNow);
 	    getAvgFastingBlood();
@@ -751,7 +810,8 @@
 	    var foodChartData;
 	    CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/getChartFood.do", "POST", formData, function(response) {
 	    	console.log("foodData");
-	    	if(response.Data.length>0){
+	    	// [2026-07-11] response.Data 가 null 이면 .length 접근에서 예외 → 차트 그리기 중단 방지(null 가드)
+	    	if(response && response.Data && response.Data.length>0){
 	    		foodChartData = response.Data;
 	    	}
 	    	console.log(foodChartData);
@@ -764,7 +824,10 @@
 	        bloodData = bloodData || [];
 
 	        function parseTime(dtm) {
-	            return new Date(dtm.replace('Z', ''));
+	            // [2026-07-11] DTM 이 숫자(epoch)/문자열 모두 올 수 있어 방어. 문자열이 아니면 .replace 에서 크래시났었음.
+	            if (dtm == null) return new Date(NaN);
+	            if (typeof dtm === 'number') return new Date(dtm);
+	            return new Date(String(dtm).replace('Z', ''));
 	        }
 	        
 	        var xAxisLabels = generateXAxisLabels(startDate, endDate);
@@ -824,7 +887,11 @@
 			    }
 			});
 			console.log(foodList);
-	        var chart = echarts.init(document.querySelector("#lineChart"));
+	        // [2026-07-11] 이미 초기화된 echarts 인스턴스가 남아 있으면 재init 시 갱신이 안 될 수 있어 dispose 후 재생성
+	        var _chartDom = document.querySelector("#lineChart");
+	        var _existChart = (window.echarts && echarts.getInstanceByDom) ? echarts.getInstanceByDom(_chartDom) : null;
+	        if (_existChart) { _existChart.dispose(); }
+	        var chart = echarts.init(_chartDom);
 	        chart.setOption({
 	            tooltip: {
 	                trigger: 'axis',
@@ -1131,8 +1198,11 @@
 
  
  function timeFormatFunc(timeOri){
-	const date = new Date(timeOri.replace('Z', ''));
-	
+	// [2026-07-11] timeOri 가 숫자(epoch)/문자열 모두 올 수 있어 방어. 문자열이 아니면 .replace 에서 크래시났었음.
+	const date = (timeOri == null) ? new Date(NaN)
+	           : (typeof timeOri === 'number') ? new Date(timeOri)
+	           : new Date(String(timeOri).replace('Z', ''));
+
 	const ampm = date.getHours() >= 12 ? '오후' : '오전';
 	const hours = date.getHours() % 12 || 12;
 	const min =  String(date.getMinutes()).padStart(2, '0')
