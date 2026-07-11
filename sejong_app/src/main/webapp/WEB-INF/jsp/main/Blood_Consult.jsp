@@ -946,7 +946,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     // jQuery 존재시 AJAX(JSON), 없으면 fetch(JSON)
     if (window.$ && $.ajax) {
       $.ajax({
-        url: "/avgBloodlowhight.do",
+        url: CommonUtil.getContextPath() + "/avgBloodlowhight.do",
         method: "POST",
         contentType: "application/json; charset=UTF-8",
         dataType: "json",
@@ -964,7 +964,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       const headers = { "Content-Type": "application/json; charset=UTF-8" };
       if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
-      fetch("/avgBloodlowhight.do", {
+      fetch(CommonUtil.getContextPath() + "/avgBloodlowhight.do", {
         method: "POST",
         headers,
         body: JSON.stringify(formData)
