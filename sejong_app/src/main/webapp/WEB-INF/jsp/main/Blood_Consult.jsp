@@ -19,6 +19,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4" defer></script>
 <!-- 데이터라벨 (옵션) -->
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2" defer></script>
+<!-- 혈당 Q&A 지식베이스 (답변 추가/수정은 이 파일만 편집) -->
+<script src="${pageContext.request.contextPath}/asset/js/blood_qa.js?date=<%= System.currentTimeMillis() %>" defer></script>
 
 <style>
   .tab-container,.header,.navbar{background-color:#fff!important}
@@ -237,7 +239,26 @@
 .card-header h5 {
   white-space: nowrap;
   margin: 0;
+  font-size: 15px;   /* TOP3(주의할음식/추천운동) 제목 조금 작게 */
 }
+
+/* 참조링크 카드 — 컴팩트 + 헤더 클릭 접기/펼치기 */
+.refcard { padding: 10px 16px; }
+.refcard-head {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.refcard-title { margin: 0; font-size: 16px; font-weight: 700; color: #3b6fd4; }
+.refcard-caret { font-size: 18px; color: #888; transition: transform .2s; }
+.refcard.collapsed .refcard-caret { transform: rotate(-90deg); }
+.refcard-body {
+  margin-top: 6px; font-size: 14px; line-height: 1.7; color: #333;
+}
+.refcard-item { display: block; text-align: left; margin-bottom: 4px; }
+.refcard-item:last-child { margin-bottom: 0; }
+.refcard-body a { color: #1a6fd0; text-decoration: none; }
+.refcard-body a:hover { text-decoration: underline; }
+.refcard.collapsed .refcard-body { display: none; }
 
 /* 헤더 — `margin-left: -18` (단위 없음) 이 쿼크 모드에서 먹혀
    '음식종류/운동종류' 열만 18px 왼쪽으로 밀려 '순위' 와 겹쳤다. 제거. */
@@ -431,6 +452,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: linear-gradient(135deg, #0056b3, #0094FF);
   transform: scale(1.05);
 }
+
+/* ═══════════════ 혈당 Q&A 채팅 (sejong-web patient_main 포팅) ═══════════════ */
+.qa-card { display:flex; flex-direction:column; }
+.qa-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.qa-head h5 { font-size:17px; margin:0; }
+.qa-clear { border:none; background:none; color:#888; font-size:13px; cursor:pointer; padding:0; }
+.qa-messages {
+  height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+  padding:8px; background:#f8f9fa; border-radius:8px; margin-bottom:8px;
+}
+.qa-input { display:flex; gap:6px; margin-bottom:8px; }
+/* common.css 의 `.btn{width:100%}` 회피를 위해 btn 클래스는 쓰지 않음 */
+.qa-input input {
+  flex:1; min-width:0; padding:8px 10px; border:1px solid #ccc;
+  border-radius:8px; font-size:14px; color:#333; background:#fff;
+}
+.qa-send {
+  flex:0 0 auto; padding:8px 16px; border:none; border-radius:8px;
+  background:#0d6efd; color:#fff; font-size:14px; cursor:pointer;
+}
+.qa-quick { display:flex; flex-wrap:wrap; gap:6px; }
+.qbtn { font-size:13px; padding:3px 10px; border-radius:10px; cursor:pointer; border:1px solid #ccc; background:#fff; color:#555; }
+.chat-user { position:relative; background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
+.chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
+.chat-del  { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
+.chat-user:hover .chat-del, .chat-bot:hover .chat-del { opacity:1; }
+.chat-intro { max-width:100% !important; align-self:stretch !important; font-size:13.5px !important; }
 
 </style>
 
@@ -646,10 +694,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
            </p>
        </div>
    </div>  
-	<div class="top3-card decrease-card" style="text-align: center;">
-	  <button id="showRecommendationBtn" class="btn">
-	    <i class="fa-solid fa-robot" style="margin-right: 8px;"></i> AI 분석 리포트 보기
-	  </button>
+	<!-- 참조링크 (헤더 클릭으로 접기/펼치기, 컴팩트) -->
+	<div class="top3-card decrease-card refcard" id="refCard">
+	    <div class="refcard-head" onclick="_toggleRef()">
+	        <h3 class="refcard-title">[참조링크]</h3>
+	        <span class="refcard-caret" id="refCaret" aria-hidden="true">▾</span>
+	    </div>
+	    <div class="refcard-body" id="refBody">
+	        <span class="refcard-item">💡 <a href="https://www.diabetes.or.kr/" target="_blank">대한당뇨병학회 바로가기</a></span>
+	        <span class="refcard-item">💡 <a href="https://www.youtube.com/channel/UCsVB1GWF-NH-RTxJax8XA_Q/featured?view_as=subscriber" target="_blank">당뇨병의정석 (YouTube)</a></span>
+	    </div>
+	</div>
+
+	<!-- 혈당 Q&A 채팅 (sejong-web 기능 포팅으로 AI 분석 리포트 대체) -->
+	<div class="top3-card decrease-card qa-card">
+	  <div class="qa-head">
+	    <h5>💬 혈당 Q&amp;A</h5>
+	    <button type="button" class="qa-clear" onclick="_clearChat();">🗑 전체 삭제</button>
+	  </div>
+	  <div id="chatMessages" class="qa-messages"></div>
+	  <div class="qa-input">
+	    <input type="text" id="chatInput" placeholder="질문을 입력하세요…" onkeypress="if(event.key==='Enter')sendChat();">
+	    <button type="button" class="qa-send" onclick="sendChat();">전송</button>
+	  </div>
+	  <div class="qa-quick">
+	    <button type="button" class="qbtn" onclick="_quickQ('이번 주 혈당 어때요?')">이번주 혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('혈당 정상범위는?')">정상범위</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('공복혈당이란?')">공복혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('식후혈당이란?')">식후혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 대처법은?')">저혈당 대처</button>
+	  </div>
 	</div>
 </main>
 
@@ -703,6 +778,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const start = new Date(end);
     if (days > 0) start.setDate(start.getDate() - (days - 1));
     return { start, end };
+  }
+
+  // 지정한 종료일 기준 N일 범위 (종료일 포함, 시작일은 N-1일 전)
+  function computeRangeEndingAt(end, days){
+    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const start = new Date(e);
+    if (days > 0) start.setDate(start.getDate() - (days - 1));
+    return { start, end: e };
+  }
+
+  // [2026-07-11] 데이터가 있는 마지막 측정일(연/월/일)을 동기 조회. 없으면 null → 오늘 기준 폴백.
+  //   연속혈당(FAHR_00) 화면의 adjustToLastDataDate() 와 동일한 /getLastBloodDate.do 재사용.
+  function _getLastDataDate(){
+    const uid = (userId && userId !== "null") ? userId : "";
+    if (!uid) return null;
+    let result = null;
+    try {
+      CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do", "POST", { userId: uid },
+        function(response){
+          if (response && response.IsSucceed && response.Data){
+            const last = new Date(String(response.Data)); // 'YYYY-MM-DDTHH:mm:ss'
+            if (!isNaN(last.getTime())){
+              result = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+            }
+          }
+        });
+    } catch(e){ console.error("getLastBloodDate 오류:", e); }
+    return result;
+  }
+
+  // 참조링크 카드 접기/펼치기
+  function _toggleRef(){
+    var c = document.getElementById('refCard');
+    if(c) c.classList.toggle('collapsed');
   }
 
   function showLoading(on){
@@ -875,38 +984,198 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     let t;
     return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), delay); };
   }
-  //ai 자료보기  
-  document.addEventListener("DOMContentLoaded", function() {
-	  const btn = document.getElementById("showRecommendationBtn");
-	  const recommendationCards = document.querySelectorAll(".recommendation-card");
+  // ===== 혈당 Q&A 채팅 (sejong-web patient_main 포팅) =====
+  function _quickQ(q){ document.getElementById('chatInput').value = q; sendChat(); }
 
-	  btn.addEventListener("click", function() {
-	    const isHidden = [...recommendationCards].every(card => !card.classList.contains("show"));
+  function _addMsg(txt, isUser, extraCls){
+    var box = document.getElementById('chatMessages');
+    if(!box) return;
+    var msg = document.createElement('div');
+    msg.className = (isUser ? 'chat-user' : 'chat-bot') + (extraCls ? (' ' + extraCls) : '');
+    if (isUser) {
+      // 삭제 버튼은 질문에만 — 삭제 시 바로 뒤 답변(.chat-bot)도 함께 제거
+      msg.innerHTML = '<span class="chat-text">' + txt + '</span>'
+                    + '<button type="button" class="chat-del" title="질문·답변 삭제">&times;</button>';
+      msg.querySelector('.chat-del').addEventListener('click', function(){
+        var next = msg.nextElementSibling;
+        msg.remove();
+        if (next && next.classList.contains('chat-bot')) next.remove();
+      });
+    } else {
+      msg.innerHTML = '<span class="chat-text">' + txt + '</span>';
+    }
+    box.appendChild(msg);
+    box.scrollTop = box.scrollHeight;
+  }
 
-	    // show 클래스로 토글 (display 대신 사용)
-	    recommendationCards.forEach(card => {
-	      if (isHidden) {
-	        card.classList.add("show");
-	      } else {
-	        card.classList.remove("show");
-	      }
-	    });
+  // 대화 전체 삭제 후 인사말만 다시 표시
+  function _clearChat(){
+    if (!confirm('대화 내용을 모두 지울까요?')) return;
+    document.getElementById('chatMessages').innerHTML = '';
+    _addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
+  }
 
-	    // 버튼 텍스트 변경
-	    btn.textContent = isHidden ? "AI 분석 리포트 닫기" : "AI 분석 리포트 보기";
+  // 동일 질문 캐시: 같은 질문+같은 혈당 컨텍스트면 서버 재호출 없이 이전 답 재사용
+  var _chatCache = {};
+  function sendChat(){
+    var input = document.getElementById('chatInput');
+    var q = (input.value || '').trim(); if(!q) return;
+    input.value = '';
+    _addMsg(q, true);
 
-	    if (isHidden) {
-	      // 마지막 카드 기준 스크롤
-	      const lastCard = recommendationCards[recommendationCards.length - 1];
-	      const rect = lastCard.getBoundingClientRect();
-	      const targetY = Math.min(
-	        window.pageYOffset + rect.top + 100,
-	        document.documentElement.scrollHeight - window.innerHeight
-	      );
-	      window.scrollTo({ top: targetY, behavior: "smooth" });
-	    }
-	  });
-	});
+    // ① 로컬 키워드/데이터 즉답 (blood_qa.js 매칭 + 화면 지표 기반)
+    var local = _chatResponse(q);
+    if (local != null) {
+      setTimeout(function(){ _addMsg(local, false); }, 280);
+      return;
+    }
+
+    // ② 동일 질문 캐시
+    var _ctxText  = _chatCtxText();
+    var _cacheKey = q.toLowerCase() + '|' + _ctxText;
+    if (_chatCache[_cacheKey]) {
+      setTimeout(function(){ _addMsg(_chatCache[_cacheKey], false); }, 200);
+      return;
+    }
+
+    // ③ 매칭 실패 → 서버 LLM(Gemini) fallback. "입력 중…" 표시 후 응답으로 교체
+    var box = document.getElementById('chatMessages');
+    var typing = document.createElement('div');
+    typing.className = 'chat-bot';
+    typing.innerHTML = '<span class="chat-text">…</span>';
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
+
+    $.ajax({
+      url: CommonUtil.getContextPath() + '/blood/chatAsk.do',
+      type: 'post',
+      data: JSON.stringify({ q: q, ctx: _ctxText }),
+      contentType: 'application/json',
+      dataType: 'json',
+      success: function(r){
+        typing.remove();
+        if (r && r.IsSucceed && r.Data) {
+          var _ans = String(r.Data);
+          _chatCache[_cacheKey] = _ans;   // 성공 답변만 캐시
+          _addMsg(_ans, false);
+        } else {
+          _addMsg(_chatFallbackMsg(), false);
+        }
+      },
+      error: function(){
+        typing.remove();
+        _addMsg(_chatFallbackMsg(), false);
+      }
+    });
+  }
+
+  // 화면에 표시된 지표 숫자만 추출 ("-" 이거나 없으면 null)
+  function _metricNum(id){
+    var el = document.getElementById(id);
+    if(!el) return null;
+    var t = (el.textContent || '').replace(/[^0-9.\-]/g, '');
+    if(!t) return null;
+    var n = parseFloat(t);
+    return isFinite(n) ? n : null;
+  }
+
+  function _chatResponse(q){
+    q = q.toLowerCase();
+    var avg = _metricNum('avgUpt'), fasting = _metricNum('avgFastingBlood'), post = _metricNum('after2hBlood');
+    var tir = _metricNum('tir'), tar = _metricNum('tar'), tbr = _metricNum('tbr'), gmi = _metricNum('gmi');
+    var note = '<br><small>※ 일반 참고용이며 진단이 아닙니다. 이상 증상은 담당 의사와 상담하세요.</small>';
+
+    // ── 데이터 의도 여부 (교과서 지식 질문 "정상범위는?" 등은 여기 안 걸리게) ──
+    var _dataIntent = /(어때|어땠|어떤|어떻|얼마|몇|상태|관리|괜찮|높은가|낮은가|위험|내 |나의|우리|이번\s*주|주간)/.test(q);
+
+    // ── 이번 주/평균 혈당 ── ('정상범위' 같은 지식 질문은 제외)
+    if (avg != null && _dataIntent && /(이번\s*주|주간|평균|한\s*주|일주일|최근|혈당\s*어때|혈당은|혈당이\s*높|혈당이\s*낮)/.test(q) && !/(정상\s*범위|범위는)/.test(q)) {
+      var s = avg <= 140 ? '양호한 상태입니다 👍'
+            : avg <= 180 ? '관리가 필요합니다.'
+            : '<span style="color:#dc3545;">고혈당 주의</span>가 필요합니다.';
+      var extra = (tir != null) ? ('<br>목표범위 내 비율(TIR): <b>' + tir + '%</b>') : '';
+      return '주간 평균 혈당: <b>' + avg + ' mg/dL</b>' + extra + '<br>' + s + note;
+    }
+
+    // ── 공복 (데이터 의도일 때만; "공복혈당이란?" 은 blood_qa.js 로) ──
+    if (fasting != null && _dataIntent && /공복/.test(q)) {
+      var ft = fasting < 100 ? '정상' : fasting < 126 ? '공복혈당장애' : '<span style="color:#dc3545;">높음</span>';
+      return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')' + note;
+    }
+
+    // ── 식후 (데이터 의도일 때만) ──
+    if (post != null && _dataIntent && /(식후|식사\s*후|식사후|밥\s*먹고|먹은\s*후)/.test(q)) {
+      var pt = post < 140 ? '정상' : post <= 180 ? '약간 높음' : '<span style="color:#dc3545;">고혈당</span>';
+      return '식후 평균 혈당: <b>' + post + ' mg/dL</b> (' + pt + ')' + note;
+    }
+
+    // ── TIR / TAR / TBR / GMI ──
+    if (tir != null && /(tir|목표범위)/.test(q)) {
+      return '목표범위 내 비율(TIR): <b>' + tir + '%</b><br>'
+           + (tir >= 70 ? '목표(70% 이상)를 잘 유지하고 있습니다 👍' : '목표(70% 이상)에 다소 못 미칩니다. 관리가 필요합니다.');
+    }
+    if (tar != null && /tar/.test(q)) { return '고혈당 시간 비율(TAR): <b>' + tar + '%</b>' + note; }
+    if (tbr != null && /tbr/.test(q)) { return '저혈당 시간 비율(TBR): <b>' + tbr + '%</b>' + note; }
+    if (gmi != null && /(gmi|당화|혈당관리지표)/.test(q)) {
+      return '혈당관리지표(GMI): <b>' + gmi + '%</b><br>' + (gmi < 7 ? '양호합니다 👍' : '관리 강화를 권장드립니다.');
+    }
+
+    // ── 일반 건강 지식: blood_qa.js 의 BLOOD_QA 키워드 매칭 (점수제) ──
+    if (typeof BLOOD_QA !== 'undefined' && BLOOD_QA.length) {
+      var bestItem = null, bestScore = 0, bestMaxLen = 0, secondScore = 0;
+      for (var i = 0; i < BLOOD_QA.length; i++) {
+        var item = BLOOD_QA[i];
+        if (!item || !item.kw) continue;
+        var score = 0, maxLen = 0;
+        for (var j = 0; j < item.kw.length; j++) {
+          var kw = String(item.kw[j]).toLowerCase();
+          if (kw && q.indexOf(kw) !== -1) {
+            score += kw.length;
+            if (kw.length > maxLen) maxLen = kw.length;
+          }
+        }
+        if (score > bestScore)        { secondScore = bestScore; bestItem = item; bestScore = score; bestMaxLen = maxLen; }
+        else if (score > secondScore) { secondScore = score; }
+      }
+      if (bestItem && bestMaxLen >= 2 && bestScore >= secondScore + 2) {
+        return bestItem.a;
+      }
+    }
+
+    // ── 특정 음식 질문(전용 답 없을 때 일반 음식 가이드) ──
+    if (/(먹어도|먹으면|먹는\s*게|먹는\s*건|드셔도|섭취해도|혈당에\s*(어떤|좋|나쁘|괜찮|영향|올라|안\s*좋))/.test(q)) {
+      return '특정 음식과 혈당 (일반 가이드):<br>'
+           + '• 흰쌀·면류·빵 등 <b>정제 탄수화물</b>과 단 음식은 혈당을 빠르게 올립니다.<br>'
+           + '• <b>채소·단백질을 먼저</b> 먹고 천천히(20분 이상) 드세요.<br>'
+           + '• 탄수화물은 양을 줄이고 잡곡·통곡물로 바꾸면 좋습니다.<br>'
+           + '• 식후 <b>30분 걷기</b>로 식후 혈당 상승을 완화하세요.<br>'
+           + '<small>※ 일반 참고용이며 음식별 반응은 개인차가 있습니다.</small>';
+    }
+
+    // ── 매칭 실패 → null → sendChat() 이 서버 LLM 으로 fallback ──
+    return null;
+  }
+
+  // LLM·매칭 모두 실패했을 때 안내 문구
+  function _chatFallbackMsg(){
+    return '죄송해요, 지금은 답변을 가져오지 못했어요 😅<br><br>이런 질문을 해보세요:<br>• "이번 주 혈당 어때요?"<br>• "혈당 정상범위는?"<br>• "저혈당 증상과 대처법은?"<br>• "운동이 혈당에 좋아요?"<br>• "스트레스와 혈당의 관계는?"';
+  }
+
+  // 현재 화면 지표 요약 — LLM 프롬프트 컨텍스트로 전달
+  function _chatCtxText(){
+    var avg = _metricNum('avgUpt'), fasting = _metricNum('avgFastingBlood'), post = _metricNum('after2hBlood'), tir = _metricNum('tir');
+    var parts = [];
+    if (avg != null)     parts.push('주간 평균 ' + avg);
+    if (fasting != null) parts.push('공복 평균 ' + fasting);
+    if (post != null)    parts.push('식후 평균 ' + post);
+    if (tir != null)     parts.push('목표범위(TIR) ' + tir + '%');
+    return parts.length ? (parts.join(' / ') + ' mg/dL 기준') : '';
+  }
+
+  // 초기 인사 메시지
+  document.addEventListener('DOMContentLoaded', function(){
+    _addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
+  });
 
   // ===== 초기화 & 이벤트 =====
   document.addEventListener('DOMContentLoaded', function(){
@@ -918,14 +1187,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const sEl = document.getElementById('startDate');
     const eEl = document.getElementById('endDate');
 
-    // 초기: active 버튼 기준으로 input/차트 세팅
+    // 초기: 데이터가 있는 마지막 날을 기준으로 일주일 보기 (연속혈당 화면과 동일).
+    //   최근 데이터 일자를 종료일로, 그 6일 전을 시작일로. 데이터가 전혀 없으면 오늘 기준.
     const activeBtn = box?.querySelector('.btn.active') || box?.querySelector('.btn[data-days="0"]');
-    if (activeBtn){
-      const days = Number(activeBtn.getAttribute('data-days'));
-      const { start, end } = computeRange(days);
-      setDateInputs(start, end);
-      loadTimeBand(start, end);
-    }
+    const initDays = activeBtn ? Number(activeBtn.getAttribute('data-days')) : 7;
+    const anchorEnd = _getLastDataDate();   // 동기 조회 (없으면 null)
+    const initRange = anchorEnd ? computeRangeEndingAt(anchorEnd, initDays) : computeRange(initDays);
+    setDateInputs(initRange.start, initRange.end);
+    loadTimeBand(initRange.start, initRange.end);
 
     // 범위 버튼 클릭
     box?.addEventListener('click', function(e){
