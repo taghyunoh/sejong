@@ -683,13 +683,15 @@ function registerUser() {
 }
 
 
-//1. SDK 초기화
-
-Kakao.init('${kakaoJsKey}');
-if (!Kakao.isInitialized()) {
-    alert('카카오 SDK 초기화 실패');
-} else {
-//	alert('${kakaoJsKey}' + " 카카오 SDK 초기화 성공");
+//1. SDK 초기화 (SDK 미로드/JS키 없음이 뒤 스크립트를 깨뜨리지 않도록 방어)
+try {
+	if (window.Kakao && '${kakaoJsKey}') {
+		if (!Kakao.isInitialized()) { Kakao.init('${kakaoJsKey}'); }
+	} else {
+		console.warn('카카오 SDK 미로드 또는 JS키 없음 — 카카오 로그인 비활성');
+	}
+} catch (e) {
+	console.error('Kakao.init 실패:', e);
 }
 
 //3. 로그인 함수 (기존 구조 유지, 보완만 추가)
@@ -704,7 +706,7 @@ function loginWithKakao() {
 	const reAskEmailConsent = function () {
 	 Kakao.Auth.login({
 	   scope: 'account_email,profile_nickname',
-	   throughTalk: false,   // [WebView 복귀 문제] 카카오톡 앱으로 튕겼다가 안 돌아오는 것 방지 → 웹 로그인 유지
+	   throughTalk: false,   // PWA(브라우저)에선 카카오톡 앱으로 튕기지 않고 브라우저 안에서 로그인 → 로그인 후 복귀 안정
 	   success: function () {
 	     requestUserAndSend();
 	   },
@@ -715,7 +717,7 @@ function loginWithKakao() {
 	 });
 	};
 	
-	const requestUserAndSend = function () {
+	const requestUserAndSend = function (isRetry) {
 	 Kakao.API.request({
 	   url: '/v2/user/me',
 	   success: function (res) {
@@ -764,31 +766,46 @@ function loginWithKakao() {
 	   },
 	   fail: function (error) {
 	     console.error('사용자 정보 요청 실패', error);
-	     alert("사용자 정보 요청 실패");
+	     // 저장된 액세스 토큰이 만료/무효일 수 있음 → 1회에 한해 토큰 비우고 새 로그인으로 복구
+	     if (!isRetry) {
+	       try { Kakao.Auth.setAccessToken(null); } catch (e) {}
+	       Kakao.Auth.login({
+	         scope: 'account_email,profile_nickname',
+	         throughTalk: false,
+	         success: function () { requestUserAndSend(true); },
+	         fail: function (err) {
+	           console.error('재로그인 실패', err);
+	           alert("카카오 로그인에 실패했습니다. 다시 시도해주세요.");
+	         }
+	       });
+	       return;
+	     }
+	     // 재시도도 실패 → 실제 에러 노출(대개 카카오 콘솔 도메인/동의항목 설정 문제)
+	     var _m = (error && (error.msg || error.error_description || error.error || error.code)) || '';
+	     alert("사용자 정보 요청 실패" + (_m ? " (" + _m + ")" : "") + "\n카카오 개발자 콘솔의 도메인/동의항목 설정을 확인해주세요.");
 	   }
 	 });
 	};
 	
-	// A. 현재 Kakao Auth 상태 확인
-	// * SDK v2 기준: getStatusInfo가 일반적입니다.
-	Kakao.Auth.getStatusInfo(function (statusObj) {
-	 if (statusObj.status === 'connected') {
-	   requestUserAndSend();
-	 } else {
-	   Kakao.Auth.login({
-	     scope: 'account_email,profile_nickname',
-	     throughTalk: false,   // [WebView 복귀 문제] 카카오톡 앱으로 튕겼다가 안 돌아오는 것 방지 → 웹 로그인 유지
-	     success: function (authObj) {
-	       console.log('로그인 성공:', authObj);
-	       requestUserAndSend();
-	     },
-	     fail: function (err) {
-	       console.error('로그인 실패', err);
-	       alert("로그인 실패");
-	     }
-	   });
-	 }
-	});
+	// A. 이미 로그인(토큰 보유)이면 바로 사용자정보, 아니면 로그인.
+	// ※ 예전엔 getStatusInfo(비동기) 콜백 안에서 login 을 불러 '클릭 흐름'을 벗어나
+	//    모바일 브라우저가 팝업을 차단 → "버튼 눌러도 반응 없음". 동기 판단으로 바꿔 해결.
+	if (Kakao.Auth.getAccessToken()) {
+	 requestUserAndSend();
+	} else {
+	 Kakao.Auth.login({
+	   scope: 'account_email,profile_nickname',
+	   throughTalk: false,   // PWA(브라우저) 로그인 후 복귀 안정을 위해 브라우저 내 로그인 유지
+	   success: function (authObj) {
+	     console.log('로그인 성공:', authObj);
+	     requestUserAndSend();
+	   },
+	   fail: function (err) {
+	     console.error('로그인 실패', err);
+	     alert("로그인 실패");
+	   }
+	 });
+	}
 }
 
  window.onload = function() {

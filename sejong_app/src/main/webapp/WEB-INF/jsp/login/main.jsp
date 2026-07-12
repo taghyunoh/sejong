@@ -151,7 +151,7 @@
    <nav class="footerNav">
      <ul>
        <li>
-         <a href="<c:url value='/mainPage.do'/> ">
+         <a href="<c:url value='/mainPage.do'/> " class="on">
            <img src="<c:url value='/asset/images/blood/icon_home.png'/> " alt="">
            <span>홈</span>
          </a>

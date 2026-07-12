@@ -6504,7 +6504,10 @@ select {
   color: #343a40;
   font-size: calc(4.1 * var(--vwu, 1vw));
   font-weight: 500;
+  /* 아래쪽에 홈 인디케이터(제스처바) 만큼 여백 추가 → 바를 살짝 위로 올려
+     하단 탭이 인디케이터에 가려 터치가 안 먹던 문제 해소. env 미지원 기기는 0px 로 무시. */
   padding: calc(3.2 * var(--vwu, 1vw)) calc(4 * var(--vwu, 1vw));
+  padding-bottom: calc(calc(3.2 * var(--vwu, 1vw)) + env(safe-area-inset-bottom, 0px));
   background: #ffffff;
   border-top: 1px solid #dee2e6;
 }
@@ -6528,8 +6531,23 @@ select {
   justify-content: center;                       /* 아이콘+글자 가운데 정렬 */
   align-items: center;
   gap: calc(0.6 * var(--vwu, 1vw));              /* 아이콘-글자 간격 */
-  padding: calc(1.4 * var(--vwu, 1vw)) calc(1.2 * var(--vwu, 1vw));  /* 상하+좌우 탭 영역 */
-  margin: calc(-1.4 * var(--vwu, 1vw)) 0;        /* 바 높이는 그대로(상하 패딩 상쇄) */
+  padding: calc(2.4 * var(--vwu, 1vw)) calc(2.4 * var(--vwu, 1vw));  /* 상하+좌우 탭 영역 확대 */
+  min-height: 48px;                              /* 손가락 터치 최소 영역 확보(모바일 터치 개선) */
+  border-radius: calc(2 * var(--vwu, 1vw));
+  -webkit-tap-highlight-color: transparent;      /* 기본 회색 하이라이트 제거(직접 지정한 눌림효과 사용) */
+  transition: background-color .12s ease;
+}
+/* 눌렀을 때 즉시 피드백 → 어느 탭을 눌렀는지 바로 구분 */
+.footerNav a:active {
+  background-color: #e9f2ff;
+}
+/* 현재 페이지 탭 표시(선택 상태) — 해당 <a> 에 class="on" 부여 */
+.footerNav a.on {
+  background-color: #e9f2ff;
+}
+.footerNav a.on span {
+  color: #1360e0;
+  font-weight: 700;
 }
 .footerNav img {
   width: calc(4.6 * var(--vwu, 1vw));            /* 아이콘 더 축소 (6.2→4.6) — 글자 키울 공간 확보 */

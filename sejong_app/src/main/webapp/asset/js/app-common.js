@@ -39,8 +39,19 @@ function callAndroid(funcName, ifData) {
 		window.webkit.messageHandlers.IOS.postMessage(JsonEncodeString);
 		console.log("iphone Login");
 	}else{
-		// 네이티브 브리지 없음(브라우저/PWA) → 웹 경로로 폴백. Android/webkit 미정의 크래시 방지.
-		console.log("Web Login (네이티브 브리지 없음)");
+		// 네이티브 브리지 없음(브라우저/PWA) → 웹 저장(localStorage)으로 폴백. Android/webkit 미정의 크래시 방지.
+		//  f102: 자동로그인/번호저장 정보를 저장
+		//  f101: 저장된 정보를 콜백(userInfoCallBack)으로 전달 → 네이티브와 동일 시그니처
+		try {
+			if (funcName === "f102") {
+				localStorage.setItem("allcareUserInfo", JSON.stringify(ifData || {}));
+			} else if (funcName === "f101") {
+				var _saved = localStorage.getItem("allcareUserInfo") || "";
+				var _cb = window[obj.callback];        // "userInfoCallBack"
+				if (typeof _cb === "function") { _cb(_saved); }
+			}
+		} catch (e) { console.warn("웹 저장 폴백 오류:", e); }
+		console.log("Web fallback (네이티브 브리지 없음): " + funcName);
 	}
 	console.log("callAndroid JsonEncodeString : " + JsonEncodeString);
 }
