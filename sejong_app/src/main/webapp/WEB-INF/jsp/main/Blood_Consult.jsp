@@ -7,6 +7,7 @@
 
 <meta charset="UTF-8">
 <title>시간대별 통계</title>
+<%@ include file="/WEB-INF/inc/pwa-head.jsp" %>
 
 <link href="${pageContext.request.contextPath}/asset/css/comm_blood.css?date=<%= System.currentTimeMillis() %>" rel="stylesheet">
 

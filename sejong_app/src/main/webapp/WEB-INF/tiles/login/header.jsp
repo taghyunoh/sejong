@@ -22,7 +22,7 @@
 	<script type="text/javascript" src='/asset/js/jquery/common.js'></script>
 	<script type="text/javascript" src="<c:url value='/asset/js/jquery-3.5.1.min.js'/>"></script> 
 	<script type="text/javascript" src="<c:url value='/asset/js/commonUtil.js'/>?date=<%= nowTime %>"></script> 
-	<script type="text/javascript" src="<c:url value='/asset/js/app-common.js'/>"></script> 
+	<script type="text/javascript" src="<c:url value='/asset/js/app-common.js'/>?date=<%= nowTime %>"></script>
 	<%-- style.css 의 @import 에는 캐시버스터를 붙일 수 없어 개별 link 로 풀었다. 순서 유지 필수. --%>
 	<%-- style.css 의 @import 에는 캐시버스터를 못 붙여 개별 link 로 풀었다. 순서 유지 필수.
 	     경로는 반드시 컨텍스트 경로를 포함해야 한다(운영은 /app 아래에 배포됨).

@@ -1,0 +1,32 @@
+{
+  "name": "연속혈당 allCare",
+  "short_name": "allCare",
+  "description": "연속혈당 allCare - 혈당·식사·운동 관리 서비스",
+  "lang": "ko",
+  "start_url": "loginPage.do",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#005b8e",
+  "icons": [
+    {
+      "src": "asset/images/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "asset/images/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "asset/images/pwa/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

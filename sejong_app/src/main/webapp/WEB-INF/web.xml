@@ -94,4 +94,10 @@
 		<tracking-mode>COOKIE</tracking-mode>
 	</session-config>
 
+	<!-- [PWA] 웹 앱 매니페스트 MIME 타입(Tomcat 기본 미지원) -->
+	<mime-mapping>
+		<extension>webmanifest</extension>
+		<mime-type>application/manifest+json</mime-type>
+	</mime-mapping>
+
 </web-app>

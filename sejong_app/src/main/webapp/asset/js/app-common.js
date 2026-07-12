@@ -32,14 +32,15 @@ function callAndroid(funcName, ifData) {
 	obj.data = ifData;
 	
 	const JsonEncodeString = JSON.stringify(obj);
-	if(IorA.indexOf("android") !== -1){
+	if(IorA.indexOf("android") !== -1 && typeof Android !== "undefined" && Android.callAppFunc){
 		Android.callAppFunc(JsonEncodeString);
 		console.log("안드");
-	}else if(IorA.indexOf("iphone") !== -1){
+	}else if(IorA.indexOf("iphone") !== -1 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.IOS){
 		window.webkit.messageHandlers.IOS.postMessage(JsonEncodeString);
 		console.log("iphone Login");
 	}else{
-		console.log("Web Login");
+		// 네이티브 브리지 없음(브라우저/PWA) → 웹 경로로 폴백. Android/webkit 미정의 크래시 방지.
+		console.log("Web Login (네이티브 브리지 없음)");
 	}
 	console.log("callAndroid JsonEncodeString : " + JsonEncodeString);
 }
@@ -51,14 +52,15 @@ function callAndroid2(funcName){
 										})[0].data;
 
 	const JsonEncodeString = JSON.stringify(obj)
-	if(IorA.indexOf("android") !== -1){
+	if(IorA.indexOf("android") !== -1 && typeof Android !== "undefined" && Android.callAppFunc){
 		Android.callAppFunc(JsonEncodeString);
 		console.log("안드");
-	}else if(IorA.indexOf("iphone") !== -1){
+	}else if(IorA.indexOf("iphone") !== -1 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.IOS){
 		window.webkit.messageHandlers.IOS.postMessage(JsonEncodeString);
 		console.log("iphone Login");
 	}else{
-		console.log("Web Login");
+		// 네이티브 브리지 없음(브라우저/PWA) → 웹 경로로 폴백. Android/webkit 미정의 크래시 방지.
+		console.log("Web Login (네이티브 브리지 없음)");
 	}
 	console.log(JsonEncodeString);
 	

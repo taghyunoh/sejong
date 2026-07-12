@@ -14,6 +14,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <tiles:insertAttribute name="header" />
+<%@ include file="/WEB-INF/inc/pwa-head.jsp" %>
 </head>
 <body>
 	<div id="wrap" class="wrap">

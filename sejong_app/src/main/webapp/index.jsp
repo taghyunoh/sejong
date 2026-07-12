@@ -8,6 +8,7 @@
 		<meta charset="UTF-8">
 		<title>로그인 페이지</title>
 		<link rel="stylesheet" type="text/css" href="/css/login.css" />
+		<%@ include file="/WEB-INF/inc/pwa-head.jsp" %>
 	</head>
 	
 	<body>
