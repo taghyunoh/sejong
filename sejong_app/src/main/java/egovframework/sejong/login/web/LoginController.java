@@ -102,6 +102,10 @@ public class LoginController {
 	@RequestMapping("/mainPage.do")
 	public String mainPage(HttpSession session,Model model) {
 		UserDTO user = (UserDTO) session.getAttribute("user");
+		// 세션 만료/미로그인 방어: NPE(500) 대신 로그인 화면으로. (평시엔 인터셉터가 먼저 차단)
+		if (user == null) {
+			return "redirect:/loginPage.do";
+		}
 		model.addAttribute("gender",user.getGender());
 		return ".login/main";
 	}

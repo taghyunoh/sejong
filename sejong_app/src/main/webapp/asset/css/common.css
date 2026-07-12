@@ -6511,26 +6511,41 @@ select {
 .footerNav ul {
   display: flex;
   flex-flow: row nowrap;
-  justify-content: space-between;
+  justify-content: space-evenly;                 /* 항목 사이 간격을 모두 동일하게 → '홈' 만 벌어지던 문제 해소 */
   align-items: center;
+  width: 100%;
+}
+/* 고정 4등분(width:25%)은 '홈'(1글자)이 넓은 셀 가운데 놓여 좌우 여백이 커져
+   '홈↔연속혈당' 만 벌어져 보였다. 내용 크기로 두고 ul 의 space-evenly 로 간격을 균등화한다.
+   (글자·아이콘을 줄여 여유 공간이 생겨 space-evenly 가 실제 간격을 만들 수 있게 됨) */
+.footerNav li {
+  display: flex;
 }
 .footerNav a {
+  box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
-  justify-content: center;
-  align-items: flex-end;
-  gap: calc(1 * var(--vwu, 1vw));
+  justify-content: center;                       /* 아이콘+글자 가운데 정렬 */
+  align-items: center;
+  gap: calc(0.6 * var(--vwu, 1vw));              /* 아이콘-글자 간격 */
+  padding: calc(1.4 * var(--vwu, 1vw)) calc(1.2 * var(--vwu, 1vw));  /* 상하+좌우 탭 영역 */
+  margin: calc(-1.4 * var(--vwu, 1vw)) 0;        /* 바 높이는 그대로(상하 패딩 상쇄) */
 }
 .footerNav img {
-  width: calc(6.2 * var(--vwu, 1vw));
+  width: calc(4.6 * var(--vwu, 1vw));            /* 아이콘 더 축소 (6.2→4.6) — 글자 키울 공간 확보 */
+  flex: 0 0 auto;
 }
 .footerNav span {
+  /* 연속혈당(FAHR) 페이지의 blood_fahr.css 가 body 를 'Noto Sans KR' 로 덮어 footer 만
+     가늘고 달라 보이던 문제 → 홈과 동일한 Gmarket Sans 로 고정(페이지 무관 일관). */
+  font-family: "Gmarket Sans", "Noto Sans KR", sans-serif;
   color: var(--Gray-800, #343a40);
-  font-size: calc(4.2 * var(--vwu, 1vw));
+  font-size: calc(4.0 * var(--vwu, 1vw));        /* 글자 키움 (3.5→4.0, 원래 4.2에 근접) — 어르신 가독성 */
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-  padding-bottom: 1px;
+  padding-bottom: 0;
+  white-space: nowrap;
 }
 
 /* 연속혈당 일일보고서 2408 */

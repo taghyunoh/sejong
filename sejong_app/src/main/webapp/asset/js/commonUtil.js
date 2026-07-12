@@ -72,8 +72,27 @@
 				}
 			})
 		},
-		
-		
+
+
 	}
-	
+
+	// [세션 만료 전역 처리]
+	//   서버 SessionCheckInterceptor 가 세션 만료 시 AJAX 응답을 401(sessionExpired) 로 준다.
+	//   모든 jQuery $.ajax(callAjax/callSyncAjax/직접호출)는 전역 ajaxError 를 거치므로
+	//   여기서 한 번만 잡아 로그인 화면으로 보낸다.
+	//   → 자동로그인 켠 사용자는 loginPage 진입 즉시 저장된 폰번호로 재로그인되어 자연 복구된다.
+	if ($ && typeof $.fn !== "undefined") {
+		var _sessionRedirecting = false;
+		$(document).ajaxError(function(event, xhr){
+			if (xhr && xhr.status === 401 && !_sessionRedirecting) {
+				_sessionRedirecting = true;
+				var ctx = sessionStorage.getItem("contextPath") || "";
+				// 이미 로그인 화면이면 다시 이동하지 않음(무한 새로고침 방지)
+				if (location.pathname.indexOf("/loginPage.do") === -1) {
+					location.href = ctx + "/loginPage.do";
+				}
+			}
+		});
+	}
+
 })(window,window.jQuery);

@@ -41,7 +41,7 @@
     max-width:760px;margin:0 auto;
   }
   .card h5{margin:0 0 8px}
-  #chartBox{height:270px;position:relative;width:calc(100% + 14px);margin:0 -7px}
+  #chartBox{height:225px;position:relative;width:calc(100% + 14px);margin:0 -7px}
   #timeBandChart{width:100% !important;height:90% !important;display:block}
 
   /* 범위 버튼 */
@@ -460,7 +460,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .qa-head h5 { font-size:17px; margin:0; }
 .qa-clear { border:none; background:none; color:#888; font-size:13px; cursor:pointer; padding:0; }
 .qa-messages {
-  height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+  height:275px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
   padding:8px; background:#f8f9fa; border-radius:8px; margin-bottom:8px;
 }
 .qa-input { display:flex; gap:6px; margin-bottom:8px; }
@@ -468,6 +468,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .qa-input input {
   flex:1; min-width:0; padding:8px 10px; border:1px solid #ccc;
   border-radius:8px; font-size:14px; color:#333; background:#fff;
+  transition:padding .15s ease, font-size .15s ease, box-shadow .15s ease;
+}
+/* 입력(포커스)할 때만 입력창을 크게 — 평소엔 원래 크기 유지 */
+.qa-input input:focus {
+  padding:13px 14px; font-size:16px; outline:none;
+  border-color:#0d6efd; box-shadow:0 0 0 2px rgba(13,110,253,.15);
 }
 .qa-send {
   flex:0 0 auto; padding:8px 16px; border:none; border-radius:8px;

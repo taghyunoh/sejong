@@ -9,7 +9,7 @@
  *
  * To force-refresh the static cache on deploy, bump CACHE_VERSION.
  */
-const CACHE_VERSION = 'allcare-static-v1';
+const CACHE_VERSION = 'allcare-static-v2';
 const BASE = new URL('./', self.location).pathname;   // e.g. '/app/' or '/'
 
 const PRECACHE_URLS = [
@@ -60,7 +60,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) same-origin static asset -> stale-while-revalidate
+  // 2a) CSS/JS -> network-first (배포/수정이 즉시 반영되도록. 캐시는 오프라인 폴백용).
+  //     stale-while-revalidate 로 캐시된 옛 css/js 가 배포 후에도 계속 보이던 문제 방지.
+  if (isStaticAsset(url) && /\.(css|js)$/i.test(url.pathname)) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      }).catch(() => caches.open(CACHE_VERSION).then((cache) => cache.match(req)))
+    );
+    return;
+  }
+
+  // 2b) 그 외 정적 asset(이미지/폰트) -> stale-while-revalidate
   if (isStaticAsset(url)) {
     event.respondWith(
       caches.open(CACHE_VERSION).then((cache) =>

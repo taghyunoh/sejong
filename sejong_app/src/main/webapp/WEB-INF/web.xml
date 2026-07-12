@@ -91,6 +91,10 @@
 	     환경에 따라 404 가 나 화면 스타일이 통째로 깨진다.
 	     쿠키로만 세션을 추적하게 해 URL 리라이트를 끈다. -->
 	<session-config>
+		<!-- 로그인 후 무활동 유지시간(분). 이 시간 방치하면 세션이 만료되고
+		     이후 요청은 SessionCheckInterceptor 가 로그인 화면으로 돌려보낸다.
+		     (session-timeout 은 XSD 상 tracking-mode 보다 먼저 와야 함) -->
+		<session-timeout>60</session-timeout>
 		<tracking-mode>COOKIE</tracking-mode>
 	</session-config>
 

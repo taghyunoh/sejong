@@ -704,6 +704,7 @@ function loginWithKakao() {
 	const reAskEmailConsent = function () {
 	 Kakao.Auth.login({
 	   scope: 'account_email,profile_nickname',
+	   throughTalk: false,   // [WebView 복귀 문제] 카카오톡 앱으로 튕겼다가 안 돌아오는 것 방지 → 웹 로그인 유지
 	   success: function () {
 	     requestUserAndSend();
 	   },
@@ -776,6 +777,7 @@ function loginWithKakao() {
 	 } else {
 	   Kakao.Auth.login({
 	     scope: 'account_email,profile_nickname',
+	     throughTalk: false,   // [WebView 복귀 문제] 카카오톡 앱으로 튕겼다가 안 돌아오는 것 방지 → 웹 로그인 유지
 	     success: function (authObj) {
 	       console.log('로그인 성공:', authObj);
 	       requestUserAndSend();
