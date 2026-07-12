@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>allCare 앱 설치 안내</title>
+  <link rel="icon" type="image/png" href="asset/images/pwa/icon-192.png">
+  <link rel="apple-touch-icon" href="asset/images/pwa/apple-touch-icon.png">
+  <style>
+    :root{ --blue:#005b8e; --blue2:#0a6fb0; --ink:#2d303f; --muted:#6b7280; --line:#e5e7eb; }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family:"Gmarket Sans","Noto Sans KR",-apple-system,sans-serif;
+      color:var(--ink); background:#f4f6f8; letter-spacing:-0.02em;
+      -webkit-text-size-adjust:100%;
+    }
+    .wrap{max-width:460px; margin:0 auto; padding:24px 18px 40px; min-height:100vh; background:#fff}
+    .top{text-align:center; padding:12px 0 18px}
+    .top img{width:84px; height:84px; border-radius:20px; box-shadow:0 4px 14px rgba(0,0,0,.12)}
+    .top h1{font-size:20px; margin:14px 0 4px}
+    .top p{margin:0; color:var(--muted); font-size:13.5px}
+
+    .cta{display:block; text-align:center; text-decoration:none; margin:18px 0 8px;
+      background:var(--blue); color:#fff; font-weight:700; font-size:16px;
+      padding:15px; border-radius:12px}
+    .cta:active{background:var(--blue2)}
+    .hint{ text-align:center; font-size:12.5px; color:var(--muted); margin:0 0 18px }
+
+    .card{border:1px solid var(--line); border-radius:14px; padding:16px 16px 6px; margin:14px 0}
+    .card h2{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px}
+    .badge{display:inline-block; font-size:11px; font-weight:700; color:#fff; background:var(--blue);
+      padding:3px 9px; border-radius:999px}
+    ol{margin:0; padding-left:0; list-style:none; counter-reset:step}
+    ol li{position:relative; padding:0 0 14px 34px; counter-increment:step; font-size:14px; line-height:1.55}
+    ol li::before{content:counter(step); position:absolute; left:0; top:0;
+      width:24px; height:24px; border-radius:50%; background:var(--blue); color:#fff;
+      font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center}
+    ol li b{color:var(--blue)}
+    .note{background:#fff7e6; border:1px solid #ffe1a8; color:#7a5b12; border-radius:10px;
+      padding:10px 12px; font-size:12.5px; line-height:1.5; margin:4px 0 12px}
+
+    .hidden{display:none !important}
+
+    .qr{text-align:center; margin-top:26px; padding-top:20px; border-top:1px dashed var(--line)}
+    .qr img{width:150px; height:150px}
+    .qr p{font-size:12px; color:var(--muted); margin:8px 0 0}
+    .foot{text-align:center; color:#9aa1ac; font-size:11.5px; margin-top:22px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <img src="asset/images/pwa/icon-192.png" alt="allCare">
+      <h1>allCare 앱 설치</h1>
+      <p>홈 화면에 추가하면 앱처럼 바로 실행돼요</p>
+    </div>
+
+    <!-- 앱 바로 시작 -->
+    <a class="cta" href="loginPage.do">앱 시작하기 →</a>
+    <p class="hint">설치 없이 바로 이용할 수도 있어요. 아래는 홈 화면에 앱으로 추가하는 방법입니다.</p>
+
+    <!-- 안드로이드 안내 -->
+    <div class="card" id="androidCard">
+      <h2><span class="badge">Android</span> 홈 화면에 추가</h2>
+      <ol>
+        <li>화면 아래 <b>“홈 화면에 추가/앱 설치”</b> 안내가 뜨면 눌러요.</li>
+        <li>안 뜨면 오른쪽 위 <b>⋮ (점 3개)</b> → <b>“앱 설치”</b> 또는 <b>“홈 화면에 추가”</b></li>
+        <li><b>설치</b>를 누르면 홈 화면에 allCare 아이콘이 생겨요.</li>
+      </ol>
+      <button class="cta" id="installBtn" style="border:0; width:100%; cursor:pointer" hidden>지금 설치하기</button>
+    </div>
+
+    <!-- iOS 안내 -->
+    <div class="card" id="iosCard">
+      <h2><span class="badge">iPhone</span> 홈 화면에 추가</h2>
+      <div class="note" id="iosSafariWarn" hidden>
+        ⚠️ 아이폰은 <b>Safari(사파리)</b>에서만 설치돼요. 지금 다른 앱(크롬·카카오 등)으로 열렸다면,
+        주소를 복사해 <b>사파리</b>로 열어 주세요.
+      </div>
+      <ol>
+        <li>화면 아래 가운데 <b>공유 버튼(□ 위에 ↑)</b>을 눌러요.</li>
+        <li>목록을 내려 <b>“홈 화면에 추가”</b>를 눌러요.</li>
+        <li>오른쪽 위 <b>“추가”</b>를 누르면 완료!</li>
+      </ol>
+    </div>
+
+    <!-- 이미 설치 안내 -->
+    <div class="note hidden" id="installedNote">✅ 이미 설치된 앱으로 실행 중이에요. 바로 이용하시면 됩니다.</div>
+
+    <!-- QR (다른 기기 공유/인쇄용) -->
+    <div class="qr">
+      <img src="asset/images/pwa/install-qr.png" alt="allCare 설치 QR">
+      <p>다른 기기에서 설치하려면 이 QR을 스캔하세요</p>
+    </div>
+
+    <div class="foot">연속혈당 allCare</div>
+  </div>
+
+  <script>
+    (function(){
+      var ua = navigator.userAgent || '';
+      var isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var isAndroid = /android/i.test(ua);
+      var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      var iosInApp = isIOS && !/safari/i.test(ua) || /crios|fxios|edgios|opios|kakaotalk|naver|line|fban|fbav|instagram/i.test(ua);
+
+      function show(id){ var e=document.getElementById(id); if(e) e.classList.remove('hidden'), e.hidden=false; }
+      function hide(id){ var e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+
+      // 이미 설치되어 앱으로 열린 경우
+      if (isStandalone) { show('installedNote'); }
+
+      // 플랫폼별 카드만 표시
+      if (isAndroid) { hide('iosCard'); }
+      else if (isIOS) { hide('androidCard'); if (iosInApp) show('iosSafariWarn'); }
+      // 데스크톱/기타: 둘 다 그대로 노출 (참고용)
+
+      // 안드로이드/데스크톱 크롬: 실제 설치 프롬프트 버튼
+      var deferred = null, btn = document.getElementById('installBtn');
+      window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault(); deferred = e;
+        if (btn){ btn.hidden = false;
+          btn.addEventListener('click', function(){
+            deferred.prompt();
+            deferred.userChoice.finally(function(){ deferred=null; btn.hidden=true; });
+          });
+        }
+      });
+      window.addEventListener('appinstalled', function(){ if(btn) btn.hidden=true; show('installedNote'); });
+    })();
+  </script>
+</body>
+</html>
