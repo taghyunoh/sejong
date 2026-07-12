@@ -40,7 +40,7 @@
     max-width:760px;margin:0 auto;
   }
   .card h5{margin:0 0 8px}
-  #chartBox{height:340px;position:relative}
+  #chartBox{height:270px;position:relative;width:calc(100% + 14px);margin:0 -7px}
   #timeBandChart{width:100% !important;height:90% !important;display:block}
 
   /* 범위 버튼 */
@@ -694,18 +694,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
            </p>
        </div>
    </div>  
-	<!-- 참조링크 (헤더 클릭으로 접기/펼치기, 컴팩트) -->
-	<div class="top3-card decrease-card refcard" id="refCard">
-	    <div class="refcard-head" onclick="_toggleRef()">
-	        <h3 class="refcard-title">[참조링크]</h3>
-	        <span class="refcard-caret" id="refCaret" aria-hidden="true">▾</span>
-	    </div>
-	    <div class="refcard-body" id="refBody">
-	        <span class="refcard-item">💡 <a href="https://www.diabetes.or.kr/" target="_blank">대한당뇨병학회 바로가기</a></span>
-	        <span class="refcard-item">💡 <a href="https://www.youtube.com/channel/UCsVB1GWF-NH-RTxJax8XA_Q/featured?view_as=subscriber" target="_blank">당뇨병의정석 (YouTube)</a></span>
-	    </div>
-	</div>
-
 	<!-- 혈당 Q&A 채팅 (sejong-web 기능 포팅으로 AI 분석 리포트 대체) -->
 	<div class="top3-card decrease-card qa-card">
 	  <div class="qa-head">
@@ -725,6 +713,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    <button type="button" class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
 	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 대처법은?')">저혈당 대처</button>
 	  </div>
+	</div>
+
+	<!-- 참조링크 (헤더 클릭으로 접기/펼치기, 컴팩트) — 맨 아래 -->
+	<div class="top3-card decrease-card refcard" id="refCard">
+	    <div class="refcard-head" onclick="_toggleRef()">
+	        <h3 class="refcard-title">[참조링크]</h3>
+	        <span class="refcard-caret" id="refCaret" aria-hidden="true">▾</span>
+	    </div>
+	    <div class="refcard-body" id="refBody">
+	        <span class="refcard-item">💡 <a href="https://www.diabetes.or.kr/" target="_blank">대한당뇨병학회 바로가기</a></span>
+	        <span class="refcard-item">💡 <a href="https://www.youtube.com/channel/UCsVB1GWF-NH-RTxJax8XA_Q/featured?view_as=subscriber" target="_blank">당뇨병의정석 (YouTube)</a></span>
+	    </div>
 	</div>
 </main>
 
@@ -869,10 +869,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           datalabels: window.ChartDataLabels ? {
             formatter: (value) => (value >= 5 ? value + '%' : ''),
             color: '#fff',
-            font: { weight: '600' },
+            font: { weight: '700', size: 13 },
+            textStrokeColor: 'rgba(0,0,0,0.65)',
+            textStrokeWidth: 3,
+            textShadowColor: 'rgba(0,0,0,0.5)',
+            textShadowBlur: 2,
+            rotation: 0,
             anchor: 'center',
             align: 'center',
-            clip: true
+            clip: false
           } : undefined
         },
         scales: {

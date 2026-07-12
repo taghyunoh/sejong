@@ -1,6 +1,28 @@
+/* [공통 폰트] comm_style.css 를 쓰는 독립 HTML 페이지(1:1문의·운동등록·식사등록 등)는
+   common.css 의 @font-face 가 없어 기존 sans-serif 로 렌더 → 다른 화면과 글자체가 달랐다.
+   여기서 공통 폰트를 직접 로드하고 body 폰트를 common.css 와 동일하게 맞춘다(한 곳 수정 = 전체 적용).
+   경로는 이 CSS 파일 기준 상대경로(../fonts/…)라 페이지 위치와 무관하게 항상 올바르게 해석된다. */
+@font-face{ font-family:"Gmarket Sans"; font-style:normal; font-weight:700;
+  src:url(../fonts/GmarketSansBold.otf) format("opentype"); }
+@font-face{ font-family:"Gmarket Sans"; font-style:normal; font-weight:500;
+  src:url(../fonts/GmarketSansMedium.otf) format("opentype"); }
+@font-face{ font-family:"Gmarket Sans"; font-style:normal; font-weight:300;
+  src:url(../fonts/GmarketSansLight.otf) format("opentype"); }
+@font-face{ font-family:"Noto Sans KR"; font-style:normal; font-weight:400;
+  src:url(../fonts/NotoSansKR-Regular.woff2) format("woff2"),
+      url(../fonts/NotoSansKR-Regular.woff) format("woff"); }
+@font-face{ font-family:"Noto Sans KR"; font-style:normal; font-weight:500;
+  src:url(../fonts/NotoSansKR-Medium.woff2) format("woff2"),
+      url(../fonts/NotoSansKR-Medium.woff) format("woff"); }
+@font-face{ font-family:"Noto Sans KR"; font-style:normal; font-weight:700;
+  src:url(../fonts/NotoSansKR-Bold.woff2) format("woff2"),
+      url(../fonts/NotoSansKR-Bold.woff) format("woff"); }
+
 body {
   margin: 0;
-  font-family: sans-serif;
+  font-family: "Gmarket Sans", "Noto Sans KR", sans-serif;   /* common.css 와 동일 */
+  letter-spacing: -0.05em;
+  color: #2d303f;
 }
 
 /* [좌우 정렬 기준]
@@ -37,7 +59,7 @@ body {
   position: static;
   z-index: 10;
   background: #f9f9f9;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 0;   /* 좌우 패딩 영역에 선이 삐져나와 보여 제거(운동·식사등록 탭바) */
 
   /* 조상 여백이 사라졌으므로 폭은 그대로 두고 좌우 패딩(약 10px)만 준다 */
   width: auto;

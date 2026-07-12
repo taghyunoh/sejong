@@ -5709,15 +5709,15 @@ a.arrow {
 
 .infoChangePopup .btnArea.bottom {
   position: sticky;
-  bottom: 0;
-  margin-left: calc(-3.7 * var(--vwu, 1vw));
-  margin-right: calc(-3.7 * var(--vwu, 1vw));
-  margin-bottom: calc(-3.7 * var(--vwu, 1vw));
+  bottom: 12px;                 /* 살짝 위로 올림(바닥에서 띄움) */
+  margin-left: 0;               /* 좌우 살짝 여백(팝업 안쪽 패딩만큼) */
+  margin-right: 0;
+  margin-bottom: 0;
 }
 .infoChangePopup .btnArea.bottom .btn {
   position: relative;
   margin-left: 0;
-  border-radius: 0;
+  border-radius: 8px;           /* 살짝 라운딩 */
   z-index: 1;
   font-size: calc(4.44 * var(--vwu, 1vw));
   height: calc(13.89 * var(--vwu, 1vw));

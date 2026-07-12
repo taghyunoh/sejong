@@ -143,6 +143,17 @@
 <!-- [레] : 회원인증 팝업 : e -->
 
 <!-- [레] : 약관 팝업 : s -->
+<style>
+/* 개인정보처리방침·회원탈퇴 팝업: 상단(파란 헤더)·하단(파란 버튼) 좌우 여백 살짝 + 라운딩 */
+/* 상단 파란 바: 조금 아래로 내리고(위 여백) 좌우로 살짝 확장(측면 여백 축소) */
+.joinPopup10 .stepList.bulcolor,
+.joinPopup4 .stepList.bulcolor{ margin:10px 8px 0 8px; border-radius:8px; }
+.joinPopup10 .buttonFixed .btnArea.fix,
+.joinPopup4 .buttonFixed .btnArea.fix{ padding-left:12px !important; padding-right:12px !important; }
+/* 하단 닫기 버튼: 살짝 위로 올림(아래 여백) + 라운딩 */
+.joinPopup10 .buttonFixed .btnArea.fix .btn,
+.joinPopup4 .buttonFixed .btnArea.fix .btn{ border-radius:8px; margin-bottom:14px; }
+</style>
 <div class="popupWrap popupFull joinPopup10">
 	<div class="popupContent popupInner">
 		<div class="popupHead">

@@ -14,23 +14,41 @@
     /* .header 높이(layout.css: 12.04vw)를 그대로 따라간다.
        38px 로 박아 두면 헤더보다 위로 올라와 제목을 덮는다.
        PC 에서는 --vwu 가 프레임 폭 기준이라 프레임 안에서도 정확히 헤더 아래에 붙는다. */
-    top: calc(12.04 * var(--vwu, 1vw));
-    left: 0;
-    width: 100%;
+    top: calc(12.04 * var(--vwu, 1vw) + 8px);   /* 헤더 아래에서 살짝 더 내림 */
+    left: 12px;
+    right: 12px;        /* 좌우 여백 + width:100% 로 인한 우측 겹침 방지 */
+    width: auto;
     background-color: #005b8e;
     z-index: 999;       /* header보다 낮게 */
 }
 
 .contents.faq {
     /* .contents 는 이미 padding-top:12.04vw 로 헤더를 비켜 있다.
-       여기서는 swipeTab 높이만큼만 더 밀어준다. */
-    margin-top: 50px;
+       여기서는 swipeTab 높이만큼만 더 밀어준다. (탭바를 8px 내린 만큼 함께 내림) */
+    margin-top: 58px;
+}
+
+/* 탭 2개(자주하는 질문 / 1:1문의) 반반 배치 */
+.swipeTab { display:flex; border-radius:8px; overflow:hidden; }
+.swipeTab > li { flex:1 1 50%; text-align:center; }
+.swipeTab > li > a.anchor {
+    display:block;
+    padding:12px 0;
+    background:#073e5f;                 /* 비활성 탭: 조금 어두운 파랑 */
+    color:#bcd6e8;
+    font-weight:700;
+    text-decoration:none;
+}
+.swipeTab > li > a.anchor.on {
+    background:#005b8e;                 /* 활성 탭: 밝은 파랑 (밑줄 대신 배경으로 구분) */
+    color:#fff;
 }
 </style>
 <!-- contents : s -->
     <div class="contents faq">
 	  <ul class="swipeTab" style="overflow:hidden;">
 		  <li><a href="#" class="anchor on">자주하는 질문</a></li>
+		  <li><a href="<c:url value='/asqMain.do'/>" class="anchor">1:1문의</a></li>
 	  </ul>
       <div class="lyInner">
 		<div class="modal fade" id="faqModal" tabindex="-1">
