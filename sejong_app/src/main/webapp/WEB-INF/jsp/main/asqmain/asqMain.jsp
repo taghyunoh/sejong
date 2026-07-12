@@ -356,7 +356,7 @@ function saveAsq() {
 
   if (confirm("입력하시겠습니까?")) {
     $.ajax({
-      url: "/updateAsq.do",
+      url: "${pageContext.request.contextPath}/updateAsq.do",
       type: "POST",
       contentType: "application/json",
       data: JSON.stringify([data]),
@@ -376,7 +376,7 @@ function delAsq(asqSeq, rowElement) {
   const data = { userUuid: userUuidEl.value || "", asqSeq };
 
   $.ajax({
-    url: "/deleteAsq.do",
+    url: "${pageContext.request.contextPath}/deleteAsq.do",
     type: "POST",
     contentType: "application/json",
     data: JSON.stringify([data]),
@@ -402,7 +402,7 @@ function getAsqList() {
   if (!userUuidEl) { alert("userUuid 요소가 없습니다."); return; }
   const param = { userUuid: userUuidEl.value || "" };
 
-  fetch('/getAsqList.do', {
+  fetch('${pageContext.request.contextPath}/getAsqList.do', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(param)
@@ -513,7 +513,7 @@ function loadFaqData(force = false) {
 
   $listRoot.html(`<li class="text-muted text-center">불러오는 중…</li>`);
 
-  fetch('/getAsqList.do', {
+  fetch('${pageContext.request.contextPath}/getAsqList.do', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(param)

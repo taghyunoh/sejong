@@ -79,7 +79,7 @@
 	
 	  $listRoot.html(`<li class="text-muted text-center">불러오는 중…</li>`);
 	
-	  fetch('/getFaqList.do', {
+	  fetch('${pageContext.request.contextPath}/getFaqList.do', {
 	    method: 'POST',
 	    headers: { 'Content-Type': 'application/json' },
 	    body: JSON.stringify({})
