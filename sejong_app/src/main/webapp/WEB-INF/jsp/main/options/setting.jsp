@@ -177,7 +177,7 @@ function getSignList(termsGb) {
 
   let param = { termsGb: termsGb };
 
-  fetch('/getSignList.do', {
+  fetch(CommonUtil.getContextPath() + '/getSignList.do', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

@@ -2,19 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="egovframework.sejong.login.mapper.LoginMapper">
 
+	<!-- 약관/방침 내용 조회 : SIGN_GB(1=개인정보처리방침 · 2=민감정보 취급방침 · 3=서비스 이용약관), 본문(USE_YN='N')만 -->
 	<select id="getSignList" parameterType="map" resultType="SjgnDTO">
-		SELECT 
-		    TERMS_SEQ 
-		   ,TERMS_GB
-		   ,TERMS_TITLE
-		   ,TERMS_CONTS
-		   ,USE_YN
-		   ,REG_ID
-		   ,REG_DTM
-		   ,MOD_ID
-		   ,MOD_DTM
-		FROM T_SIGN_MST 
-		WHERE TERMS_GB = #{termsGb} 
-		 ORDER BY TERMS_SEQ ASC 
+		SELECT
+		    SIGN_SEQ    AS termsSeq
+		   ,SIGN_GB     AS termsGb
+		   ,SIGN_NAME   AS termsTitle
+		   ,SIGN_CONTS  AS termsConts
+		   ,USE_YN      AS useYn
+		   ,REG_DTM     AS regDtm
+		   ,MOD_DTM     AS modDtm
+		FROM T_SIGN_MST
+		WHERE SIGN_GB = #{termsGb}
+		  AND USE_YN = 'N'
+		ORDER BY SIGN_SEQ ASC
 	</select>
 </mapper>
