@@ -106,9 +106,17 @@
   background-color: #f8f9fa;
   min-height: 100vh;
   padding-top: calc(var(--header-height, 56px) + max(16px, env(safe-area-inset-top)));
-  padding-right: max(20px, env(safe-area-inset-right));
+  padding-right: max(12px, env(safe-area-inset-right)); /* 좌우 조금 확장(20→12px) */
   padding-bottom: max(20px, env(safe-area-inset-bottom));
-  padding-left: max(20px, env(safe-area-inset-left));
+  padding-left: max(12px, env(safe-area-inset-left));   /* 좌우 조금 확장(20→12px) */
+}
+/* [연속혈당 측정 화면처럼 구분선 없이 자연스럽게] 카드 테두리·그림자 제거 + 좌우 여백 축소로 넓게 */
+.top2-card,
+.top3-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
 }
 .ranking-grid { 
   display: grid; 

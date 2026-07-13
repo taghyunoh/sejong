@@ -5,6 +5,27 @@
 
 
 <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+<style>
+/* [로그인 화면 고정] 위/아래로 드래그하면 빈 공간(고무줄 스크롤)이 보이던 문제 —
+   기존 common.css 의 .splash.login 이 103vh/103% 로 뷰포트보다 크게 잡혀 있어 발생.
+   ※ 모바일(실기기, <600px)에서만 적용한다. 데스크톱(>=600px)은 app-desktop.css 의
+      휴대폰 프레임(.wrap.wrap 높이)을 그대로 두어야 하므로 건드리지 않는다. */
+@media (max-width: 599px) {
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .wrap.splash.login {
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+}
+/* [약관동의] 항목 우측 끝의 중복 화살표(>) 제거 (common.css .agreeAnchor::after) */
+.agreeList .agreeAnchor::after { content: none !important; }
+/* [전체 동의] 행은 상세보기 링크가 아니므로 제목 옆 화살표 제거 + 강조 */
+.agreeItem.agreeAll .agreeAnchor > span { background: none; padding-right: 0; }
+.agreeItem.agreeAll .agreeAnchor { color: #2b6fff; }
+</style>
 <!-- wrap : s -->
  <div class="wrap splash login">
    <!-- contents : s -->
@@ -153,6 +174,18 @@
 /* 하단 닫기 버튼: 살짝 위로 올림(아래 여백) + 라운딩 */
 .joinPopup10 .buttonFixed .btnArea.fix .btn,
 .joinPopup4 .buttonFixed .btnArea.fix .btn{ border-radius:8px; margin-bottom:14px; }
+
+/* [회원등록 흐름] joinPopup1(회원인증)·2(약관동의)·3(정보입력) 도 개인정보처리방침과 동일한
+   '상단 바 + 하단 전체폭 버튼' 형태로 통일 — 상단 단계바 여백/라운딩, 하단 버튼 전체폭/라운딩/여백 */
+.joinPopup1 .stepList,
+.joinPopup2 .stepList,
+.joinPopup3 .stepList{ margin:10px 8px 0 8px; border-radius:8px; }
+.joinPopup1 .buttonFixed .btnArea.fix,
+.joinPopup2 .buttonFixed .btnArea.fix,
+.joinPopup3 .buttonFixed .btnArea.fix{ padding-left:12px !important; padding-right:12px !important; }
+.joinPopup1 .buttonFixed .btnArea.fix .btn,
+.joinPopup2 .buttonFixed .btnArea.fix .btn,
+.joinPopup3 .buttonFixed .btnArea.fix .btn{ border-radius:8px; margin-bottom:14px; }
 </style>
 <div class="popupWrap popupFull joinPopup10">
 	<div class="popupContent popupInner">
@@ -210,11 +243,20 @@
 				</li>
 			</ul>
 			<div class="agreeList">
+					<div class="agreeItem agreeAll">
+						<a href="#" class="agreeAnchor" onclick="return false;"><span>전체 동의</span></a>
+						<div class="checkboxWrap type02">
+							<span class="inputCheckbox solo">
+								<input type="checkbox" id="chk_all" onchange="toggleAllAgree(this.checked);">
+								<label for="chk_all"></label>
+							</span>
+						</div>
+					</div>
 				<div class="agreeItem">
 					<a href="#" class="agreeAnchor" onclick="getSignList(3);" ><span>서비스 이용약관</span></a>
 					<div class="checkboxWrap type02">
 						<span class="inputCheckbox solo">
-							<input type="checkbox" id="chk_01" checked>
+							<input type="checkbox" id="chk_01">
 							<label for="chk_01"></label>
 						</span>
 					</div>
@@ -461,8 +503,8 @@ function reqAuth(){
 			alert("테스트 유저");
 			location.href = CommonUtil.getContextPath() + "/mainPage.do";
 		//	location.href = CommonUtil.getContextPath() + "/goBloodPage.do";
-			
-		
+
+
 		});
 		return;
 	}
@@ -615,6 +657,16 @@ function goJoin3(){
 	javascript:layerPop('close' , 'joinPopup2');
 	javascript:layerPop('open' , 'joinPopup3');
 }
+// [전체 동의] 체크 → 개별 약관 3개 일괄 체크/해제
+function toggleAllAgree(checked){
+	$("#chk_01, #chk_02, #chk_03").prop("checked", checked);
+}
+// 개별 약관 체크 상태에 맞춰 '전체 동의' 상태 동기화
+function syncAgreeAll(){
+	var all = $("#chk_01").is(':checked') && $("#chk_02").is(':checked') && $("#chk_03").is(':checked');
+	$("#chk_all").prop("checked", all);
+}
+$(document).on('change', '#chk_01, #chk_02, #chk_03', syncAgreeAll);
 
 function goJoin4(){
 	javascript:layerPop('open' , 'joinPopup4');
@@ -693,6 +745,20 @@ try {
 } catch (e) {
 	console.error('Kakao.init 실패:', e);
 }
+
+// 1-2. 저장된 카카오 토큰이 만료/무효면 페이지 로드 시 미리 비워둔다(백그라운드, 화면 영향 없음).
+//   → 유효하면 그대로 둬서 로그인 클릭 시 '토큰 있음' 빠른 경로로 바로 진입(카카오 로그인 화면 깜박임 없음).
+//   → 만료면 미리 비워둬서 클릭 시 제스처 안에서 한 번에 로그인(예전의 '두 번 탭' 방지).
+function kakaoPurgeStaleToken() {
+	try {
+		if (!window.Kakao || !Kakao.isInitialized() || !Kakao.Auth.getAccessToken()) return;
+		Kakao.API.request({
+			url: '/v1/user/access_token_info',
+			fail: function () { try { Kakao.Auth.setAccessToken(null); } catch (e) {} }
+		});
+	} catch (e) { console.warn('카카오 토큰 사전점검 오류:', e); }
+}
+kakaoPurgeStaleToken();
 
 //3. 로그인 함수 (기존 구조 유지, 보완만 추가)
 function loginWithKakao() {
@@ -787,9 +853,10 @@ function loginWithKakao() {
 	 });
 	};
 	
-	// A. 이미 로그인(토큰 보유)이면 바로 사용자정보, 아니면 로그인.
-	// ※ 예전엔 getStatusInfo(비동기) 콜백 안에서 login 을 불러 '클릭 흐름'을 벗어나
-	//    모바일 브라우저가 팝업을 차단 → "버튼 눌러도 반응 없음". 동기 판단으로 바꿔 해결.
+	// A. 저장된 토큰이 있으면(=로그인 상태) 바로 사용자정보 조회 → 카카오 로그인 화면이 안 떠서 깜박임 없음.
+	//    토큰이 없으면(미로그인 또는 만료로 위 kakaoPurgeStaleToken 에서 사전 정리됨) 클릭 제스처 안에서 로그인.
+	//    ※ 장시간 미사용으로 만료된 토큰은 페이지 로드시 미리 비워지므로 여기서 null → 아래 else 로 빠져
+	//      '한 번의 탭'으로 로그인된다(제스처 안 login 이라 팝업 차단 없음). 예전의 깜박임/두 번 탭 모두 방지.
 	if (Kakao.Auth.getAccessToken()) {
 	 requestUserAndSend();
 	} else {
@@ -857,7 +924,15 @@ function loginWithKakao() {
 	  });
 	}
 	function renderSignList(data) {
-		  let list = document.getElementById("signList");
+		  // #signList 가 joinPopup10(개인정보처리방침)·joinPopup2(약관동의) 두 곳에 중복돼 있어,
+		  // getElementById 는 항상 첫 번째(숨겨진 joinPopup10)만 잡는다 → 약관동의 화면에 내용이 안 뜸.
+		  // 지금 열려있는 팝업 내부의 tbody 를 대상으로 한다. (element.querySelector 는 getElementById 와 달리
+		  // 스코프 안에서 검색하므로 id 가 중복돼도 올바른 것을 찾는다.)
+		  let list = null;
+		  let scope = $('.popupWrap:visible').last()[0];
+		  if (scope) { list = scope.querySelector('#signList'); }
+		  if (!list) { list = document.getElementById("signList"); }
+		  if (!list) { return; }
 		  list.innerHTML = '';
 
 		  data.forEach(item => {

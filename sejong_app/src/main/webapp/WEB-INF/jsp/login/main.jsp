@@ -3,6 +3,26 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 <style>
+/* [슬라이드 메뉴 상단 로그아웃 버튼] 닫기(X) 왼쪽에 배치 (기존 .menuWrap .logout 스타일 재사용, 위치만 조정) */
+.menuWrap .user .logout{
+  right: calc(15 * var(--vwu, 1vw)); /* 닫기(X)와 간격 확보 위해 좌측으로 이동 */
+  top: calc(2.2 * var(--vwu, 1vw));
+  z-index: 2;
+  cursor: pointer;
+  text-decoration: none;
+}
+/* [이름 밑 선 제거] 이름/상단 행 영역의 밑줄·하단 보더·그림자 제거 */
+.menuWrap .topArea,
+.menuWrap .topArea .user,
+.menuWrap .topArea .name,
+.menuWrap .topArea .name strong,
+.menuWrap .topArea .name > span{
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+.menuWrap .topArea .name::after,
+.menuWrap .topArea .user::after{ display: none !important; }
 </style>
 <!-- wrap : s -->
  <div class="wrap main">
@@ -19,6 +39,7 @@
               알림<span class="">새로운 알림</span>
             </div>
           </div>
+          <a href="#" class="logout" onclick="logout(); return false;">로그아웃</a>
           <a href="#" class="menuClose"></a>
         </div>
       </div>
@@ -322,8 +343,9 @@
  <!-- wrap : e -->
 <script>
 var accessToken = "";
-var userId = ""; 
+var userId = "";
 var gender;
+var _userPhone = ""; // 로그아웃 시 자동로그인 해제용(번호 유지)
 $(document).ready(function() {
 	getUserInfo();
 	var userNm = '<%=session.getAttribute("userNm")%>';
@@ -349,9 +371,19 @@ function getUserInfo(){
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/getUserInfo.do","POST",'',function(response){
 		console.log(response.Data);
 		const user = response.Data;
+		_userPhone = user.phone; // 로그아웃 시 자동로그인 해제에 사용
 		$("#height").val(user.height);
 		$("#weight").val(user.weight);
 		$('input:radio[name=rdo_sugar]:input[value='+user.blodGb+']').attr("checked", true);
+	});
+}
+// 슬라이드 메뉴 상단 로그아웃: 서버 세션 해제 + 자동로그인 해제 후 로그인 화면으로 이동.
+// (자동로그인을 안 끄면 loginPage.do 진입 시 autoLogin.do 로 곧바로 재로그인되어 로그아웃이 무효가 됨)
+function logout(){
+	if(!confirm("로그아웃 하시겠습니까?")) return;
+	try { callAndroid("f102", { phone: _userPhone, autoYn: false, saveYn: true }); } catch(e){ console.warn("자동로그인 해제 실패:", e); }
+	CommonUtil.callAjax(CommonUtil.getContextPath() + "/logout.do","POST",'',function(response){
+		location.href = CommonUtil.getContextPath() + "/loginPage.do";
 	});
 }
 
