@@ -9,7 +9,7 @@
  *
  * To force-refresh the static cache on deploy, bump CACHE_VERSION.
  */
-const CACHE_VERSION = 'allcare-static-v2';
+const CACHE_VERSION = 'allcare-static-v3';
 const BASE = new URL('./', self.location).pathname;   // e.g. '/app/' or '/'
 
 const PRECACHE_URLS = [
@@ -54,9 +54,9 @@ self.addEventListener('fetch', (event) => {
     (req.headers.get('accept') || '').includes('text/html');
 
   if (isDynamic) {
-    event.respondWith(
-      fetch(req).catch(() => caches.match(BASE + 'offline.html'))
-    );
+    // [먹통 방지] 네비게이션 / HTML / .do / .jsp 는 서비스워커가 개입하지 않고 브라우저가 직접 처리한다.
+    //   삼성인터넷 등 일부 브라우저에서 SW 제어 하의 페이지(로그인 등)가 먹통되는 문제를 회피.
+    //   (대가: 오프라인 폴백 offline.html 포기 — 온라인 전용 서비스라 영향 미미)
     return;
   }
 

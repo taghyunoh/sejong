@@ -3,6 +3,7 @@
   "short_name": "allCare",
   "description": "연속혈당 allCare - 혈당·식사·운동 관리 서비스",
   "lang": "ko",
+  "id": "/app/loginPage.do",
   "start_url": "loginPage.do",
   "scope": "./",
   "display": "standalone",

@@ -88,7 +88,7 @@
 			</div>
          </div>
          <div class="notice_wrap">
-           ※ 사용하시는 앱은 세종시 AI기반 디지털 헬스케어서비스 실증을 위한 체험형 혈당관리용 앱입니다. 
+           ※ 사용하시는 앱은 세종시 AI기반 디지털 헬스케어서비스 실증을 위한 체험형 혈당관리용 앱입니다. <span style="color:#4a90d9;">(v2)</span> 
          </div>
        </div>
      </div>
@@ -471,7 +471,7 @@ function userInfoCallBack(data){
 		if(obj.autoYn){
 			const userData = {};
 			userData.phone = obj.phone;
-			CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/autoLogin.do","POST",userData,function(response){
+			CommonUtil.callAjax(CommonUtil.getContextPath() + "/autoLogin.do","POST",userData,function(response){
 				if(response.IsSucceed){
 					location.href = CommonUtil.getContextPath() + "/mainPage.do";
 				}else{
@@ -517,7 +517,7 @@ function reqAuth(){
    //
 	//나중복구 
     //NCP 인증보내기 세션 에 인증키와 시간 등록 
- 	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/sendSensApi.do","POST",phone,function(response){
+ 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/sendSensApi.do","POST",phone,function(response){
 		console.log(response.Data);
 		alert(response.Message);
 	}); 
@@ -535,7 +535,7 @@ function checkAuth(){
 	const data = {};
 	data.phone = phone;
 	data.authCode = authCode; 
-	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/loginCheck.do","POST",data,function(response){
+	CommonUtil.callAjax(CommonUtil.getContextPath() + "/loginCheck.do","POST",data,function(response){
 		console.log(response.Data);
 		if(response.IsSucceed){
 			alert(response.Message);
@@ -566,7 +566,7 @@ function reqAuth_out(){
 		return;
 	}
 	//NCP 인증보내기 세션 에 인증키와 시간 등록 
-	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/sendSensApi.do","POST",phone,function(response){
+	CommonUtil.callAjax(CommonUtil.getContextPath() + "/sendSensApi.do","POST",phone,function(response){
 		console.log(response.Data);
 		alert(response.Message);
 	});
@@ -578,7 +578,7 @@ function checkAuth_out(){
 	const data = {};
 	data.phone    = phone;
 	data.authCode = authCode;
-	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/loginCheck.do","POST",data,function(response){
+	CommonUtil.callAjax(CommonUtil.getContextPath() + "/loginCheck.do","POST",data,function(response){
 		console.log(response.Data);
 		if(response.IsSucceed){
 			if(response.Data >= 1){

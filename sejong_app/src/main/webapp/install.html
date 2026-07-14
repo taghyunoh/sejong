@@ -6,20 +6,14 @@
   <title>allCare 앱 설치 안내</title>
   <link rel="icon" type="image/png" href="asset/images/pwa/icon-192.png">
   <link rel="apple-touch-icon" href="asset/images/pwa/apple-touch-icon.png">
-  <!-- [PWA] 이 페이지에서 '홈 화면에 설치'가 되도록 manifest·서비스워커 연결 (static .html 이라 pwa-head.jsp 못 씀) -->
+  <!-- [PWA] manifest 만 연결(설치 메타데이터). 서비스워커 등록은 install.html 에서 하지 않음.
+       install.html 에서 SW 를 등록하면 '앱 시작하기'로 loginPage.do 이동 시 그 페이지가 SW 제어를
+       받아 먹통(freeze)이 되는 문제가 있어, SW 등록은 앱 내부(pwa-head.jsp)에만 맡긴다. -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#005b8e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="allCare">
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js', { scope: './' })
-          .catch(function (e) { console.warn('SW 등록 실패:', e); });
-      });
-    }
-  </script>
   <style>
     :root{ --blue:#005b8e; --blue2:#0a6fb0; --ink:#2d303f; --muted:#6b7280; --line:#e5e7eb; }
     *{box-sizing:border-box}
@@ -89,8 +83,8 @@
     <!-- 큰 버튼: 설치 없이 바로 시작 (대부분 이것만 누르면 끝) -->
     <a class="cta" href="loginPage.do">앱 시작하기 →</a>
 
-    <!-- 홈 화면에 설치: 설치 가능하면 즉시 설치, 아니면 아래 수동 안내를 펼침(죽은 버튼 방지) -->
-    <button class="cta install" id="installBtn">홈 화면에 설치하기</button>
+    <!-- 홈 화면에 추가: 설치 가능하면 즉시(깔끔한 앱 아이콘), 아니면 아래 수동 안내를 펼침(죽은 버튼 방지) -->
+    <button class="cta install" id="installBtn">홈 화면에 추가</button>
 
     <p class="hint">설치 없이 바로 사용할 수 있어요.</p>
 
@@ -105,9 +99,9 @@
         <div class="card" id="androidCard">
           <h2><span class="badge">Android</span> 홈 화면에 추가</h2>
           <ol>
-            <li>화면 아래 <b>“홈 화면에 추가/앱 설치”</b> 안내가 뜨면 눌러요.</li>
-            <li>안 뜨면 오른쪽 위 <b>⋮ (점 3개)</b> → <b>“앱 설치”</b> 또는 <b>“홈 화면에 추가”</b></li>
-            <li><b>설치</b>를 누르면 홈 화면에 allCare 아이콘이 생겨요.</li>
+            <li>브라우저 <b>메뉴( ⋮ 또는 화면 아래 ≡ )</b>를 눌러요.</li>
+            <li><b>“홈 화면에 추가”</b>( 또는 <b>“현재 페이지 추가”</b> · <b>“앱 설치”</b> )를 눌러요.</li>
+            <li>홈 화면에 <b>allCare 아이콘</b>이 생겨요. 다음부턴 <b>아이콘만</b> 누르면 열립니다.</li>
           </ol>
         </div>
 
@@ -133,7 +127,7 @@
       <p>다른 기기에서 열려면 이 QR을 스캔하세요</p>
     </div>
 
-    <div class="foot">연속혈당 allCare</div>
+    <div class="foot">연속혈당 allCare · v8</div>
   </div>
 
   <script>
@@ -164,11 +158,22 @@
             // 안드로이드 크롬 등: 실제 설치 프롬프트
             deferred.prompt();
             deferred.userChoice.finally(function(){ deferred = null; });
-          } else {
-            // 설치 프롬프트 미지원(아이폰/조건 미충족/이미 설치) → 아래 '홈 화면에 추가' 수동 안내 펼치기
-            var d = document.querySelector('details.more');
-            if (d){ d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            return;
           }
+          // ▼ 설치 프롬프트가 없을 때(이미 설치 / 프롬프트 1회 소비 / 아이폰·인앱 브라우저 등)
+          //   조용히 스크롤만 하면 "아무 반응 없음"으로 보이므로, 무엇을 눌러야 하는지 명확히 안내.
+          if (isStandalone){
+            alert('이미 앱으로 설치되어 있어요.\n홈 화면의 allCare 아이콘을 누르면 열립니다.');
+            return;
+          }
+          var d = document.querySelector('details.more');
+          if (d){ d.open = true; }
+          if (isIOS){
+            alert('아이폰은 사파리에서 설치돼요.\n\n① 화면 아래 공유 버튼(□ 위에 ↑)\n② "홈 화면에 추가"\n③ 오른쪽 위 "추가"\n\n설치 없이 바로 쓰려면 "앱 시작하기"를 누르세요.');
+          } else {
+            alert('홈 화면에 아이콘을 만들려면\n브라우저 메뉴( ⋮ 또는 화면 아래 ≡ )에서\n"홈 화면에 추가"( 또는 "현재 페이지 추가" )를 누르세요.\n\n그냥 바로 쓰려면 "앱 시작하기"를 누르면 됩니다.');
+          }
+          if (d){ try{ d.scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(e){} }
         });
       }
       window.addEventListener('appinstalled', function(){ show('installedNote'); });
