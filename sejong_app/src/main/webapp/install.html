@@ -6,6 +6,20 @@
   <title>allCare 앱 설치 안내</title>
   <link rel="icon" type="image/png" href="asset/images/pwa/icon-192.png">
   <link rel="apple-touch-icon" href="asset/images/pwa/apple-touch-icon.png">
+  <!-- [PWA] 이 페이지에서 '홈 화면에 설치'가 되도록 manifest·서비스워커 연결 (static .html 이라 pwa-head.jsp 못 씀) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#005b8e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="allCare">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .catch(function (e) { console.warn('SW 등록 실패:', e); });
+      });
+    }
+  </script>
   <style>
     :root{ --blue:#005b8e; --blue2:#0a6fb0; --ink:#2d303f; --muted:#6b7280; --line:#e5e7eb; }
     *{box-sizing:border-box}
@@ -15,24 +29,40 @@
       color:var(--ink); background:#f4f6f8; letter-spacing:-0.02em;
       -webkit-text-size-adjust:100%;
     }
-    .wrap{max-width:460px; margin:0 auto; padding:24px 18px 40px; min-height:100vh; background:#fff}
-    .top{text-align:center; padding:12px 0 18px}
-    .top img{width:84px; height:84px; border-radius:20px; box-shadow:0 4px 14px rgba(0,0,0,.12)}
-    .top h1{font-size:20px; margin:14px 0 4px}
-    .top p{margin:0; color:var(--muted); font-size:13.5px}
+    .wrap{max-width:460px; margin:0 auto; padding:28px 18px 40px; min-height:100vh; background:#fff}
+    .top{text-align:center; padding:8px 0 20px}
+    .top img{width:96px; height:96px; border-radius:22px; box-shadow:0 4px 14px rgba(0,0,0,.12)}
+    .top h1{font-size:23px; margin:16px 0 6px}
+    .top p{margin:0; color:var(--muted); font-size:15px}
 
-    .cta{display:block; text-align:center; text-decoration:none; margin:18px 0 8px;
-      background:var(--blue); color:#fff; font-weight:700; font-size:16px;
-      padding:15px; border-radius:12px}
+    /* 큰 버튼 — 어르신도 쉽게 누르도록 크게 */
+    .cta{display:block; text-align:center; text-decoration:none; margin:14px 0 8px;
+      background:var(--blue); color:#fff; font-weight:700; font-size:19px;
+      padding:19px; border-radius:14px}
     .cta:active{background:var(--blue2)}
-    .hint{ text-align:center; font-size:12.5px; color:var(--muted); margin:0 0 18px }
+    button.cta{width:100%; border:0; cursor:pointer; font-family:inherit}
+    .cta.install{background:#0a7d3c}
+    .cta.install:active{background:#0b6e36}
+    /* hidden 속성이 .cta{display:block} 에 덮이지 않도록 — 설치 가능할 때만 버튼 노출 */
+    .cta[hidden]{display:none !important}
+    .hint{ text-align:center; font-size:13.5px; color:var(--muted); margin:2px 0 8px }
 
-    .card{border:1px solid var(--line); border-radius:14px; padding:16px 16px 6px; margin:14px 0}
+    /* 접이식 — 설치 방법은 접어둠 */
+    .more{border:1px solid var(--line); border-radius:14px; margin:16px 0 0; overflow:hidden}
+    .more>summary{list-style:none; cursor:pointer; padding:15px 16px; font-size:15.5px;
+      font-weight:700; color:var(--blue); display:flex; align-items:center; justify-content:space-between}
+    .more>summary::-webkit-details-marker{display:none}
+    .more>summary::after{content:"\25BC"; font-size:12px; color:var(--muted); transition:transform .2s}
+    .more[open]>summary::after{transform:rotate(180deg)}
+    .more-body{padding:0 16px 10px}
+
+    .card{border:0; padding:6px 0 0; margin:6px 0}
+    .card+.card{border-top:1px solid var(--line); padding-top:12px; margin-top:12px}
     .card h2{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px}
     .badge{display:inline-block; font-size:11px; font-weight:700; color:#fff; background:var(--blue);
       padding:3px 9px; border-radius:999px}
     ol{margin:0; padding-left:0; list-style:none; counter-reset:step}
-    ol li{position:relative; padding:0 0 14px 34px; counter-increment:step; font-size:14px; line-height:1.55}
+    ol li{position:relative; padding:0 0 14px 34px; counter-increment:step; font-size:14.5px; line-height:1.55}
     ol li::before{content:counter(step); position:absolute; left:0; top:0;
       width:24px; height:24px; border-radius:50%; background:var(--blue); color:#fff;
       font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center}
@@ -42,56 +72,65 @@
 
     .hidden{display:none !important}
 
-    .qr{text-align:center; margin-top:26px; padding-top:20px; border-top:1px dashed var(--line)}
-    .qr img{width:150px; height:150px}
+    .qr{text-align:center; margin-top:24px; padding-top:18px; border-top:1px dashed var(--line)}
+    .qr img{width:140px; height:140px}
     .qr p{font-size:12px; color:var(--muted); margin:8px 0 0}
-    .foot{text-align:center; color:#9aa1ac; font-size:11.5px; margin-top:22px}
+    .foot{text-align:center; color:#9aa1ac; font-size:11.5px; margin-top:20px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
       <img src="asset/images/pwa/icon-192.png" alt="allCare">
-      <h1>allCare 앱 설치</h1>
-      <p>홈 화면에 추가하면 앱처럼 바로 실행돼요</p>
+      <h1>allCare</h1>
+      <p>아래 버튼을 누르면 바로 시작돼요</p>
     </div>
 
-    <!-- 앱 바로 시작 -->
+    <!-- 큰 버튼: 설치 없이 바로 시작 (대부분 이것만 누르면 끝) -->
     <a class="cta" href="loginPage.do">앱 시작하기 →</a>
-    <p class="hint">설치 없이 바로 이용할 수도 있어요. 아래는 홈 화면에 앱으로 추가하는 방법입니다.</p>
 
-    <!-- 안드로이드 안내 -->
-    <div class="card" id="androidCard">
-      <h2><span class="badge">Android</span> 홈 화면에 추가</h2>
-      <ol>
-        <li>화면 아래 <b>“홈 화면에 추가/앱 설치”</b> 안내가 뜨면 눌러요.</li>
-        <li>안 뜨면 오른쪽 위 <b>⋮ (점 3개)</b> → <b>“앱 설치”</b> 또는 <b>“홈 화면에 추가”</b></li>
-        <li><b>설치</b>를 누르면 홈 화면에 allCare 아이콘이 생겨요.</li>
-      </ol>
-      <button class="cta" id="installBtn" style="border:0; width:100%; cursor:pointer" hidden>지금 설치하기</button>
-    </div>
+    <!-- 홈 화면에 설치: 설치 가능하면 즉시 설치, 아니면 아래 수동 안내를 펼침(죽은 버튼 방지) -->
+    <button class="cta install" id="installBtn">홈 화면에 설치하기</button>
 
-    <!-- iOS 안내 -->
-    <div class="card" id="iosCard">
-      <h2><span class="badge">iPhone</span> 홈 화면에 추가</h2>
-      <div class="note" id="iosSafariWarn" hidden>
-        ⚠️ 아이폰은 <b>Safari(사파리)</b>에서만 설치돼요. 지금 다른 앱(크롬·카카오 등)으로 열렸다면,
-        주소를 복사해 <b>사파리</b>로 열어 주세요.
-      </div>
-      <ol>
-        <li>화면 아래 가운데 <b>공유 버튼(□ 위에 ↑)</b>을 눌러요.</li>
-        <li>목록을 내려 <b>“홈 화면에 추가”</b>를 눌러요.</li>
-        <li>오른쪽 위 <b>“추가”</b>를 누르면 완료!</li>
-      </ol>
-    </div>
+    <p class="hint">설치 없이 바로 사용할 수 있어요.</p>
 
-    <!-- 이미 설치 안내 -->
+    <!-- 이미 설치되어 앱으로 열린 경우 -->
     <div class="note hidden" id="installedNote">✅ 이미 설치된 앱으로 실행 중이에요. 바로 이용하시면 됩니다.</div>
+
+    <!-- 접이식: 홈 화면에 아이콘 추가하는 방법 (원하는 사람만 펼쳐봄) -->
+    <details class="more">
+      <summary>홈 화면에 아이콘 추가하는 방법</summary>
+      <div class="more-body">
+        <!-- 안드로이드 -->
+        <div class="card" id="androidCard">
+          <h2><span class="badge">Android</span> 홈 화면에 추가</h2>
+          <ol>
+            <li>화면 아래 <b>“홈 화면에 추가/앱 설치”</b> 안내가 뜨면 눌러요.</li>
+            <li>안 뜨면 오른쪽 위 <b>⋮ (점 3개)</b> → <b>“앱 설치”</b> 또는 <b>“홈 화면에 추가”</b></li>
+            <li><b>설치</b>를 누르면 홈 화면에 allCare 아이콘이 생겨요.</li>
+          </ol>
+        </div>
+
+        <!-- iOS -->
+        <div class="card" id="iosCard">
+          <h2><span class="badge">iPhone</span> 홈 화면에 추가</h2>
+          <div class="note" id="iosSafariWarn" hidden>
+            ⚠️ 아이폰은 <b>Safari(사파리)</b>에서만 추가돼요. 다른 앱(크롬·카카오 등)으로 열렸다면
+            주소를 복사해 <b>사파리</b>로 열어 주세요.
+          </div>
+          <ol>
+            <li>화면 아래 가운데 <b>공유 버튼(□ 위에 ↑)</b>을 눌러요.</li>
+            <li>목록을 내려 <b>“홈 화면에 추가”</b>를 눌러요.</li>
+            <li>오른쪽 위 <b>“추가”</b>를 누르면 완료!</li>
+          </ol>
+        </div>
+      </div>
+    </details>
 
     <!-- QR (다른 기기 공유/인쇄용) -->
     <div class="qr">
       <img src="asset/images/pwa/install-qr.png" alt="allCare 설치 QR">
-      <p>다른 기기에서 설치하려면 이 QR을 스캔하세요</p>
+      <p>다른 기기에서 열려면 이 QR을 스캔하세요</p>
     </div>
 
     <div class="foot">연속혈당 allCare</div>
@@ -105,29 +144,34 @@
       var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       var iosInApp = isIOS && !/safari/i.test(ua) || /crios|fxios|edgios|opios|kakaotalk|naver|line|fban|fbav|instagram/i.test(ua);
 
-      function show(id){ var e=document.getElementById(id); if(e) e.classList.remove('hidden'), e.hidden=false; }
+      function show(id){ var e=document.getElementById(id); if(e){ e.classList.remove('hidden'); e.hidden=false; } }
       function hide(id){ var e=document.getElementById(id); if(e) e.classList.add('hidden'); }
 
       // 이미 설치되어 앱으로 열린 경우
       if (isStandalone) { show('installedNote'); }
 
-      // 플랫폼별 카드만 표시
+      // 플랫폼별 카드만 표시(접이식 안)
       if (isAndroid) { hide('iosCard'); }
       else if (isIOS) { hide('androidCard'); if (iosInApp) show('iosSafariWarn'); }
       // 데스크톱/기타: 둘 다 그대로 노출 (참고용)
 
-      // 안드로이드/데스크톱 크롬: 실제 설치 프롬프트 버튼
+      // 안드로이드/데스크톱 크롬: 실제 설치 프롬프트 버튼(가능할 때만 노출)
       var deferred = null, btn = document.getElementById('installBtn');
-      window.addEventListener('beforeinstallprompt', function(e){
-        e.preventDefault(); deferred = e;
-        if (btn){ btn.hidden = false;
-          btn.addEventListener('click', function(){
+      window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; });
+      if (btn){
+        btn.addEventListener('click', function(){
+          if (deferred){
+            // 안드로이드 크롬 등: 실제 설치 프롬프트
             deferred.prompt();
-            deferred.userChoice.finally(function(){ deferred=null; btn.hidden=true; });
-          });
-        }
-      });
-      window.addEventListener('appinstalled', function(){ if(btn) btn.hidden=true; show('installedNote'); });
+            deferred.userChoice.finally(function(){ deferred = null; });
+          } else {
+            // 설치 프롬프트 미지원(아이폰/조건 미충족/이미 설치) → 아래 '홈 화면에 추가' 수동 안내 펼치기
+            var d = document.querySelector('details.more');
+            if (d){ d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          }
+        });
+      }
+      window.addEventListener('appinstalled', function(){ show('installedNote'); });
     })();
   </script>
 </body>

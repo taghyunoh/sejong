@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>allCare 설치 QR 생성기</title>
+  <style>
+    body{font-family:"Noto Sans KR",-apple-system,sans-serif; color:#2d303f; background:#f4f6f8; margin:0; padding:24px}
+    .wrap{max-width:460px; margin:0 auto; background:#fff; border-radius:14px; padding:22px; box-shadow:0 2px 12px rgba(0,0,0,.06)}
+    h1{font-size:19px; margin:0 0 4px}
+    p.sub{margin:0 0 18px; color:#6b7280; font-size:13px}
+    label{display:block; font-size:13px; font-weight:700; margin:12px 0 6px}
+    input,select{width:100%; padding:11px 12px; border:1px solid #d1d5db; border-radius:9px; font-size:15px; box-sizing:border-box}
+    .row{display:flex; gap:10px}
+    .row>div{flex:1}
+    button{margin-top:16px; width:100%; padding:14px; border:0; border-radius:11px; background:#005b8e;
+      color:#fff; font-size:16px; font-weight:700; cursor:pointer}
+    button.dl{background:#0a7d3c}
+    button:active{opacity:.9}
+    #qrbox{display:flex; justify-content:center; margin:22px 0 6px; min-height:60px}
+    #qrbox img,#qrbox canvas{border:1px solid #e5e7eb; border-radius:8px}
+    .url{word-break:break-all; text-align:center; color:#005b8e; font-size:13px; margin:6px 0 0}
+    .err{color:#b42318; font-size:13px; text-align:center; margin-top:10px}
+    .tip{margin-top:16px; font-size:12px; color:#6b7280; line-height:1.6; background:#f8fafc; border:1px solid #eef2f7; border-radius:9px; padding:10px 12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>allCare 설치 QR 생성기</h1>
+    <p class="sub">주소를 넣고 [QR 만들기] → [PNG 저장]. 저장한 파일을 <b>asset/images/pwa/install-qr.png</b> 로 덮어쓰면 설치 페이지 QR도 바뀝니다.</p>
+
+    <label for="url">QR에 담을 주소(URL)</label>
+    <input id="url" type="text" value="https://allcare24.kr/app/install.html" placeholder="https://allcare24.kr/app/install.html">
+
+    <div class="row">
+      <div>
+        <label for="size">크기(px)</label>
+        <select id="size">
+          <option>256</option>
+          <option selected>512</option>
+          <option>768</option>
+          <option>1024</option>
+        </select>
+      </div>
+      <div>
+        <label for="ec">오류보정</label>
+        <select id="ec">
+          <option value="L">L (작게)</option>
+          <option value="M" selected>M (권장)</option>
+          <option value="Q">Q</option>
+          <option value="H">H (튼튼)</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="make">QR 만들기</button>
+    <div id="qrbox"></div>
+    <div class="url" id="urlEcho"></div>
+    <div class="err" id="err"></div>
+    <button class="dl" id="dl" style="display:none">PNG 저장</button>
+
+    <div class="tip">
+      · 인쇄/포스터용은 <b>512~1024px</b> 권장.<br>
+      · 저장한 PNG를 <b>asset/images/pwa/install-qr.png</b> 로 교체하면 install.html의 QR이 자동 반영됩니다.<br>
+      · 인터넷이 없으면 QR 라이브러리를 못 불러올 수 있어요(온라인에서 한 번 생성해 두세요).
+    </div>
+  </div>
+
+  <!-- QR 렌더 라이브러리 (생성 전용 도구라 CDN 사용) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script>
+    (function(){
+      var box = document.getElementById('qrbox');
+      var err = document.getElementById('err');
+      var dl  = document.getElementById('dl');
+      var urlEcho = document.getElementById('urlEcho');
+      var lastPng = null;
+
+      function make(){
+        err.textContent = ''; box.innerHTML = ''; dl.style.display='none'; lastPng=null;
+        var url  = document.getElementById('url').value.trim();
+        var size = parseInt(document.getElementById('size').value, 10) || 512;
+        var ec   = document.getElementById('ec').value || 'M';
+        if(!url){ err.textContent = '주소(URL)를 입력하세요.'; return; }
+        if(typeof qrcode === 'undefined'){ err.textContent = 'QR 라이브러리를 불러오지 못했어요(인터넷 확인).'; return; }
+
+        try{
+          var qr = qrcode(0, ec);        // typeNumber 0 = 자동
+          qr.addData(url);
+          qr.make();
+          // 여백 4모듈 포함해 지정 크기에 맞춰 캔버스로 렌더 → PNG 다운로드 가능
+          var count = qr.getModuleCount();
+          var margin = 4;
+          var total = count + margin*2;
+          var cell = Math.max(1, Math.floor(size/total));
+          var px = cell*total;
+          var cv = document.createElement('canvas');
+          cv.width = px; cv.height = px;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0,0,px,px);
+          ctx.fillStyle = '#000';
+          for(var r=0;r<count;r++){
+            for(var c=0;c<count;c++){
+              if(qr.isDark(r,c)){
+                ctx.fillRect((c+margin)*cell, (r+margin)*cell, cell, cell);
+              }
+            }
+          }
+          box.appendChild(cv);
+          urlEcho.textContent = url;
+          lastPng = cv.toDataURL('image/png');
+          dl.style.display = 'block';
+        }catch(e){
+          err.textContent = '생성 실패: ' + (e && e.message ? e.message : e);
+        }
+      }
+
+      dl.addEventListener('click', function(){
+        if(!lastPng) return;
+        var a = document.createElement('a');
+        a.href = lastPng; a.download = 'install-qr.png';
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+
+      document.getElementById('make').addEventListener('click', make);
+      // 라이브러리 로드 후 자동 1회 생성
+      window.addEventListener('load', function(){ setTimeout(make, 60); });
+    })();
+  </script>
+</body>
+</html>
