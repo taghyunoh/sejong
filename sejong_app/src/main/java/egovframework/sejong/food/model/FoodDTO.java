@@ -16,7 +16,7 @@ public class FoodDTO {
 	private String regDttm;
 	private String modDttm;
 	private String kCal;
-	
+
 	public String getkCal() {
 		return kCal;
 	}

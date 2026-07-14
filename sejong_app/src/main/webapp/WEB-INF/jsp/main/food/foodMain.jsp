@@ -306,6 +306,9 @@ function pickHHMM(elId){
 
 /* ========== 저장/삭제/조회 ========== */
 function saveFood() {
+  // 자동완성으로 고른 음식이면 마스터 연결(foodMseq)로 칼로리 자동 집계, 직접입력이면 기본값 '1'
+  var _mseq = document.getElementById("foodMseq").value;
+  if(!_mseq || _mseq === "undefined") _mseq = "1";
   const data = {
     userUuid : document.getElementById("userUuid").value,
     eatDate  : document.getElementById("eatDate").value,
@@ -315,7 +318,7 @@ function saveFood() {
     foodName : document.getElementById("foodName").value,
     foodCnt  : document.getElementById("foodCnt").value,
     foodAcnt : document.getElementById("foodAcnt").value,
-    foodMseq : document.getElementById("foodMseq").value
+    foodMseq : _mseq
   };
 
   if (!data.eatDate) { alert("식사일자를 입력하세요."); return; }
@@ -333,6 +336,7 @@ function saveFood() {
         document.getElementById("foodName").value = "";
         document.getElementById("foodCnt").value  = "1";
         document.getElementById("foodAcnt").value = "1";
+        document.getElementById("foodMseq").value = "";
         getFoodList("2");
       },
       error: function(){ alert("시스템오류입니다 다시 입력하세요!"); }
@@ -502,8 +506,8 @@ function initFoodAutosuggest(){
   const seqEl     = document.getElementById('foodMseq');
   if (!inputName || !listbox) return;
 
-  const MIN_LEN = 2;
-  const WAIT_MS = 250;
+  const MIN_LEN = 1;   // 1글자부터 검색(입력할 때마다)
+  const WAIT_MS = 150;
 
   let timer = null;
   let lastController = null;

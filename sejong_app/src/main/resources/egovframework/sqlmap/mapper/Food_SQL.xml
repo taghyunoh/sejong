@@ -299,7 +299,7 @@
 	          #{foodDanwi},
 	          1,
 	          #{foodAcnt},
-	          1,
+	          #{foodMseq},
 	          NOW(),
 	          NOW()
 	        )
@@ -312,7 +312,7 @@
 	        FOOD_DANWI  = #{foodDanwi},
 	        FOOD_CNT    = 1,
 	        FOOD_ACNT   = #{foodAcnt},
-	        FOOD_MSEQ   = 1,
+	        FOOD_MSEQ   = #{foodMseq},
 	        MOD_DTTM    = NOW()
 	</insert>
 	
@@ -348,7 +348,7 @@
 	     EAT_STIME ,
 	     FOOD_NAME ,
 	     FOOD_CNT  ,
-	     FOOD_ACNT 
+	     FOOD_ACNT
 	FROM  RANKED
 	ORDER BY EAT_DATE DESC , EAT_STIME DESC    
  </select>		
@@ -361,7 +361,7 @@
 		    MOD_DTTM  
 		FROM  T_FOOD_MST
 		WHERE 1=1 
-		  AND  FOOD_NAME   LIKE CONCAT('%'  #{findData}  '%')
+		  AND  FOOD_NAME   LIKE CONCAT('%', #{findData}, '%')
     	ORDER BY FOOD_NAME ASC   
  </select>		
 </mapper>
