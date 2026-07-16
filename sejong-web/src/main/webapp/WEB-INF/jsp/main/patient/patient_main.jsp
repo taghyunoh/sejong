@@ -21,6 +21,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js" defer></script>
 <script>
+
   // 자체완결 페이지(raw/*) 라 헤더 tiles 가 안 붙으므로 contextPath 를 여기서 세팅
   sessionStorage.setItem("contextPath", '<c:out value="${pageContext.request.contextPath}"/>');
 </script>
