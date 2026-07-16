@@ -20,6 +20,7 @@
     touch-action: none;
   }
 }
+
 /* [약관동의] 항목 우측 끝의 중복 화살표(>) 제거 (common.css .agreeAnchor::after) */
 .agreeList .agreeAnchor::after { content: none !important; }
 /* [전체 동의] 행은 상세보기 링크가 아니므로 제목 옆 화살표 제거 + 강조 */
