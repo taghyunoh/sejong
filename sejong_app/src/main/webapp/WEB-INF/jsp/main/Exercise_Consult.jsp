@@ -21,6 +21,7 @@
   --card-pad: 16px;      /* 카드 좌우 패딩(헤더 풀블리드 상쇄용) */
 }
 
+
 /* ===== 레이아웃 ===== */
 .main-content {
   background-color: #f8f9fa;
