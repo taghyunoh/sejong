@@ -17,8 +17,25 @@
 			   , IFNULL(A.EMAIL,'') AS EMAIL
 			   , IFNULL(B.DTL_CODE_NM,'') AS DTL_CODE_NM
 			   , A.REG_DTM
+			   /* [2026-07-31 회원관리 '혈당지표'] 최근 7일 CGM 집계 — 화면에서 정렬·표시에 사용.
+			      데이터 없으면 NULL(화면 '-' 표기). GMI = 3.31 + 0.02392 × 평균혈당(표준식) */
+			   , C.AVG_BLOOD AS AVG_BLOOD
+			   , C.TAR       AS TAR
+			   , C.TBR       AS TBR
+			   , C.GMI       AS GMI
           From T_USER_TRAN A
 		  LEFT OUTER JOIN T_COMM_MST_DTL B ON B.CODE = 'CD7' AND B.DTL_CODE = A.BLOD_GB
+		  LEFT OUTER JOIN (
+		        SELECT USER_UUID
+		             , ROUND(AVG(CAST(UPT_VALUE AS UNSIGNED)))                                                       AS AVG_BLOOD
+		             , ROUND(SUM(CASE WHEN CAST(UPT_VALUE AS UNSIGNED) > 180 THEN 1 ELSE 0 END) * 100 / COUNT(*), 1) AS TAR
+		             , ROUND(SUM(CASE WHEN CAST(UPT_VALUE AS UNSIGNED) <  70 THEN 1 ELSE 0 END) * 100 / COUNT(*), 1) AS TBR
+		             , ROUND(3.31 + 0.02392 * AVG(CAST(UPT_VALUE AS UNSIGNED)), 1)                                   AS GMI
+		          FROM T_BLDINF_TRAN
+		         WHERE IFNULL(CAST(UPT_VALUE AS UNSIGNED),0) > 0
+		           AND CGM_DTM >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+		         GROUP BY USER_UUID
+		  ) C ON C.USER_UUID = A.USER_UUID
 		 where 1=1
 		 ]]>
 

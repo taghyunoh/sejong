@@ -35,6 +35,13 @@ public class DoctorDTO {
 	private String deptNm;
 	private String title;
 
+	/* [2026-07-31 회원관리 '혈당지표' 검색·정렬] 최근 7일 CGM(T_BLDINF_TRAN) 집계값.
+	   avgBlood=평균혈당 / tar=고혈당(180 초과) 비율 / tbr=저혈당(70 미만) 비율 / gmi=혈당관리지표 */
+	private String avgBlood;
+	private String tar;
+	private String tbr;
+	private String gmi;
+
 	private String faqSeq;
 	private String faqGb;
 	private String qstnConts;
@@ -44,6 +51,16 @@ public class DoctorDTO {
 
 	public String getTitle() { return title; }
 	public void setTitle(String title) { this.title = title; }
+
+	/* 혈당지표(최근 7일 집계) — 회원관리 목록 검색·정렬용 (2026-07-31) */
+	public String getAvgBlood() { return avgBlood; }
+	public void setAvgBlood(String avgBlood) { this.avgBlood = avgBlood; }
+	public String getTar() { return tar; }
+	public void setTar(String tar) { this.tar = tar; }
+	public String getTbr() { return tbr; }
+	public void setTbr(String tbr) { this.tbr = tbr; }
+	public String getGmi() { return gmi; }
+	public void setGmi(String gmi) { this.gmi = gmi; }
 
 	public String getDeptNm() { return deptNm; }
 	public void setDeptNm(String deptNm) { this.deptNm = deptNm; }

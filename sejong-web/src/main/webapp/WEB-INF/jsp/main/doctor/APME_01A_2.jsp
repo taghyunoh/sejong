@@ -518,6 +518,16 @@
 	  	     		    set('highestPercentage', highestPercentage < 5);     // 매우높음(>250) < 5%
 	  	     		    set('lowPercentage',     TBR <  4);                  // TBR(<70 합) < 4%
 	  	     		    set('lowestPercentage',  lowestPercentage < 1);      // 매우낮음(<54) < 1%
+
+	  	     		    // [2026-07-31 기획] 개요 하단 '5개 관리지표' 카드에도 같은 값·판정으로 표시
+	  	     		    var card = function(id, val, good){
+	  	     		        var el = document.getElementById(id); if(!el) return;
+	  	     		        el.textContent = val;
+	  	     		        el.style.color = good ? ok : bad; el.style.fontWeight = bold;
+	  	     		    };
+	  	     		    card('tirCard', TIR, TIR >= 70);
+	  	     		    card('tarCard', TAR, TAR <  25);
+	  	     		    card('tbrCard', TBR, TBR <   4);
 	  	     		})();
 	  	     		var cal_lowestPercentage  ;
 	  	     		var cal_Percentage5       ;
@@ -2069,6 +2079,9 @@
 				href="#sub-tab3">혈당 그래프</a></li>
 			<li class="stab-item"><a class="" id="tab4"
 				href="#sub-tab4">통 계</a></li>
+			<%-- [2026-07-31 기획] AI 분석 탭 — 의사 입장에서 중요한 '지표 해석'을 강조 --%>
+			<li class="stab-item"><a class="" id="tab5"
+				href="#sub-tab5">AI 분석</a></li>
 		</ul>
 				<!-- 서브 탭메뉴 컨텐츠 영역 -->
 				<!-- 서브 탭 컨텐츠 개요 -->
@@ -2107,6 +2120,23 @@
 			              </p>
 			            </section>
 			          </div>
+			          <%-- [2026-07-31 기획] 5개 관리지표(TIR/TBR/TAR/CV/GMI) — 대한당뇨병학회 권장기준 병기.
+			               TIR·TAR·TBR 값은 drawBloodBarChart 응답으로 이미 계산되던 것을 여기에도 표시(추가 조회 없음).
+			               색: 권장 충족=초록 / 미달=빨강 (기존 판정 색상 규칙과 동일) --%>
+			          <div class="content-row flex-left-right">
+			            <section class="content-box box-row">
+			              <h5>목표범위 유지<br>&emsp; TIR <small>(≥70%)</small></h5>
+			              <p class="num-wrap"><span class="num" id="tirCard">-</span><span>%</span></p>
+			            </section>
+			            <section class="content-box box-row">
+			              <h5>고혈당 시간<br>&emsp; TAR <small>(&lt;25%)</small></h5>
+			              <p class="num-wrap"><span class="num" id="tarCard">-</span><span>%</span></p>
+			            </section>
+			            <section class="content-box box-row">
+			              <h5>저혈당 시간<br>&emsp; TBR <small>(&lt;4%)</small></h5>
+			              <p class="num-wrap"><span class="num" id="tbrCard">-</span><span>%</span></p>
+			            </section>
+			          </div>
 			          <div class="content-row flex-left-right">
 			            <section class="content-box box-row">
 			              <h5>혈당관리지표<br>&emsp; GMI</h5>
@@ -2116,14 +2146,14 @@
 			              </p>
 			            </section>
 			            <section class="content-box box-row">
-			              <h5>변동계수<br>&emsp; CV</h5>              
+			              <h5>변동계수<br>&emsp; CV <small>(≤36%)</small></h5>
 			              <p class="num-wrap">
 			                <span class="num" id="cv"></span>
 			                <span>%</span>
 			              </p>
 			            </section>
 			            <section class="content-box box-row">
-			              <h5>표준편차</h5>              
+			              <h5>표준편차</h5>
 			              <p class="num-wrap">
 			                <span class="num" id="std"></span>
 			                <span>mg/dL</span>
@@ -2344,9 +2374,252 @@
 						</div>
 					</div>
 				</div>
+
+				<%-- [2026-07-31 기획] AI 분석 — 5개 지표별 현재상태 해석 + 종합 분석/코칭.
+				     값은 개요 탭에서 이미 계산된 것(TIR/TAR/TBR/CV/GMI·평균)을 그대로 읽어 쓴다(추가 조회 없음).
+				     탭을 열 때마다 최신 값으로 다시 해석한다(aiRender). --%>
+				<div class="stab-content" id="sub-tab5">
+					<div class="steb-container">
+						<%-- [2026-07-31 기획] 환자 앱(patient_main.jsp)의 '시간대별 혈당 + 식사·운동 마커' 그래프를 그대로 가져옴.
+						     날짜는 조회기간의 종료일 기준. 원천 = getBloodChartData / getFoodInfo / getExerInfo (앱과 동일) --%>
+						<section class="content-box">
+							<h5><span id="aiDayTitle">시간대별 혈당 추이</span></h5>
+							<div class="ai-legend">
+								<span style="color:#5b8ff9">— 혈당</span> &nbsp;·&nbsp; <span>🍚 식사</span> &nbsp;·&nbsp; <span>🚴 운동</span>
+								&nbsp;·&nbsp; <span style="color:#c0c4cc;">┊</span> 식사·운동 시각
+							</div>
+							<div id="aiDayChart" style="height:340px; width:100%;"></div>
+						</section>
+						<section class="content-box">
+							<h5>📌 지표 해석 <small style="font-weight:400;color:#888;">— 대한당뇨병학회 관리지표 기준</small></h5>
+							<div id="aiIdxWrap" class="ai-idx"></div>
+						</section>
+						<%-- 종합 분석 · 생활습관 코칭 — 한 줄에 두 박스로(2026-07-31 요청, 세로 여백 절약) --%>
+						<div class="content-row flex-left-right ai-2box">
+							<section class="content-box">
+								<h5>🩺 종합 분석</h5>
+								<div id="aiSummary" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
+							</section>
+							<section class="content-box">
+								<h5>💡 생활습관 코칭 <small style="font-weight:400;color:#888;">— 환자 앱과 동일한 기준</small></h5>
+								<div id="aiCoach" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
+							</section>
+						</div>
+						<%-- [2026-07-31 기획] 식사·운동 정보 = 하단 두 박스(앱의 내용). 위 그래프와 같은 조회분을 재사용 --%>
+						<div class="content-row flex-left-right ai-2box">
+							<section class="content-box">
+								<h5>🍚 식사 정보 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
+								<div id="aiFoodBox" class="ai-list">조회 후 표시됩니다.</div>
+							</section>
+							<section class="content-box">
+								<h5>🚴 운동 정보 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
+								<div id="aiExerBox" class="ai-list">조회 후 표시됩니다.</div>
+							</section>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
-	 </div> 
+	 </div>
 </div>
+<script>
+/* [2026-07-31 기획 'AI 분석'] 5개 지표(TIR·TAR·TBR·CV·GMI) 해석 + 종합/코칭 문장.
+   개요 탭이 채운 DOM 값(#tirCard·#tarCard·#tbrCard·#cv·#gmi·#avg)을 읽어 해석만 만든다 — 서버 재조회 없음.
+   권장기준: TIR ≥70% · TAR <25% · TBR <4% · CV ≤36% · GMI 참고치(권장 없음) */
+(function(){
+  var AI_OK='#2f9e63', AI_BAD='#d9534f';
+  function _n(id){ var el=document.getElementById(id); if(!el) return NaN;
+    return parseFloat(String(el.textContent||'').replace(/[^0-9.\-]/g,'')); }
+  window.aiRender = function(){
+    var tir=_n('tirCard'), tar=_n('tarCard'), tbr=_n('tbrCard'), cv=_n('cv'), gmi=_n('gmi'), avg=_n('avg');
+    var rows=[];
+    function row(nm, val, unit, ok, txt){
+      if(isNaN(val)) return;
+      rows.push('<div class="ai-row"><span class="ai-nm">'+nm+'</span>'
+        +'<span class="ai-val" style="color:'+(ok===null?'#333':(ok?AI_OK:AI_BAD))+'">'+val+unit+'</span>'
+        +'<span class="ai-txt">'+txt+'</span></div>');
+    }
+    row('TIR (목표범위 유지)', tir, '%', tir>=70,
+        tir>=70 ? '권장(70% 이상)을 충족합니다. 혈당이 목표 범위에서 잘 유지되고 있습니다.'
+                : '권장(70% 이상)에 미달합니다. 목표 범위 유지 시간을 늘리는 관리가 필요합니다.');
+    row('TAR (고혈당 시간)', tar, '%', tar<25,
+        tar<25 ? '권장(25% 미만)을 충족합니다. 고혈당 노출이 적습니다.'
+               : '권장(25% 미만)을 초과합니다. 식후 혈당 상승 관리(식사량·탄수화물·식후 활동)가 필요합니다.');
+    row('TBR (저혈당 시간)', tbr, '%', tbr<4,
+        tbr<4 ? '권장(4% 미만)을 충족합니다. 저혈당 위험이 낮습니다.'
+              : '권장(4% 미만)을 초과합니다. 저혈당 위험이 있어 약물·식사 시간 점검이 필요합니다.');
+    row('CV (혈당 변동성)', cv, '%', cv<=36,
+        cv<=36 ? '권장(36% 이하)을 충족합니다. 혈당 변동이 안정적입니다.'
+               : '권장(36% 이하)을 초과해 변동이 큽니다. 식사 규칙성과 저혈당 반복 여부를 확인하세요.');
+    row('GMI (혈당관리지표)', gmi, '%', null,
+        '평균혈당을 당화혈색소 형태로 환산한 <b>참고 지표</b>입니다(권장 위험분류 제시 없음).');
+    var w=document.getElementById('aiIdxWrap');
+    if(w) w.innerHTML = rows.length ? rows.join('') : '<div class="ai-box">표시할 지표가 없습니다. 개요 탭에서 기간을 조회해 주세요.</div>';
+
+    // 종합 분석 — TIR 기준 판정 + 벗어난 지표 나열
+    var bad=[];
+    if(!isNaN(tar) && tar>=25) bad.push('고혈당 시간(TAR)');
+    if(!isNaN(tbr) && tbr>=4)  bad.push('저혈당 시간(TBR)');
+    if(!isNaN(cv)  && cv>36)   bad.push('혈당 변동성(CV)');
+    var sum='';
+    if(!isNaN(tir)){
+      sum += (tir>=70)
+        ? '<b style="color:'+AI_OK+'">목표 달성</b> — 목표범위 유지시간(TIR) '+tir+'%로 권장 기준을 충족합니다.'
+        : '<b style="color:'+AI_BAD+'">관리 필요</b> — 목표범위 유지시간(TIR) '+tir+'%로 권장(70% 이상)에 미달합니다.';
+      if(!isNaN(avg)) sum += ' 평균혈당은 '+avg+' mg/dL 입니다.';
+      sum += bad.length ? '<br>함께 살펴볼 지표: <b>'+bad.join(', ')+'</b>' : '<br>다섯 개 지표가 모두 권장 범위 안에 있습니다.';
+    }else{
+      sum = '지표 값을 불러오면 분석이 표시됩니다. (개요 탭에서 기간을 조회하세요)';
+    }
+    var s=document.getElementById('aiSummary'); if(s) s.innerHTML=sum;
+
+    // 생활습관 코칭 — 가장 두드러진 문제 기준(환자 앱과 동일한 문구 체계)
+    var head='', tips=[];
+    if(!isNaN(tar) && tar>=25){
+      head='선택 기간 동안 고혈당 시간이 길었습니다. 식후 혈당 상승이 반복되는 양상입니다.';
+      tips=['식사량(특히 정제 탄수화물) 줄이도록 안내','채소·단백질 먼저 섭취, 식사 속도 20분 이상','식후 20~30분 걷기 권장'];
+    }else if(!isNaN(tbr) && tbr>=4){
+      head='선택 기간 동안 저혈당이 관찰되었습니다. 저혈당 원인 확인이 우선입니다.';
+      tips=['공복 운동 회피, 식사 거르지 않도록 안내','약물(인슐린·설포닐우레아) 용량·시점 점검','저혈당 증상 시 즉시 당분 섭취 교육'];
+    }else if(!isNaN(cv) && cv>36){
+      head='혈당 변동 폭이 큰 편입니다. 저혈당과 고혈당이 번갈아 나타날 수 있습니다.';
+      tips=['식사 시간 규칙화, 과식·결식 회피','간식 패턴 점검','활동량을 일정하게 유지'];
+    }else if(!isNaN(tir)){
+      head='현재 혈당이 안정적으로 관리되고 있습니다.';
+      tips=['현재 생활습관 유지','꾸준한 센서 착용·기록 독려'];
+    }
+    var c=document.getElementById('aiCoach');
+    if(c) c.innerHTML = head ? (head + '<ul class="ai-tips">' + tips.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>')
+                             : '지표 값을 불러오면 코칭 내용이 표시됩니다.';
+  };
+  /* [2026-07-31 기획] 시간대별 혈당 + 식사·운동 마커 그래프 + 하단 식사/운동 2박스.
+     환자 앱(patient_main.jsp loadDayChart)과 같은 원천·같은 표현.
+     날짜 = 조회기간 종료일(#endDate). 조회 3건은 한 번에 받아 그래프와 두 박스가 같은 자료를 쓴다. */
+  window.aiDayRender = function(){
+    var dom = document.getElementById('aiDayChart');
+    if(!dom || typeof echarts === 'undefined') return;
+    var dateKey = ($("#end_date").val() || "").substring(0,10);        // 'YYYY-MM-DD' (조회기간 종료일)
+    var uid = "${sessionScope['t_user_uuid']}";                        // 선택 환자 UUID(다른 조회와 동일 원천)
+    if(!dateKey || !uid){ dom.innerHTML = '<div class="ai-box">조회 기간을 먼저 선택하세요.</div>'; return; }
+    $("#aiDayTitle").text(dateKey + " 시간대별 혈당 추이");
+    $(".aiDayTxt").text(dateKey);
+    var dc = dateKey.replace(/-/g,'');                                 // 'YYYYMMDD'
+    var prev = echarts.getInstanceByDom(dom); if(prev) prev.dispose();
+
+    $.when(
+      $.ajax({ url:CommonUtil.getContextPath()+"/getBloodChartData.do", type:"post",
+        data:JSON.stringify({ end:dateKey, userId:uid }), contentType:"application/json", dataType:"json" }),
+      $.ajax({ url:CommonUtil.getContextPath()+"/getFoodInfo.do", type:"post",
+        data:JSON.stringify({ userUuid:uid, eatDate:dc }), contentType:"application/json", dataType:"json" }),
+      $.ajax({ url:CommonUtil.getContextPath()+"/getExerInfo.do", type:"post",
+        data:JSON.stringify({ userUuid:uid, exerDate:dc }), contentType:"application/json", dataType:"json" })
+    ).done(function(bRes, fRes, eRes){
+      var rows     = Array.isArray(bRes[0]) ? bRes[0] : [];
+      var foodRows = (fRes[0]&&fRes[0].Data) ? fRes[0].Data : [];
+      var exerRows = (eRes[0]&&eRes[0].Data) ? eRes[0].Data : [];
+
+      // 시간(HH)별 혈당 평균
+      var buckets = {};
+      rows.forEach(function(r){
+        var hm = r.HM || (function(v){ var s=String(v==null?'':v); var m=s.match(/(\d{2}):(\d{2})/); return m?(m[1]+':'+m[2]):''; })(r.DTM);
+        var hh = hm.substring(0,2), v = parseInt(r.UPT,10);
+        if(!hh || isNaN(v)) return;
+        if(!buckets[hh]) buckets[hh]={sum:0,cnt:0};
+        buckets[hh].sum += v; buckets[hh].cnt++;
+      });
+      var foodMap = {}, exerMap = {};
+      foodRows.forEach(function(r){ var hh=(r.eatStime||'').substring(0,2); if(hh){ (foodMap[hh]=foodMap[hh]||[]).push(r.foodName||'식사'); } });
+      exerRows.forEach(function(r){ var hh=(r.exerStime||'').substring(0,2); if(hh){ (exerMap[hh]=exerMap[hh]||[]).push(r.exerName||'운동'); } });
+
+      var hourSet={};
+      Object.keys(buckets).forEach(function(h){ hourSet[h]=1; });
+      Object.keys(foodMap).forEach(function(h){ hourSet[h]=1; });
+      Object.keys(exerMap).forEach(function(h){ hourSet[h]=1; });
+      var hours = Object.keys(hourSet).sort();
+      var xs = hours.map(function(h){ return h+'시'; });
+      var ys = hours.map(function(h){ return buckets[h] ? Math.round(buckets[h].sum/buckets[h].cnt) : null; });
+      var FOOD_Y=290, EXER_Y=258;
+      var foodPts = hours.map(function(h){ return foodMap[h] ? FOOD_Y : null; });
+      var exerPts = hours.map(function(h){ return exerMap[h] ? EXER_Y : null; });
+      var eventLines = hours.filter(function(h){ return foodMap[h]||exerMap[h]; }).map(function(h){ return { xAxis:h+'시' }; });
+
+      // 하단 두 박스 — 시간순 목록
+      var fmtT = function(s){ s=String(s||''); return s.length>=4 ? (s.substring(0,2)+':'+s.substring(2,4)) : s; };
+      var listHtml = function(arr, tmKey, nmKey, extra){
+        if(!arr.length) return '<div class="ai-box">이 날짜의 기록이 없습니다.</div>';
+        return '<ul class="ai-ul">' + arr.slice().sort(function(a,b){ return String(a[tmKey]||'').localeCompare(String(b[tmKey]||'')); })
+          .map(function(r){
+            var ex = extra ? extra(r) : '';
+            return '<li><span class="ai-tm">'+fmtT(r[tmKey])+'</span><span class="ai-nm2">'+(r[nmKey]||'-')+'</span>'+ex+'</li>';
+          }).join('') + '</ul>';
+      };
+      $("#aiFoodBox").html(listHtml(foodRows, 'eatStime', 'foodName', function(r){
+        var kcal = (r.kcal!=null && r.kcal!=='') ? (' <span class="ai-sub">'+r.kcal+' kcal</span>') : '';
+        return kcal;
+      }));
+      $("#aiExerBox").html(listHtml(exerRows, 'exerStime', 'exerName', function(r){
+        var min = (r.exerTime!=null && r.exerTime!=='') ? (' <span class="ai-sub">'+r.exerTime+'분</span>') : '';
+        return min;
+      }));
+
+      if(!rows.length && !foodRows.length && !exerRows.length){
+        dom.innerHTML = '<div class="ai-box">'+dateKey+' 데이터 없음</div>';
+        return;
+      }
+      dom.innerHTML = '';
+      var chart = echarts.init(dom);
+      chart.setOption({
+        tooltip:{ trigger:'axis', formatter:function(params){
+          if(!params||!params.length) return '';
+          var hh=hours[params[0].dataIndex]||'', bv=null;
+          params.forEach(function(p){ if(p.seriesName==='혈당'&&p.value!=null) bv=p.value; });
+          var txt=params[0].axisValue+'<br/>혈당: <b>'+(bv!=null?bv+' mg/dL':'기록 없음')+'</b>';
+          if(foodMap[hh]) txt+='<br/>🍚 식사: '+foodMap[hh].join(', ');
+          if(exerMap[hh]) txt+='<br/>🚴 운동: '+exerMap[hh].join(', ');
+          return txt;
+        }},
+        legend:{ show:false },
+        grid:{ left:40, right:16, top:20, bottom:30 },
+        xAxis:{ type:'category', data:xs, axisTick:{ alignWithLabel:true } },
+        yAxis:{ type:'value', min:0, max:300 },
+        series:[
+          { name:'혈당', type:'line', data:ys, smooth:true, areaStyle:{}, connectNulls:true,
+            label:{ show:true, position:'top', formatter:function(p){ return p.value!=null?p.value:''; } },
+            markPoint:{ data:[ {type:'max',name:'최고',itemStyle:{color:'#dc3545'}}, {type:'min',name:'최저',itemStyle:{color:'#f5c518'}} ] },
+            markLine:{ silent:true, symbol:'none', lineStyle:{type:'dashed',color:'#c0c4cc',width:1}, label:{show:false}, data:eventLines } },
+          { name:'식사', type:'scatter', data:foodPts, symbolSize:1, label:{ show:true, formatter:'🍚', fontSize:20, position:'inside' } },
+          { name:'운동', type:'scatter', data:exerPts, symbolSize:1, label:{ show:true, formatter:'🚴', fontSize:20, position:'inside' } }
+        ]
+      });
+    }).fail(function(xhr){
+      dom.innerHTML = '<div class="ai-box" style="color:#d9534f">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+')</div>';
+    });
+  };
+  // AI 분석 탭 클릭 시 최신 값으로 해석·그래프 갱신
+  $(document).on('click', '#tab5', function(){ setTimeout(function(){ window.aiRender(); window.aiDayRender(); }, 0); });
+})();
+</script>
+<style>
+/* AI 분석 탭 */
+.ai-idx .ai-row { display:flex; align-items:flex-start; gap:10px; padding:10px 4px; border-bottom:1px solid #eef2f7; }
+.ai-idx .ai-row:last-child { border-bottom:0; }
+.ai-idx .ai-nm { flex:0 0 175px; font-weight:700; color:#2d303f; font-size:14px; }
+.ai-idx .ai-val { flex:0 0 70px; font-weight:800; font-size:16px; text-align:right; }
+.ai-idx .ai-txt { flex:1; color:#37475a; font-size:14px; line-height:1.6; }
+.ai-box { font-size:14px; line-height:1.8; color:#37475a; padding:6px 4px; }
+.ai-tips { margin:8px 0 0; padding-left:20px; }
+.ai-tips li { margin-bottom:4px; }
+/* 그래프 범례 + 하단 식사/운동 2박스 */
+.ai-legend { font-size:12px; color:#8a98a8; margin:2px 0 6px; }
+.ai-2box { display:flex; gap:12px; }
+.ai-2box > .content-box { flex:1 1 0; min-width:0; }
+.ai-list { max-height:260px; overflow-y:auto; }
+.ai-ul { list-style:none; margin:0; padding:0; }
+.ai-ul li { display:flex; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid #eef2f7; font-size:14px; }
+.ai-ul li:last-child { border-bottom:0; }
+.ai-ul .ai-tm { flex:0 0 52px; color:#1976d2; font-weight:700; }
+.ai-ul .ai-nm2 { flex:1; color:#2d303f; }
+.ai-ul .ai-sub { color:#8a98a8; font-size:13px; }
+</style>
 </body>
 </html>
