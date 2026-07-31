@@ -31,7 +31,8 @@
 .bloodPageNav .pgBtn{ display:flex; align-items:center; justify-content:center; width:100%;
   background:#218ecb; color:#fff; border:0; border-radius: calc(2.2 * var(--vwu,1vw));
   padding: calc(3 * var(--vwu,1vw)) 0; font-size: calc(4 * var(--vwu,1vw)); font-weight:700; cursor:pointer; }
-.bloodPageNav .pgBtn.prev{ background:#fff; color:#218ecb; border:1px solid #218ecb; }
+/* [2026-07-31] 2페이지 [이전] 버튼도 1페이지 [다음]과 같은 파란 배경으로 통일(흰 배경 아웃라인 → 파랑) */
+.bloodPageNav .pgBtn.prev{ background:#218ecb; color:#fff; border:0; }
 /* 2페이지 지표 목록(2026-07-31 상세 기획) — 라벨(권장 기준) 작은 글씨 + 값 큰 글씨 세로 나열.
    값 색: 목표 안=초록(#2e7d32) / 벗어남=황토(#e67e22) / GMI=참고치라 조건 없음(검정) */
 /* [2026-07-31 '밀도있게'] 2페이지 지표 목록 — 줄 간격·값 크기 축소 */
