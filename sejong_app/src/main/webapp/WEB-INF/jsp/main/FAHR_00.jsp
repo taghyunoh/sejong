@@ -10,8 +10,48 @@
 </head>
 
 <body>
+<style>
+/* [2026-07-31 기획 — 화면 2페이지 분할] 1p=수치·그래프·평균 / 2p=혈당 변화·상세 지표(TIR·TAR·TBR·GMI·CV).
+   긴 스크롤 대신 [다음]/[이전] 버튼으로 화면 전환. */
+/* [2026-07-31] 평균 패널·다음 버튼 위아래 간격 축소 — [상세 지표 보기 (다음)]가 스크롤 없이 보이게 */
+/* [2026-07-31 재수정] 간격의 실제 원천 = common.css .blood_list 의 flex gap:20px + padding:20px
+   (margin 조정으로는 안 바뀌던 이유). gap·padding 을 직접 줄인다 */
+#bloodPage1 .blood_list{ gap: 6px !important; padding: 8px 20px !important; }
+#bloodPage1 .blood_list .aval_wrap{ gap: 2px !important; }   /* 라벨(평균혈당 등) ↔ 숫자 간격 */
+/* [2026-07-31 추가 미세조정] 버튼이 '살짝만' 보임 → 시간버튼 줄 위 여백(mt20)·버튼 주변을 더 줄여 온전히 보이게 */
+#bloodPage1 .time_wrap{ margin-top: 8px !important; }
+/* 차트 아래 큰 여백의 원천 = .contents .lyInner 의 아래 padding(5.56vwu) — 이 화면만 축소 (2026-07-31) */
+#bloodPage1 .lyInner{ padding-bottom: calc(1.2 * var(--vwu,1vw)); }
+.bloodPageNav .pgBtn{ padding: calc(2.4 * var(--vwu,1vw)) 0; }
+.bloodPageNav{ padding: calc(0.8 * var(--vwu,1vw)) calc(4 * var(--vwu,1vw)) calc(1.5 * var(--vwu,1vw)); }
+/* 하단 고정 메뉴 대비 여유는 1페이지(맨 아래 [다음] 버튼)에만 — 2페이지 상단 [이전] 버튼에 주면
+   버튼과 지표 사이가 벌어진다(2026-07-31 '표시부분 공간 좁혀주세요' 원인) */
+#bloodPage1 .bloodPageNav{ margin-bottom: calc(14 * var(--vwu,1vw)); }
+#bloodPage2 .bloodPageNav{ margin-bottom: 0; padding-bottom: calc(2.2 * var(--vwu,1vw)); }   /* [이전]과 지표 사이 살짝만 간격(2026-07-31) */
+.bloodPageNav .pgBtn{ display:flex; align-items:center; justify-content:center; width:100%;
+  background:#218ecb; color:#fff; border:0; border-radius: calc(2.2 * var(--vwu,1vw));
+  padding: calc(3 * var(--vwu,1vw)) 0; font-size: calc(4 * var(--vwu,1vw)); font-weight:700; cursor:pointer; }
+.bloodPageNav .pgBtn.prev{ background:#fff; color:#218ecb; border:1px solid #218ecb; }
+/* 2페이지 지표 목록(2026-07-31 상세 기획) — 라벨(권장 기준) 작은 글씨 + 값 큰 글씨 세로 나열.
+   값 색: 목표 안=초록(#2e7d32) / 벗어남=황토(#e67e22) / GMI=참고치라 조건 없음(검정) */
+/* [2026-07-31 '밀도있게'] 2페이지 지표 목록 — 줄 간격·값 크기 축소 */
+.p2list{ margin: calc(0.6 * var(--vwu,1vw)) calc(4 * var(--vwu,1vw)) calc(1.5 * var(--vwu,1vw)); }
+.p2list .p2head{ display:flex; justify-content:space-between; font-size: calc(3.3 * var(--vwu,1vw));
+  color:#2d303f; font-weight:600; padding-bottom: calc(1 * var(--vwu,1vw)); border-bottom:1px solid #eef2f7; }
+.p2list .p2avgrow{ display:flex; gap: calc(6 * var(--vwu,1vw)); padding: calc(1.3 * var(--vwu,1vw)) 0; border-bottom:1px solid #eef2f7; }
+.p2list .p2avgrow h6{ font-size: calc(3.1 * var(--vwu,1vw)); color:#5b6b80; font-weight:600; margin:0 0 calc(0.3 * var(--vwu,1vw)); }
+.p2list .p2avgrow .v{ font-size: calc(4.8 * var(--vwu,1vw)); font-weight:800; color:#2d303f; }
+.p2list .p2item{ padding: calc(1.3 * var(--vwu,1vw)) 0; border-bottom:1px solid #eef2f7; }
+.p2list .p2item .lb{ font-size: calc(3.1 * var(--vwu,1vw)); color:#2d303f; font-weight:700; margin:0; }
+.p2list .p2item .lb .hint{ color:#8a98a8; font-weight:500; }
+.p2list .p2item .v{ font-size: calc(4.8 * var(--vwu,1vw)); font-weight:800; color:#2d303f; margin-top: calc(0.3 * var(--vwu,1vw)); }
+/* 2페이지 아래 '현재 혈당 변화' 설명 블록도 촘촘하게 */
+#bloodPage2 .blood-detail-section{ margin: calc(0.8 * var(--vwu,1vw)) 0 !important; }
+#bloodPage2 .blood-detail-section .section-content{ padding-top: 0 !important; padding-bottom: 0 !important; }
+</style>
     <!-- contents : s -->
     <div class="contents">
+     <div id="bloodPage1"><%-- 1페이지 = 현재 수치 + 차트 + 평균 3종 (기획: 유지) --%>
       <!-- 혈당 대시보드 -->
       <article class="top_board_blood">
         <div class="prev_wrap">
@@ -60,7 +100,9 @@
         <section class="blood_chart">
           <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
           <!-- 차트 영역 -->
-          <div id="lineChart" style="height: 300px; width: 100%"></div>
+          <%-- [2026-07-31] 높이 300→268 — 그래프(플롯) 크기는 grid(top24/bottom12)로 그대로 유지하고,
+               차트 아래 남던 빈 공간만 줄여 하단(평균 패널)을 위로. 여백은 12px 정도 남김(너무 붙지 않게) --%>
+          <div id="lineChart" style="height: 268px; width: 100%"></div>
           <!-- //차트 영역 -->
           
         </section>
@@ -87,9 +129,34 @@
 		    <div class="bl_color_high ft40" id="after2hBlood" data-value="-">-</div>
 		  </div>
 		</div>
-		
+
       </section>
-      <section class="blood_list">
+      <%-- 1페이지 → 2페이지 이동 (2026-07-31 기획: 하단 내용은 스크롤 대신 다음 화면으로) --%>
+      <div class="bloodPageNav">
+        <button type="button" class="pgBtn" onclick="bloodPage(2)">상세 지표 보기 (다음) &nbsp;&gt;</button>
+      </div>
+     </div><%-- /#bloodPage1 --%>
+
+     <div id="bloodPage2" style="display:none;"><%-- 2페이지 = 상세 지표 (2026-07-31 상세 기획 표현식 그대로) --%>
+      <div class="bloodPageNav">
+        <button type="button" class="pgBtn prev" onclick="bloodPage(1)">&lt;&nbsp; 수치·그래프로 (이전)</button>
+      </div>
+      <section class="p2list">
+        <div class="p2head"><span>현재시점 24시간 기준</span><span>단위 : mg/dL</span></div>
+        <%-- 평균 3종 — 1페이지 값을 페이지 전환 시 복사(bloodPage(2)) — 서버 재조회 없음 --%>
+        <div class="p2avgrow">
+          <div><h6>평균혈당</h6><div class="v" id="p2avg">-</div></div>
+          <div><h6>공복평균</h6><div class="v" id="p2fast">-</div></div>
+          <div><h6>식후평균</h6><div class="v" id="p2after">-</div></div>
+        </div>
+        <div class="p2item"><p class="lb">GMI지수(%) <span class="hint">: 혈당 관리지표(참고사항)</span></p><div class="v" id="p2gmi">-</div></div>
+        <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p><div class="v" id="p2tir">-</div></div>
+        <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p><div class="v" id="p2tar">-</div></div>
+        <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p><div class="v" id="p2tbr">-</div></div>
+        <div class="p2item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p><div class="v" id="p2cv">-</div></div>
+      </section>
+      <%-- 기존 GMI지수·TIR 큰 패널 — 위 목록과 중복이라 숨김(#gmi/#tir 은 기존 스크립트가 채우므로 요소는 유지) --%>
+      <section class="blood_list" style="display:none;">
         <div class="top_row flx-row j-between a-center">
           <div class="left_wrap aval_wrap">
             <h6> GMI지수(%)</h6>
@@ -148,9 +215,11 @@
                     <span class="detail-box_small"id="tir1" >-</span>
                     <span class="change-text"> 입니다</span>
                 </div>
-               </div> 
+               </div>
 	        </section>
 	    </div>
+
+     </div><%-- /#bloodPage2 --%>
         <!-- contents : e -->
     </div>
   <script>
@@ -176,6 +245,44 @@
 		  };
   
   // [2026-07-11] 연동 안내 배너(showConnectGuide) 제거 — 최초/재연동 모두 i-Sens 로그인 자동 이동으로 통일.
+
+  // [2026-07-31 기획] 화면 2페이지 전환 — 1p(수치·그래프·평균) ↔ 2p(상세 지표)
+  function bloodPage(no){
+    var p1=document.getElementById('bloodPage1'), p2=document.getElementById('bloodPage2');
+    if(p1) p1.style.display = (no===1)?'':'none';
+    if(p2) p2.style.display = (no===2)?'':'none';
+    if(no===2){
+      // 평균 3종은 1페이지 값을 그대로 복사(같은 화면 원천 — 서버 재조회 없음)
+      [['avgUpt','p2avg'],['avgFastingBlood','p2fast'],['after2hBlood','p2after']].forEach(function(m){
+        var s=document.getElementById(m[0]), d=document.getElementById(m[1]);
+        if(s && d) d.textContent = (s.textContent||'-').trim() || '-';
+      });
+    }
+    var c=document.querySelector('.contents'); if(c) c.scrollTop=0;
+    window.scrollTo(0,0);
+  }
+  // [2026-07-31 상세 기획] 2페이지 지표 — 차트에 그린 것과 같은 데이터(dataPoints)로 계산.
+  //   TIR=70~180 비율(권장 70% 이상) / TAR=180 초과(권장 25% 미만) / TBR=70 미만(권장 4% 미만)
+  //   CV=표준편차÷평균×100(권장 36% 이하) / GMI=3.31+0.02392×평균(참고치 — 색 조건 없음)
+  //   ★값 색: 목표 안=초록(#2e7d32) / 벗어남=황토(#e67e22) — 메인 화면 혈당상태 색과 동일 규칙
+  var P2_OK='#2e7d32', P2_WARN='#e67e22', P2_PLAIN='#2d303f';
+  function _fillPage2Stats(points){
+    function put(id,txt,col){ var e=document.getElementById(id); if(e){ e.textContent=txt; e.style.color=col||P2_PLAIN; } }
+    var vals=(points||[]).map(function(p){ return +p.value; }).filter(function(v){ return !isNaN(v) && v>0; });
+    if(!vals.length){ ['p2tir','p2tar','p2tbr','p2gmi','p2cv'].forEach(function(i){ put(i,'-'); }); return; }
+    var n=vals.length;
+    var tir=Math.round(vals.filter(function(v){ return v>=70 && v<=180; }).length*100/n);
+    var tar=Math.round(vals.filter(function(v){ return v>180; }).length*100/n);
+    var tbr=Math.round(vals.filter(function(v){ return v<70; }).length*100/n);
+    var mean=vals.reduce(function(a,b){ return a+b; },0)/n;
+    var sd=Math.sqrt(vals.reduce(function(a,b){ return a+(b-mean)*(b-mean); },0)/n);
+    var cv=Math.round(sd*100/mean);
+    put('p2tir', tir+' %', (tir>=70)?P2_OK:P2_WARN);
+    put('p2tar', tar+' %', (tar<25)?P2_OK:P2_WARN);
+    put('p2tbr', tbr+' %', (tbr<4)?P2_OK:P2_WARN);
+    put('p2cv',  cv +' %', (cv<=36)?P2_OK:P2_WARN);
+    put('p2gmi', (3.31+0.02392*mean).toFixed(1));   // 참고치 — 검정 유지
+  }
 
   $(document).ready(function() {
 	    // 토큰 정보 
@@ -851,9 +958,10 @@
 	        var dataPoints = bloodData.length > 0 ? bloodData.map(function(item) {
 	            return {
 	                time: parseTime(item.DTM),
-	                value: parseInt(item.UPT, 10) 
+	                value: parseInt(item.UPT, 10)
 	            };
 	        }) : [];
+	        _fillPage2Stats(dataPoints);   // [2026-07-31] 2페이지 상세 지표(TIR·TAR·TBR·GMI·CV) — 차트와 동일 데이터
 	        
 	        var foodIndex = 0;
 	        var foodList = [];
@@ -921,10 +1029,13 @@
 	                    { gt: 201, lte: 1000, color: '#ff3e09' }
 	                ]
 	            },
-	            grid: { 
+	            grid: {
 	                left: '3%',
 	                right: '8%',
-	                bottom: '3%',
+	                /* [2026-07-31] 그래프 크기는 유지한 채 위·아래 빈 공간만 정리 —
+	                   top 24 / bottom 12 + 컨테이너 300→268 로 아래 표시부(평균 패널)가 올라옴(플롯 높이는 종전과 동일) */
+	                top: 24,
+	                bottom: 12,
 	                containLabel: true
 	            },
 	            xAxis: {

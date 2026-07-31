@@ -120,8 +120,10 @@
        <a href="<c:url value='/goBloodPage.do'/>" class="stateLink">혈당 지표 확인 &nbsp;&gt;&gt;</a>
      </div>
      <div class="mainAiMenu">
-       <a href="#" class="aiBtn" onclick="alert('AI 종합분석(주간)은 준비 중입니다.'); return false;"><span>AI 종합분석(주간)</span><i>&gt;</i></a>
-       <a href="#" class="aiBtn" onclick="alert('AI 챗봇은 준비 중입니다.'); return false;"><span>AI 챗봇</span><i>&gt;</i></a>
+       <%-- AI 종합분석(주간) = 기존 혈당분석(혈당 연관분석) 화면 호출 (2026-07-31 기획 확정) --%>
+       <a href="<c:url value='/goBloodPage2.do'/>" class="aiBtn"><span>AI 종합분석(주간)</span><i>&gt;</i></a>
+       <%-- AI 챗봇 = 혈당 연관분석의 Q&A 를 전체화면 오버레이로 이동(기획 7) — ?chat=1 로 진입하면 자동 오픈 --%>
+       <a href="<c:url value='/goBloodPage2.do'/>?chat=1" class="aiBtn"><span>AI 챗봇</span><i>&gt;</i></a>
      </div>
 
      <%-- 기존 4카드(연속혈당·혈당분석·식사관리·운동관리) — 삭제 아닌 숨김(원복 대비).
@@ -191,7 +193,9 @@
        </li>
      </ul>
      </div><%-- /#oldMainCards (숨김) --%>
-     <p  class="desc" id="errormsg">  </p>
+     <%-- [2026-07-31] 옛 4카드용 안내문 — 같은 내용을 혈당상태 카드가 이미 보여 주고,
+          화면에 흰 글자로 겹쳐 뒤늦게 나타나 '새로고침되는 것처럼' 보였다 → 숨김(스크립트는 그대로 채움) --%>
+     <p  class="desc" id="errormsg" style="display:none;">  </p>
      <!-- contents : e -->
    </div>
 
@@ -498,23 +502,28 @@ function refreshToken(){
 /* [메인 개편 2026-07-31] 오늘 혈당의 TIR(70~180mg/dL 범위 내 비율)로 상태 표시.
    기준: TIR 70% 이상 = '정상'(초록) / 미만 = '관리 필요'(주황) / 유효 측정값 없음 = 회색 안내.
    원천 = todayBlod() 가 이미 받아오는 getTodayBlood.do(오늘 측정 목록) — 추가 조회 없음. */
+/* [2026-07-31] 같은 내용이면 DOM 을 건드리지 않는다 — todayBlod() 가 진입 시 1회,
+   외부 CGM 재수집(getBloodData) 성공 후 1회 더 불려 글자가 두 번 바뀌며 깜빡였다. */
+function _setStable(sel, txt, cls){
+    var $e = $(sel); if(!$e.length) return;
+    if($e.text() === txt && (cls == null || $e.attr('class') === cls)) return;
+    $e.text(txt); if(cls != null) $e.attr('class', cls);
+}
 function updateBloodState(data){
     var el = $("#bloodState");
     if(!el.length) return;
     var rows = (data||[]).filter(function(r){ return +r.UPT_VALUE > 0; });
     var vals = rows.map(function(r){ return +r.UPT_VALUE; });
     if(!vals.length){
-        el.text("측정값 없음").attr("class","st-none");
-        // [2026-07-31 요청] 마지막에 찍힌 게 언제 것인지 표시 — 연속혈당 화면과 같은 getLastBloodDate.do 재사용.
-        //   userId(CGM)가 아직 없으면(미연동) 기존 안내문 유지.
+        // [2026-07-31 깜빡임 개선] 여기서 즉시 '측정값 없음'을 쓰면, 잠시 뒤 마지막 측정일 조회 결과로
+        //   다시 '정상/관리 필요'로 바뀌며 화면이 새로고침되는 것처럼 보였다.
+        //   → 조회가 끝난 뒤 최종 상태를 '한 번만' 반영한다(조회 전에는 초기 '확인 중' 유지).
         var uid = (typeof userId !== 'undefined' && userId && userId !== "null") ? userId : "";
         if(uid){
             CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do","POST",{ userId: uid },function(res){
                 if(res && res.IsSucceed && res.Data){
                     var t = String(res.Data).replace('T',' ').substring(0,16);   // 'YYYY-MM-DD HH:mm'
-                    $("#bloodTir").text("마지막 측정 " + t + " — 이후 들어온 측정값이 없습니다");
-                    // [2026-07-31 요청] 마지막 측정일 데이터로 수치 + '정상/관리 필요' 상태까지 표시
-                    //   (그 날짜 데이터 = getBloodChartData, 행={DTM,UPT} — 그 날의 TIR 로 판정, 최신 행이 마지막 수치)
+                    // 마지막 측정일 하루치로 수치·그날 TIR·상태를 함께 계산해 한 번에 표시
                     var day = String(res.Data).substring(0,10);
                     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do","POST",
                         { userId: uid, start: day+"T00:00:00", end: day+"T23:59:59" }, function(list){
@@ -527,31 +536,35 @@ function updateBloodState(data){
                                 var tm = (typeof r.DTM==='number') ? r.DTM : new Date(String(r.DTM).replace('Z','')).getTime();
                                 if(!isNaN(tm) && (!last || tm > last.tm)) last = { tm:tm, v:v };
                             });
-                            if(!dv.length) return;   // 값이 없으면 위의 '마지막 측정 일시' 표시만 유지
+                            if(!dv.length){   // 그날 값이 없으면 일시만
+                                _setStable('#bloodState', "측정값 없음", 'st-none');
+                                _setStable('#bloodTir', "마지막 측정 " + t + " — 이후 들어온 측정값이 없습니다");
+                                return;
+                            }
                             var inR = dv.filter(function(v){ return v >= 70 && v <= 180; }).length;
                             var dTir = Math.round(inR * 100 / dv.length);
-                            if(dTir >= 70){ el.text("'정상'").attr("class","st-good"); }
-                            else          { el.text("'관리 필요'").attr("class","st-warn"); }
-                            $("#bloodTir").text("마지막 측정 " + t + (last ? (" · " + last.v + " mg/dL") : "")
+                            _setStable('#bloodState', (dTir>=70) ? "'정상'" : "'관리 필요'", (dTir>=70) ? 'st-good' : 'st-warn');
+                            _setStable('#bloodTir', "마지막 측정 " + t + (last ? (" · " + last.v + " mg/dL") : "")
                                 + " · 그날 TIR " + dTir + "% (목표범위 70~180 내 비율) — 이후 들어온 측정값이 없습니다");
                         });
                 }else{
-                    $("#bloodTir").text("혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
+                    _setStable('#bloodState', "측정값 없음", 'st-none');
+                    _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
                 }
             });
         }else{
-            $("#bloodTir").text("혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
+            _setStable('#bloodState', "측정값 없음", 'st-none');
+            _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
         }
         return;
     }
     var inRange = vals.filter(function(v){ return v >= 70 && v <= 180; }).length;
     var tir = Math.round(inRange * 100 / vals.length);
-    if(tir >= 70){ el.text("'정상'").attr("class","st-good"); }
-    else         { el.text("'관리 필요'").attr("class","st-warn"); }
+    _setStable('#bloodState', (tir>=70) ? "'정상'" : "'관리 필요'", (tir>=70) ? 'st-good' : 'st-warn');
     // 언제 것·마지막 수치 함께 표시 — 오늘 최신 행(getTodayBlood 첫 행)
     var lastAt = (rows[0] && rows[0].formatedDate) ? (' · 마지막 측정 ' + rows[0].formatedDate) : '';
     var lastVal = (rows[0] && rows[0].UPT_VALUE != null) ? (' · ' + rows[0].UPT_VALUE + ' mg/dL') : '';
-    $("#bloodTir").text("오늘 TIR " + tir + "% (목표범위 70~180 내 비율)" + lastAt + lastVal);
+    _setStable('#bloodTir', "오늘 TIR " + tir + "% (목표범위 70~180 내 비율)" + lastAt + lastVal);
 }
 function todayBlod() {
     $("#errormsg").empty(); // () 붙여야 정상 동작

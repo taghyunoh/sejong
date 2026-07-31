@@ -251,6 +251,22 @@
   font-size: 15px;   /* TOP3(주의할음식/추천운동) 제목 조금 작게 */
 }
 
+/* [2026-07-31 기획] 주간 혈당관리지표 — 앞장(연속혈당 상세)과 동일한 표현식 목록 + AI 분석 텍스트 */
+.wk-metrics { margin-top: 8px; }
+.wk-metrics .wk-item { padding: 9px 2px; border-bottom: 1px solid #eef2f7; }
+.wk-metrics .wk-item .lb { margin: 0; font-size: 13px; font-weight: 700; color: #2d303f; }
+.wk-metrics .wk-item .lb .hint { color: #8a98a8; font-weight: 500; }
+.wk-metrics .wk-item .v { margin-top: 3px; font-size: 24px; font-weight: 800; color: #2d303f; }
+.wk-ai { margin-top: 10px; }
+/* 파란 섹션 머리띠(기획 모양) + 점선 분석 박스 + 코칭 본문 */
+.wk-sechead { margin: 12px 0 8px; padding: 6px 10px; background: #8ca6db; color: #fff;
+  border-radius: 6px; font-size: 14px; font-weight: 800; }
+.wk-dashbox { border: 1.5px dashed #4a6fb5; border-radius: 8px; padding: 10px 12px; background: #fff; }
+.wk-ailist { margin: 0; padding-left: 18px; }
+.wk-ailist li { font-size: 13.5px; line-height: 1.8; color: #37475a; }
+.wk-coach { font-size: 13.5px; line-height: 1.8; color: #37475a; padding: 2px 4px; }
+.wk-coach ul { margin: 6px 0 0; padding-left: 18px; }
+
 /* 참조링크 카드 — 컴팩트 + 헤더 클릭 접기/펼치기 */
 .refcard { padding: 10px 16px; }
 .refcard-head {
@@ -471,6 +487,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height:275px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
   padding:8px; background:#f8f9fa; border-radius:8px; margin-bottom:8px;
 }
+/* [2026-07-31 기획 7] AI 챗봇 = 전체화면 오버레이 (연관분석 본문에서 제외, 메인 [AI 챗봇]→?chat=1 로 진입) */
+/* ★[2026-07-31 방식 변경] fixed 오버레이 → '화면 전환'(문서 흐름 그대로)
+   fixed + height(100%/100dvh/좌표)는 기기·프레임마다 실제 높이가 달라 하단이 잘리거나 빈 띠가 생겼다.
+   연속혈당 1↔2페이지 전환과 같은 방식으로, 챗봇을 열면 이 화면의 다른 카드만 감추고 챗봇 블록을 보인다.
+   → 하단 메뉴(footerNav)는 원래 문서 흐름대로 그대로 보이고, 높이 계산이 아예 필요 없다. */
+.chat-overlay{ display:none; background:#fff; flex-direction:column; padding:6px 12px 14px; }
+.chat-overlay.on{ display:flex; }   /* (기존 .on 규칙과 동일 — 화면 전환 방식에서도 flex 유지) */
+/* 챗봇만 남으면 아래가 짧아 회색 배경이 드러난다 → 그 영역까지 흰색으로 이어 붙여 카드처럼 보이게 (2026-07-31) */
+.contents.chat-on{ background:#fff; }
+.chat-overlay.on{ display:flex; }
+.chat-ovhead{ display:flex; align-items:center; gap:8px; padding:4px 2px 10px; border-bottom:1px solid #e3e9f2; margin-bottom:8px; }
+/* 휴대폰(좁은 폭)에서 제목이 길면 [전체 삭제]가 화면 밖으로 밀림 → 제목은 말줄임, 버튼은 고정(2026-07-31) */
+.chat-ovhead h5{ flex:1 1 auto; min-width:0; margin:0; font-size:16px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-ovhead .qa-clear{ flex:0 0 auto; white-space:nowrap; }
+.chat-back{ border:0; background:none; font-size:19px; color:#2b6fff; cursor:pointer; padding:2px 6px; }
+/* 내용(메시지)부는 남는 높이만 쓰고 필요하면 줄어든다(min-height:0 없으면 flex 자식이 안 줄어
+   입력창·질문칩이 화면 아래로 밀려 안 보임 — 2026-07-31 실제 발생). 하단(입력·칩)은 항상 고정 표시 */
+/* ★대화 영역 = 고정 200px (2026-07-31 최종 — '내용 줄이고 하단 많이 보이게')
+   vh·dvh·실측 계산은 기기마다 어긋나 폐기. 작은 폰에서도 [대화200+입력+칩 전부+하단메뉴]가 들어간다.
+   대화가 길어지면 이 안에서만 세로 스크롤된다. */
+.chat-overlay .qa-messages{ flex:0 0 auto; height:200px; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  /* [2026-07-31] max-height 52vh 상한 제거 — 실기기에서 내용이 상한에 걸려 칩 아래 빈 띠가 생겼음.
+     flex(1 1 auto)+min-height:0 만으로 남는 높이를 정확히 채우고 하단(입력·칩 2줄)은 밀리지 않는다 */
+.chat-overlay .qa-trash{ background:#eef2f7 !important; color:#5b6b80 !important; }
+.chat-overlay .qa-input, .chat-overlay .qa-quick{ flex:0 0 auto; }
+/* ★질문 칩 = 줄바꿈으로 전부 표시(2026-07-31 최종)
+   가로 한 줄 스크롤은 옆으로 미는 조작이 불편하다는 지적 → 여러 줄로 모두 보이게. 스크롤 필요 없음.
+   (대화 영역을 200px 로 줄여 확보한 공간에 들어간다) */
+.chat-overlay .qa-quick{ display:flex; flex-wrap:wrap; max-height:none; overflow:visible; gap:6px; }
+.chat-overlay .qa-quick .qbtn{ flex:0 0 auto; font-size:12px; padding:5px 10px; white-space:nowrap; }
 .qa-input { display:flex; gap:6px; margin-bottom:8px; }
 /* common.css 의 `.btn{width:100%}` 회피를 위해 btn 클래스는 쓰지 않음 */
 .qa-input input {
@@ -522,9 +569,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	</div>	
   <div class="top3-card decrease-card" style="margin-top:1px;">
       <!-- 혈당 수치 패널 -->
-	  <h5 class="chart-title">* 주간 혈당관리지표</h5>
+	  <%-- [2026-07-31 기획] 헤더 = '현재일 기준 이전 일주일' (주간 기준임을 명시) --%>
 		<section class="blood_list">
-		  <div class="unit flx-row a-center j-end"> 
+		  <div class="unit flx-row a-center j-between">
+		    <span class="ft14" style="font-weight:700; color:#2d303f;">현재일 기준 이전 일주일</span>
 		    <span class="ft14">단위 : mg/dL</span>
 		  </div>
 		
@@ -545,21 +593,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		    </div>
 		  </div>
 		
-		  <div class="top_row flx-row j-between a-center">
-		    <div class="center_wrap aval_wrap">
-		      <h6>GMI지수(%)</h6>
-		      <span class="bl_color_low ft40" id="gmi" data-value="-">-</span>
-		    </div>
-		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
-		    <div class="center_wrap aval_wrap">
-		      <h6>TIR(%)</h6>
-		      <div>
-		        <span class="bl_color_low ft40" id="tir" data-value="-">-</span>
-		      </div>
-		    </div>
-		    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
+		  <%-- [2026-07-31 기획] 앞장(연속혈당 상세 2페이지)과 동일한 표현식 —
+		       GMI(참고치·색 조건 없음) + TIR/TAR/TBR/CV(권장 기준 문구 + 목표 안=초록/벗어남=황토).
+		       값 채우기는 기존 스크립트 그대로(#gmi/#tir/#tar/#tbr/#cv) — 색·AI 분석은 하단 감시 스크립트(wkAi)가 처리.
+		       종전의 GMI/TIR 큰 패널과 별도 TAR/TBR/CV 카드는 이 목록으로 통합(중복 제거). --%>
+		  <div class="wk-metrics">
+		    <div class="wk-item"><p class="lb">GMI지수(%) <span class="hint">: 혈당 관리지표(참고사항)</span></p>
+		      <div class="v"><span id="gmi" data-value="-">-</span></div></div>
+		    <div class="wk-item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p>
+		      <div class="v"><span id="tir" data-value="-">-</span></div></div>
+		    <div class="wk-item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p>
+		      <div class="v"><span id="tar" data-value="-">-</span></div></div>
+		    <div class="wk-item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p>
+		      <div class="v"><span id="tbr" data-value="-">-</span></div></div>
+		    <div class="wk-item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p>
+		      <div class="v"><span id="cv" data-value="-">-</span></div></div>
 		  </div>
 		</section>
+		<%-- [2026-07-31 기획 확정] TIR 베이스 5개 항목(TIR·TAR·TBR·CV·GMI) 세부 분석 + 생활습관 코칭.
+		     값이 채워질 때마다 wkAi 스크립트가 자동 갱신. --%>
+		<div class="wk-ai">
+		  <h5 class="wk-sechead">* 혈당지표 분석</h5>
+		  <div class="wk-dashbox">
+		    <ul id="wkAiList" class="wk-ailist"><li>지표 수치를 불러오면 분석이 표시됩니다.</li></ul>
+		  </div>
+		  <h5 class="wk-sechead">* 생활습관 코칭</h5>
+		  <div id="wkCoach" class="wk-coach">지표 수치를 불러오면 코칭 내용이 표시됩니다.</div>
+		</div>
 		<br>
     <h5 class="chart-title">* 저혈당/고혈당 발생구간(시간)</h5>
 
@@ -581,40 +641,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <span class="item"><i class="box" style="background:#FF0000"></i> 저 (70미만)</span>
     </div>
   </div>
-   <div class="top3-card decrease-card">
-	
-	  <div class="top_row flx-row j-between a-center">
-	    <div class="center_wrap aval_wrap">
-	      <h6>TAR(%)</h6>
-	      <span class="bl_color_low ft24" id="tar" data-value="-">-</span>
-	    </div>
-	    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
-	    <div class="center_wrap aval_wrap">
-	      <h6>TBR(%)</h6>
-	      <div>
-	        <span class="bl_color_low ft24" id="tbr" data-value="-">-</span>
-	      </div>
-	    </div>
-	    <div class="line_col" style="height: calc(10 * var(--vwu, 1vw));"></div>
-	    <div class="center_wrap aval_wrap">
-	      <h6>CV(%)</h6>
-	      <div>
-	        <span class="bl_color_low ft24" id="cv" data-value="-">-</span>
-	      </div>
-	    </div>
-	  </div>
-	  <br>
-	  <div class="row_item metric-note">
-	    <label>TAR(%):목표혈당범위(70-180mg/dl)초과시간비율</label>
-	  </div>
-	  <div class="row_item metric-note">
-	    <label>TBR(%):목표혈당범위 미만(70미만 저혈당)시간비율</label>
-	  </div>
-	  <div class="row_item metric-note">
-	    <label>CV(%) :혈당 변동계수(36% 미만 안정적)</label>
-	  </div>
-
-   </div> 
+   <%-- [2026-07-31 기획] 별도 TAR/TBR/CV 카드 제거 — #tar/#tbr/#cv 는 위 '주간 혈당관리지표' 목록으로 이동
+        (같은 id 를 두 곳에 둘 수 없어 이 카드는 통째로 제거. 설명문구는 목록의 '권장 :' 힌트로 대체) --%>
    <div class="top3-card decrease-card"> 
 	  <div class="row_item">
 	      <label>* 고혈당 구간:</label>
@@ -659,11 +687,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     </div>
   </div> 
 
-  <div class="recommendation-card">
+  <%-- [2026-07-31 기획] [개인 맞춤 추천] 주간 리포트 블록 숨김(X 표시) — 문장은 상단 'AI 분석(5개 지표 기준)'으로 대체.
+       안의 id 들(avgUpt1_name 등)은 기존 스크립트가 채우므로 요소는 남기고 숨김(원복 대비). --%>
+  <div class="recommendation-card" style="display:none;">
 
        <div class="card-header">
            <h3 class="card-title recommendation font-large">[개인 맞춤 추천]</h3>
-       </div>	    
+       </div>
 		<div class="report-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 		  <h5 style="margin: 0;">*주간 혈당관련 리포트</h5>
 		  <span style="font-size: 12px; color: gray;"></span>
@@ -709,16 +739,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
            </p>
        </div>
    </div>  
-	<!-- 혈당 Q&A 채팅 (sejong-web 기능 포팅으로 AI 분석 리포트 대체) -->
-	<div class="top3-card decrease-card qa-card">
-	  <div class="qa-head">
-	    <h5>💬 혈당 Q&amp;A</h5>
-	    <button type="button" class="qa-clear" onclick="_clearChat();">🗑 전체 삭제</button>
+	<%-- [2026-07-31 기획 7. AI 챗봇] 혈당 Q&A 를 연관분석 본문에서 제외하고 전체화면 오버레이로 이동.
+	     메인 [AI 챗봇] 버튼 → goBloodPage2.do?chat=1 로 진입하면 바로 열린다(주간 지표는 이 화면 스크립트가 그대로 계산).
+	     처음 열릴 때 인사말 하단에 TIR·TAR·TBR 분석 내용 표시(지표가 늦게 오면 도착 시 1회 추가 — wkAi 연동). --%>
+	<div id="chatOverlay" class="chat-overlay">
+	  <div class="chat-ovhead">
+	    <button type="button" class="chat-back" onclick="closeChat();">&#10094;</button>
+	    <h5>🤖 AI 챗봇</h5>
 	  </div>
 	  <div id="chatMessages" class="qa-messages"></div>
+	  <%-- [2026-07-31] 입력줄+질문칩을 한 덩어리로 묶어 화면 하단에 고정(sticky).
+	       높이를 계산하지 않아도 어떤 기기에서나 항상 보인다 — 대화가 길어지면 위쪽만 스크롤된다. --%>
+	  <div class="chat-bottom">
 	  <div class="qa-input">
 	    <input type="text" id="chatInput" placeholder="질문을 입력하세요…" onkeypress="if(event.key==='Enter')sendChat();">
 	    <button type="button" class="qa-send" onclick="sendChat();">전송</button>
+	    <%-- 전체 삭제 — 헤더 우측은 모바일에서 잘려 안 보여 입력줄로 이동(2026-07-31, 아이콘만) --%>
+	    <button type="button" class="qa-send qa-trash" onclick="_clearChat();" title="대화 전체 삭제">🗑</button>
 	  </div>
 	  <div class="qa-quick">
 	    <button type="button" class="qbtn" onclick="_quickQ('이번 주 혈당 어때요?')">이번주 혈당</button>
@@ -727,8 +764,79 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    <button type="button" class="qbtn" onclick="_quickQ('식후혈당이란?')">식후혈당</button>
 	    <button type="button" class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
 	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 대처법은?')">저혈당 대처</button>
+	    <%-- [기획 7] 지표 빠른 질문 칩 추가 --%>
+	    <button type="button" class="qbtn" onclick="_quickQ('목표혈당 유지시간(TIR) 어때요?')">목표혈당 유지시간(TIR)</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('고혈당시간(TAR) 어때요?')">고혈당시간(TAR)</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('저혈당시간(TBR) 어때요?')">저혈당시간(TBR)</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('혈당변동성(CV) 어때요?')">혈당변동성(CV)</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('GMI 어때요?')">(혈당관리표시자)GMI</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('고혈당 구간 알려줘')">고혈당 구간</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 구간 알려줘')">저혈당 구간</button>
 	  </div>
+	  </div><%-- /.chat-bottom --%>
 	</div>
+
+	<script>
+	/* [2026-07-31 기획 — wkAi] 지표 값 색(권장 기준: 목표 안=초록/벗어남=황토, GMI는 참고치라 무조건)
+	   + 'AI 분석(5개 지표 기준)' 문장 자동 생성. 값은 기존 스크립트가 #gmi/#tir/#tar/#tbr/#cv 에 채우므로
+	   그 변화를 감시(MutationObserver)해 색과 문장을 갱신한다 — 기존 계산 로직 무변경. */
+	(function(){
+	  var OK='#2e7d32', WARN='#e67e22', PLAIN='#2d303f';
+	  function num(id){ var e=document.getElementById(id); if(!e) return NaN;
+	    return parseFloat(String(e.textContent).replace(/[^0-9.\-]/g,'')); }
+	  function paint(id, ok){ var e=document.getElementById(id); if(e && !isNaN(num(id))) e.style.color = ok?OK:WARN; }
+	  function upd(){
+	    var gmi=num('gmi'), tir=num('tir'), tar=num('tar'), tbr=num('tbr'), cv=num('cv');
+	    var g=document.getElementById('gmi'); if(g) g.style.color=PLAIN;   // GMI = 참고치(색 조건 없음)
+	    paint('tir', tir>=70); paint('tar', tar<25); paint('tbr', tbr<4); paint('cv', cv<=36);
+	    // 평균 3종 색 — 평균 70~180 / 공복 100 미만 / 식후 140 미만이면 초록, 벗어나면 황토(기획 색 예시와 일치)
+	    var avg=num('avgUpt'), fast=num('avgFastingBlood'), after=num('after2hBlood');
+	    paint('avgUpt', avg>=70 && avg<=180); paint('avgFastingBlood', fast>=70 && fast<100); paint('after2hBlood', after>=70 && after<140);
+
+	    // ── * 혈당지표 분석 (TIR 베이스 종합판정 + 문제 항목별 조언) ──
+	    var L=[];
+	    if(!isNaN(tir)){
+	      L.push(tir>=70 ? "지표는 <b style='color:"+OK+"'>‘정상’</b>입니다"
+	                     : "지표는 <b style='color:"+WARN+"'>‘관리필요’</b>입니다");
+	    }
+	    if(!isNaN(tar) && tar>=25) L.push('TAR이 높아 식후 걷기가 필요합니다');
+	    if(!isNaN(tbr) && tbr>=4)  L.push('TBR이 높아 공복운동 금지가 필요합니다');
+	    if(!isNaN(cv)  && cv>36)   L.push('CV가 높아 혈당 변동 관리가 필요합니다');
+	    if(!isNaN(fast) && fast>=100) L.push('공복혈당이 높아 저녁 식사·간식 조절이 필요합니다');
+	    if(L.length===1 && !isNaN(tir) && tir>=70) L.push('다섯 개 지표가 모두 권장 범위 안에 있습니다');
+	    if(!isNaN(gmi)) L.push('GMI(혈당 관리지표)는 '+gmi+'% 입니다 (참고사항)');
+	    var ul=document.getElementById('wkAiList');
+	    if(ul && L.length) ul.innerHTML = L.map(function(s){ return '<li>'+s+'</li>'; }).join('');
+
+	    // ── * 생활습관 코칭 (가장 두드러진 문제 기준 문구 + 실천 항목) ──
+	    var box=document.getElementById('wkCoach');
+	    if(box && !isNaN(tir)){
+	      var head='', tips=[];
+	      if(!isNaN(tar) && tar>=25){
+	        head='지난 일주일 동안 고혈당 시간이 다소 길었습니다.<br>특히 식후 혈당 상승이 반복되는 것으로 보입니다.';
+	        tips=['식사량을 줄이세요.','탄수화물 비율을 줄이세요.','식후 20~30분 걷기를 실천해 보세요.'];
+	      }else if(!isNaN(tbr) && tbr>=4){
+	        head='지난 일주일 동안 저혈당이 발생했습니다.<br>저혈당은 즉각적인 대처가 필요합니다.';
+	        tips=['공복 상태의 운동을 피하세요.','식사를 거르지 말고 규칙적으로 하세요.','저혈당 증상이 느껴지면 즉시 당분을 섭취하세요.'];
+	      }else if(!isNaN(cv) && cv>36){
+	        head='지난 일주일 동안 혈당 변동 폭이 큰 편이었습니다.';
+	        tips=['식사 시간을 규칙적으로 유지하세요.','과식과 결식을 피하세요.','가벼운 활동을 꾸준히 이어가세요.'];
+	      }else{
+	        head='지난 일주일 혈당이 안정적으로 관리되고 있습니다.';
+	        tips=['현재 생활습관을 그대로 유지하세요.','꾸준한 측정과 기록을 계속해 주세요.'];
+	      }
+	      box.innerHTML = head + '<ul>' + tips.map(function(s){ return '<li>'+s+'</li>'; }).join('') + '</ul>';
+	    }
+	    // [기획 7] 챗봇이 열려 있고 아직 인사 분석을 못 붙였으면 지표 도착 시 1회 게시
+	    if (window._chatIntroHook) try{ window._chatIntroHook(); }catch(e){}
+	  }
+	  ['gmi','tir','tar','tbr','cv','avgUpt','avgFastingBlood','after2hBlood'].forEach(function(id){
+	    var e=document.getElementById(id); if(!e) return;
+	    new MutationObserver(upd).observe(e, { childList:true, characterData:true, subtree:true });
+	  });
+	  upd();
+	})();
+	</script>
 
 	<!-- 참조링크 (헤더 클릭으로 접기/펼치기, 컴팩트) — 맨 아래 -->
 	<div class="top3-card decrease-card refcard" id="refCard">
@@ -1137,7 +1245,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (tar != null && /tar/.test(q)) { return '고혈당 시간 비율(TAR): <b>' + tar + '%</b>' + note; }
     if (tbr != null && /tbr/.test(q)) { return '저혈당 시간 비율(TBR): <b>' + tbr + '%</b>' + note; }
     if (gmi != null && /(gmi|당화|혈당관리지표)/.test(q)) {
-      return '혈당관리지표(GMI): <b>' + gmi + '%</b><br>' + (gmi < 7 ? '양호합니다 👍' : '관리 강화를 권장드립니다.');
+      return '혈당관리지표(GMI): <b>' + gmi + '%</b><br>' + (gmi < 7 ? '양호합니다 👍' : '관리 강화를 권장드립니다.')
+           + '<br><small>※ 대한당뇨병학회 기준 — GMI는 권장(위험분류) 제시가 없는 참고 지표입니다.</small>';
+    }
+    // [2026-07-31 기획 7] CV·고혈당/저혈당 구간 칩 응답 (관리지표 기준 = 대한당뇨병학회)
+    var cv = _metricNum('cv');
+    if (cv != null && /(cv|변동성)/.test(q)) {
+      return '혈당 변동성(CV): <b>' + cv + '%</b><br>'
+           + (cv <= 36 ? '권장(36% 이하) 범위로 안정적입니다 👍' : '권장(36% 이하)보다 커서 혈당 변동 관리가 필요합니다.');
+    }
+    if (/고혈당\s*구간/.test(q)) {
+      var hz = (document.getElementById('avgHigh_name') || {}).textContent || '';
+      return hz.trim() ? ('고혈당 발생 구간(시간대): <b>' + hz + '</b>' + note)
+                       : '이번 주 고혈당 발생 구간 정보가 아직 없습니다.';
+    }
+    if (/저혈당\s*구간/.test(q)) {
+      var lz = (document.getElementById('avgLow_name') || {}).textContent || '';
+      return lz.trim() ? ('저혈당 발생 구간(시간대): <b>' + lz + '</b>' + note)
+                       : '이번 주 저혈당 발생 구간 정보가 아직 없습니다.';
     }
 
     // ── 일반 건강 지식: blood_qa.js 의 BLOOD_QA 키워드 매칭 (점수제) ──
@@ -1192,9 +1317,89 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return parts.length ? (parts.join(' / ') + ' mg/dL 기준') : '';
   }
 
-  // 초기 인사 메시지
+  // [2026-07-31 기획 7] 챗봇 오버레이 열기/닫기 — 메인 [AI 챗봇](goBloodPage2.do?chat=1) 진입 시 자동 오픈
+  var _chatFromMain = false, _chatIntroDone = false, _chatIntroForce = false;
+  // [2026-07-31 방식 변경] 화면 전환 — 챗봇을 열면 이 화면의 다른 카드만 감춘다(연속혈당 1↔2p 와 동일).
+  //   fixed 오버레이의 높이 문제(기기별 잘림·빈 띠)를 없애고, 하단 메뉴는 문서 흐름 그대로 보인다.
+  function _chatSiblings(ov){
+    var out = [];
+    if(!ov || !ov.parentNode) return out;
+    var kids = ov.parentNode.children;
+    for(var i=0;i<kids.length;i++){ if(kids[i] !== ov) out.push(kids[i]); }
+    return out;
+  }
+  // [2026-07-31] 대화영역 기본 높이는 CSS 고정 200px(작은 폰 기준). 화면이 더 크면 아래에 빈 공간이
+  //   남으므로, '칩 줄 아래끝 ~ 하단메뉴 윗변' 간격을 재서 그만큼만 대화영역을 늘린다.
+  //   ※ 절대 좌표를 추정하지 않고 '지금 남은 간격'만 더하므로 기기·프레임과 무관하게 정확하다.
+  function _chatFill(){
+    var ov = document.getElementById('chatOverlay');
+    if(!ov || !ov.classList.contains('on')) return;
+    var box = document.getElementById('chatMessages');
+    var bot = ov.querySelector('.chat-bottom');
+    var fn  = document.querySelector('.footerNav');
+    if(!box || !bot || !fn) return;
+    var gap = fn.getBoundingClientRect().top - bot.getBoundingClientRect().bottom;
+    if(gap > 8) box.style.height = (box.offsetHeight + gap - 4) + 'px';
+  }
+  window.addEventListener('resize', function(){
+    var box = document.getElementById('chatMessages');
+    if(box) box.style.height = '';   // 기본(CSS 200px)으로 되돌린 뒤 다시 채움
+    setTimeout(_chatFill, 0);
+  });
+  function openChat(){
+    var ov = document.getElementById('chatOverlay');
+    _chatSiblings(ov).forEach(function(el){
+      if(el.getAttribute('data-chat-hidden') === '1') return;
+      el.setAttribute('data-chat-prev', el.style.display || '');
+      el.setAttribute('data-chat-hidden', '1');
+      el.style.display = 'none';
+    });
+    if(ov) ov.classList.add('on');
+    try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.add('chat-on'); }catch(e){}
+    setTimeout(_chatFill, 0); setTimeout(_chatFill, 300);   // 렌더 직후 + 폰트/이미지 반영 후 한 번 더
+    _chatIntroAnalysis();   // 지표가 이미 준비돼 있으면 인사 밑에 분석 표시(아직이면 wkAi 도착 훅으로 1회)
+    // [2026-07-31] TIR 이 늦게 와서 분석에서 빠지는 것 방지 — 3종이 다 모일 때까지 기다리되,
+    //   4초가 지나면 그때까지 온 지표만이라도 게시(전부 실패 시 빈 게시는 안 함)
+    setTimeout(function(){ _chatIntroForce = true; _chatIntroAnalysis(); }, 4000);
+  }
+  function closeChat(){
+    var ov = document.getElementById('chatOverlay');
+    if(ov) ov.classList.remove('on');
+    try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.remove('chat-on'); }catch(e){}
+    // 감춰 둔 카드 원복(메인에서 온 경우엔 그대로 뒤로 가므로 복원해도 무해)
+    _chatSiblings(ov).forEach(function(el){
+      if(el.getAttribute('data-chat-hidden') !== '1') return;
+      el.style.display = el.getAttribute('data-chat-prev') || '';
+      el.removeAttribute('data-chat-hidden'); el.removeAttribute('data-chat-prev');
+    });
+    if(_chatFromMain) history.back();   // 메인에서 왔으면 메인으로 복귀
+  }
+  // 처음 열릴 때 인사 하단에 TIR·TAR·TBR 분석 표시(기획 확정). 지표가 늦게 오면 wkAi 갱신 훅에서 1회 추가.
+  function _chatIntroAnalysis(){
+    if(_chatIntroDone) return;
+    var ov = document.getElementById('chatOverlay');
+    if(!ov || !ov.classList.contains('on')) return;
+    var tir=_metricNum('tir'), tar=_metricNum('tar'), tbr=_metricNum('tbr');
+    if(tir==null && tar==null && tbr==null) return;
+    // TIR(가장 중요한 지표) 포함 보장 — 3종이 다 모이기 전에는 게시하지 않는다(4초 경과 시에만 부분 게시)
+    if(!_chatIntroForce && (tir==null || tar==null || tbr==null)) return;
+    // 한 줄 표시(2026-07-31 요청) — 문구를 짧게 + 줄바꿈 금지(nowrap)
+    function ln(s){ return '<span style="white-space:nowrap; display:block;">'+s+'</span>'; }
+    var L=[];
+    if(tir!=null) L.push(ln('• TIR(목표유지) <b>'+tir+'%</b> — 권장 70%↑ '+(tir>=70?'충족 👍':'<b style="color:#e67e22">미달</b>')));
+    if(tar!=null) L.push(ln('• TAR(고혈당) <b>'+tar+'%</b> — 권장 25%↓ '+(tar<25?'충족':'<b style="color:#e67e22">초과</b>')));
+    if(tbr!=null) L.push(ln('• TBR(저혈당) <b>'+tbr+'%</b> — 권장 4%↓ '+(tbr<4?'충족':'<b style="color:#e67e22">초과</b>')));
+    _addMsg('최근 일주일 지표 분석입니다.'+L.join('')+'<small>※ 대한당뇨병학회 관리지표 기준</small>', false);
+    _chatIntroDone = true;
+  }
+  window._chatIntroHook = _chatIntroAnalysis;   // wkAi upd() 가 지표를 채울 때마다 호출(1회 게시 가드 내장)
+
+  // 초기 인사 메시지 (+ 메인 [AI 챗봇] 경유면 오버레이 자동 오픈)
   document.addEventListener('DOMContentLoaded', function(){
     _addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
+    try{
+      if(new URLSearchParams(window.location.search).get('chat')==='1'){ _chatFromMain=true; openChat(); }
+    }catch(e){}
   });
 
   // ===== 초기화 & 이벤트 =====
