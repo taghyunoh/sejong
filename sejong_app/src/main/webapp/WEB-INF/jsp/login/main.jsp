@@ -45,6 +45,14 @@
   padding:calc(3.3 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw));
   font-size:calc(4.07 * var(--vwu,1vw)); font-weight:700; color:#2d303f; text-decoration:none; }
 .mainAiMenu .aiBtn i{ font-style:normal; color:#218ecb; font-weight:800; }
+/* [2026-08-01] CGM 상태 안내(#errormsg) 복원 — AI 메뉴 아래.
+   예전엔 옛 4카드용 흰 글자가 배경에 그대로 얹혀 '겹쳐 보인다'는 지적으로 숨겼던 것 →
+   반투명 박스로 감싸 배경(파랑 일러스트) 위에서도 읽히게 하고, 내용이 있을 때만 표시한다. */
+.cgmNotice{ display:none; margin-top:calc(3.2 * var(--vwu,1vw));
+  background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.35);
+  border-radius:calc(2.2 * var(--vwu,1vw));
+  padding:calc(2.8 * var(--vwu,1vw)) calc(3.6 * var(--vwu,1vw));
+  font-size:calc(3.4 * var(--vwu,1vw)); line-height:1.45; color:#fff; word-break:keep-all; }
 </style>
 <!-- wrap : s -->
  <div class="wrap main">
@@ -125,6 +133,9 @@
        <%-- AI 챗봇 = 혈당 연관분석의 Q&A 를 전체화면 오버레이로 이동(기획 7) — ?chat=1 로 진입하면 자동 오픈 --%>
        <a href="<c:url value='/goBloodPage2.do'/>?chat=1" class="aiBtn"><span>AI 챗봇</span><i>&gt;</i></a>
      </div>
+     <%-- [2026-08-01] CGM 상태 안내 — 개편 전 메인에 있던 안내(센서 착용 / i-Sens 연동 필요)를
+          AI 메뉴 바로 밑으로 되살렸다. 내용이 있을 때만 보인다(_setCgmNotice). --%>
+     <p class="cgmNotice" id="errormsg"></p>
 
      <%-- 기존 4카드(연속혈당·혈당분석·식사관리·운동관리) — 삭제 아닌 숨김(원복 대비).
           todayBlod() 가 채우는 #nowVal 등도 이 안에 있어 그대로 둔다(안 보여도 무해). --%>
@@ -193,9 +204,6 @@
        </li>
      </ul>
      </div><%-- /#oldMainCards (숨김) --%>
-     <%-- [2026-07-31] 옛 4카드용 안내문 — 같은 내용을 혈당상태 카드가 이미 보여 주고,
-          화면에 흰 글자로 겹쳐 뒤늦게 나타나 '새로고침되는 것처럼' 보였다 → 숨김(스크립트는 그대로 채움) --%>
-     <p  class="desc" id="errormsg" style="display:none;">  </p>
      <!-- contents : e -->
    </div>
 
@@ -509,6 +517,16 @@ function _setStable(sel, txt, cls){
     if($e.text() === txt && (cls == null || $e.attr('class') === cls)) return;
     $e.text(txt); if(cls != null) $e.attr('class', cls);
 }
+/* [2026-08-01] CGM 상태 안내 — 내용이 있을 때만 보인다.
+   todayBlod() 가 진입 시 1회 + 외부 CGM 재수집 후 1회 더 불리므로, 같은 내용이면 DOM 을 안 건드린다(깜빡임 방지). */
+function _setCgmNotice(html){
+    var $e = $("#errormsg"); if(!$e.length) return;
+    html = html || "";
+    if($e.data('cgmMsg') !== html){
+        $e.data('cgmMsg', html).html(html);
+    }
+    $e.css('display', html ? 'block' : 'none');
+}
 function updateBloodState(data){
     var el = $("#bloodState");
     if(!el.length) return;
@@ -567,8 +585,6 @@ function updateBloodState(data){
     _setStable('#bloodTir', "오늘 TIR " + tir + "% (목표범위 70~180 내 비율)" + lastAt + lastVal);
 }
 function todayBlod() {
-    $("#errormsg").empty(); // () 붙여야 정상 동작
-
     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getTodayBlood.do", "POST", '', function(response) {
         console.log(response);
         const data = response.Data;
@@ -586,11 +602,11 @@ function todayBlod() {
             }
 
             // [2026-07-11] 값이 0일 때: 연동(토큰) 상태로 안내 구분 (연동됨 → 센서착용 / 미연동 → 연동필요)
-            if (data[0].UPT_VALUE == 0) {
-                $("#errormsg").html(window.__hasToken
+            _setCgmNotice(data[0].UPT_VALUE == 0
+                ? (window.__hasToken
                     ? "혈당기(CGM)를 착용하면 측정값이 표시됩니다"
-                    : "케어센서 에어(i-Sens) 연동이 필요합니다.<br/>연속혈당 메뉴에서 로그인해 주세요.");
-            }
+                    : "케어센서 에어(i-Sens) 연동이 필요합니다.<br/>연속혈당 메뉴에서 로그인해 주세요.")
+                : "");
 
         } else {
             $("#formatedDate").text("-");
@@ -598,7 +614,7 @@ function todayBlod() {
             $("#diff").text(0);
 
             // [2026-07-11] 데이터 없음: 연동됨이면 센서착용 안내, 미연동이면 연동필요 안내 (오표시 '로그인 해주세요' 방지)
-            $("#errormsg").html(window.__hasToken
+            _setCgmNotice(window.__hasToken
                 ? "혈당기(CGM)를 착용하면 측정값이 표시됩니다"
                 : "케어센서 에어(i-Sens) 연동이 필요합니다.<br/>연속혈당 메뉴에서 로그인해 주세요.");
         }
