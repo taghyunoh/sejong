@@ -23,6 +23,28 @@
 }
 .menuWrap .topArea .name::after,
 .menuWrap .topArea .user::after{ display: none !important; }
+
+/* 의료정보변경 팝업 취소 버튼 색·간격은 common.css 에 있다(팝업이 top.jsp·userSetting.jsp 에도 복제돼 있어 공통 처리) */
+
+/* [메인 개편 2026-07-31 — 기획 이미지] 4카드 대신 혈당상태 카드 + AI 메뉴.
+   색은 통일성: 앱 파랑(#218ecb) / 정상=초록 / 관리 필요=주황. 기존 4카드는 삭제 아닌 숨김(원복 대비, #oldMainCards) */
+.mainState{ background:#fff; border:1px solid #dfe6f0; border-radius:calc(2.8 * var(--vwu,1vw));
+  padding:calc(4.2 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw)) calc(3 * var(--vwu,1vw));
+  margin-top:calc(4 * var(--vwu,1vw)); box-shadow:0 2px 8px rgba(18,38,99,.08); }
+.mainState .stateText{ font-size:calc(4.26 * var(--vwu,1vw)); color:#2d303f; font-weight:500; }
+.mainState .stateText em{ font-style:normal; font-weight:800; }
+.mainState .stateText em.st-good{ color:#2e7d32; }   /* 정상 */
+.mainState .stateText em.st-warn{ color:#e67e22; }   /* 관리 필요 */
+.mainState .stateText em.st-none{ color:#8a98a8; }   /* 측정값 없음/확인 중 */
+.mainState .tirTxt{ display:block; margin-top:calc(1.2 * var(--vwu,1vw)); font-size:calc(3.1 * var(--vwu,1vw)); color:#8a98a8; }
+.mainState .stateLink{ display:block; text-align:right; margin-top:calc(2.2 * var(--vwu,1vw));
+  font-size:calc(3.7 * var(--vwu,1vw)); font-weight:800; color:#218ecb; text-decoration:underline; text-underline-offset:3px; }
+.mainAiMenu{ margin-top:calc(3.5 * var(--vwu,1vw)); display:flex; flex-direction:column; gap:calc(2.8 * var(--vwu,1vw)); }
+.mainAiMenu .aiBtn{ display:flex; align-items:center; justify-content:space-between;
+  background:#fff; border:1px solid #218ecb; border-radius:calc(2.4 * var(--vwu,1vw));
+  padding:calc(3.3 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw));
+  font-size:calc(4.07 * var(--vwu,1vw)); font-weight:700; color:#2d303f; text-decoration:none; }
+.mainAiMenu .aiBtn i{ font-style:normal; color:#218ecb; font-weight:800; }
 </style>
 <!-- wrap : s -->
  <div class="wrap main">
@@ -64,27 +86,14 @@
             <span>운동관리</span>
           </a>
         </div>
-        <div class="etc_menu_list">
-          <a class="etc_wrap" href="<c:url value='noticePage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_notice.png'/> " alt="공지사항">
-            <span>공지사항</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='faqPage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_faq.png'/> " alt="FAQ">
-            <span>FAQ</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='asqMain.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_qa.png'/> " alt="1:1문의">
-            <span>1:1문의</span>
-          </a>
-          <a class="etc_wrap" href="javascript:layerPop('open' , 'infoChangePopup')">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_pinf.png'/> " alt="개인정보">
-            <span>개인정보</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='settingPage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_set.png'/> " alt="설정">
-            <span>설정</span>
-          </a>
+        <%-- [슬라이드 메뉴 하단 변경 2026-07-31 — 기획 이미지] 아이콘 그리드 → 텍스트 바로가기 목록.
+             1:1문의(asqMain.do)는 기획안대로 제외. 개인정보 변경 = 기존 의료정보변경 팝업.
+             tiles/main/top.jsp 에 같은 메뉴가 하나 더 있다 — 바꿀 때 둘 다 고칠 것. --%>
+        <div class="etc_menu_list etc_links">
+          <a class="etc_link" href="<c:url value='noticePage.do'/> ">&gt; 공지사항 바로가기</a>
+          <a class="etc_link" href="<c:url value='faqPage.do'/> ">&gt; FAQ 바로가기</a>
+          <a class="etc_link" href="javascript:layerPop('open' , 'infoChangePopup')">&gt; 개인정보 변경 바로가기</a>
+          <a class="etc_link" href="<c:url value='settingPage.do'/> ">&gt; 설정 바로가기</a>
         </div>
       </div>
     </div>
@@ -101,6 +110,23 @@
          혈당관리, 식사관리, 운동관리를 통한 일상속 건강관리를 해보세요.
        </p>
      </div>
+     <%-- [메인 개편 2026-07-31 — 기획 이미지] 현재 혈당상태(TIR 기준) + AI 메뉴.
+          · 상태 판정 = 오늘 혈당의 TIR(70~180mg/dL 범위 내 비율): 70% 이상 '정상' / 미만 '관리 필요' / 데이터 없으면 측정값 없음
+          · [혈당 지표 확인] = 기존 연속혈당 화면(goBloodPage.do)
+          · AI 종합분석(주간)·AI 챗봇 = 추후 연결(일단 자리만 — 준비 중 안내) --%>
+     <div class="mainState">
+       <p class="stateText">현재 혈당상태는 <em id="bloodState" class="st-none">확인 중</em> 입니다</p>
+       <span class="tirTxt" id="bloodTir"></span>
+       <a href="<c:url value='/goBloodPage.do'/>" class="stateLink">혈당 지표 확인 &nbsp;&gt;&gt;</a>
+     </div>
+     <div class="mainAiMenu">
+       <a href="#" class="aiBtn" onclick="alert('AI 종합분석(주간)은 준비 중입니다.'); return false;"><span>AI 종합분석(주간)</span><i>&gt;</i></a>
+       <a href="#" class="aiBtn" onclick="alert('AI 챗봇은 준비 중입니다.'); return false;"><span>AI 챗봇</span><i>&gt;</i></a>
+     </div>
+
+     <%-- 기존 4카드(연속혈당·혈당분석·식사관리·운동관리) — 삭제 아닌 숨김(원복 대비).
+          todayBlod() 가 채우는 #nowVal 등도 이 안에 있어 그대로 둔다(안 보여도 무해). --%>
+     <div id="oldMainCards" style="display:none;">
      <ul class="dataList">
        <li class="dataItem">
          <a href="<c:url value='/goBloodPage.do'/> " class="inner data01">
@@ -164,6 +190,7 @@
          </a>
        </li>
      </ul>
+     </div><%-- /#oldMainCards (숨김) --%>
      <p  class="desc" id="errormsg">  </p>
      <!-- contents : e -->
    </div>
@@ -468,12 +495,71 @@ function refreshToken(){
 	  
 	)
 }
+/* [메인 개편 2026-07-31] 오늘 혈당의 TIR(70~180mg/dL 범위 내 비율)로 상태 표시.
+   기준: TIR 70% 이상 = '정상'(초록) / 미만 = '관리 필요'(주황) / 유효 측정값 없음 = 회색 안내.
+   원천 = todayBlod() 가 이미 받아오는 getTodayBlood.do(오늘 측정 목록) — 추가 조회 없음. */
+function updateBloodState(data){
+    var el = $("#bloodState");
+    if(!el.length) return;
+    var rows = (data||[]).filter(function(r){ return +r.UPT_VALUE > 0; });
+    var vals = rows.map(function(r){ return +r.UPT_VALUE; });
+    if(!vals.length){
+        el.text("측정값 없음").attr("class","st-none");
+        // [2026-07-31 요청] 마지막에 찍힌 게 언제 것인지 표시 — 연속혈당 화면과 같은 getLastBloodDate.do 재사용.
+        //   userId(CGM)가 아직 없으면(미연동) 기존 안내문 유지.
+        var uid = (typeof userId !== 'undefined' && userId && userId !== "null") ? userId : "";
+        if(uid){
+            CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do","POST",{ userId: uid },function(res){
+                if(res && res.IsSucceed && res.Data){
+                    var t = String(res.Data).replace('T',' ').substring(0,16);   // 'YYYY-MM-DD HH:mm'
+                    $("#bloodTir").text("마지막 측정 " + t + " — 이후 들어온 측정값이 없습니다");
+                    // [2026-07-31 요청] 마지막 측정일 데이터로 수치 + '정상/관리 필요' 상태까지 표시
+                    //   (그 날짜 데이터 = getBloodChartData, 행={DTM,UPT} — 그 날의 TIR 로 판정, 최신 행이 마지막 수치)
+                    var day = String(res.Data).substring(0,10);
+                    CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do","POST",
+                        { userId: uid, start: day+"T00:00:00", end: day+"T23:59:59" }, function(list){
+                            list = Array.isArray(list) ? list : [];
+                            var last=null, dv=[];
+                            list.forEach(function(r){
+                                var v = parseInt(r.UPT,10);
+                                if(isNaN(v) || v <= 0) return;
+                                dv.push(v);
+                                var tm = (typeof r.DTM==='number') ? r.DTM : new Date(String(r.DTM).replace('Z','')).getTime();
+                                if(!isNaN(tm) && (!last || tm > last.tm)) last = { tm:tm, v:v };
+                            });
+                            if(!dv.length) return;   // 값이 없으면 위의 '마지막 측정 일시' 표시만 유지
+                            var inR = dv.filter(function(v){ return v >= 70 && v <= 180; }).length;
+                            var dTir = Math.round(inR * 100 / dv.length);
+                            if(dTir >= 70){ el.text("'정상'").attr("class","st-good"); }
+                            else          { el.text("'관리 필요'").attr("class","st-warn"); }
+                            $("#bloodTir").text("마지막 측정 " + t + (last ? (" · " + last.v + " mg/dL") : "")
+                                + " · 그날 TIR " + dTir + "% (목표범위 70~180 내 비율) — 이후 들어온 측정값이 없습니다");
+                        });
+                }else{
+                    $("#bloodTir").text("혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
+                }
+            });
+        }else{
+            $("#bloodTir").text("혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
+        }
+        return;
+    }
+    var inRange = vals.filter(function(v){ return v >= 70 && v <= 180; }).length;
+    var tir = Math.round(inRange * 100 / vals.length);
+    if(tir >= 70){ el.text("'정상'").attr("class","st-good"); }
+    else         { el.text("'관리 필요'").attr("class","st-warn"); }
+    // 언제 것·마지막 수치 함께 표시 — 오늘 최신 행(getTodayBlood 첫 행)
+    var lastAt = (rows[0] && rows[0].formatedDate) ? (' · 마지막 측정 ' + rows[0].formatedDate) : '';
+    var lastVal = (rows[0] && rows[0].UPT_VALUE != null) ? (' · ' + rows[0].UPT_VALUE + ' mg/dL') : '';
+    $("#bloodTir").text("오늘 TIR " + tir + "% (목표범위 70~180 내 비율)" + lastAt + lastVal);
+}
 function todayBlod() {
     $("#errormsg").empty(); // () 붙여야 정상 동작
 
     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getTodayBlood.do", "POST", '', function(response) {
         console.log(response);
         const data = response.Data;
+        updateBloodState(data);   // [메인 개편] 혈당상태(TIR) 카드 갱신
 
         if (data && data.length > 0) {
             $("#formatedDate").text(data[0].formatedDate);

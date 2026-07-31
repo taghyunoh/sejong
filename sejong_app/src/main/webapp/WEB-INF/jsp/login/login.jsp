@@ -42,7 +42,7 @@
          <div class="form">
             <div class="left_right_wrap mt20">
               <div class="inputWrap mr10">
-                <input type="text" class="inpText mt0" id="authPhone" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" maxlength="11" placeholder="휴대폰번호 입력" />
+                <input type="text" class="inpText mt0" id="authPhone" oninput="authPhoneInput(this);" maxlength="11" placeholder="휴대폰번호 입력" />
               </div>
               <div class="btnArea mt0 w50">
                 <a href="#" class="btn btnLine01 round pl20 pr20"  onclick="reqAuth();"><span>인증번호 요청</span></a>
@@ -178,15 +178,26 @@
 
 /* [회원등록 흐름] joinPopup1(회원인증)·2(약관동의)·3(정보입력) 도 개인정보처리방침과 동일한
    '상단 바 + 하단 전체폭 버튼' 형태로 통일 — 상단 단계바 여백/라운딩, 하단 버튼 전체폭/라운딩/여백 */
+/* 상단 단계바 — 좌우 여백을 없애 좌우로 크게(폭만 확대) (2026-07-31 요청)
+   + 단계 표시바 배경 = [다음] 버튼과 같은 파랑(btnCol02 #218ecb, 종전 #005d92) (2026-07-31 2차 요청) */
 .joinPopup1 .stepList,
 .joinPopup2 .stepList,
-.joinPopup3 .stepList{ margin:10px 8px 0 8px; border-radius:8px; }
+.joinPopup3 .stepList{ margin:10px 0 0 0; border-radius:8px; background:#218ecb; }
 .joinPopup1 .buttonFixed .btnArea.fix,
 .joinPopup2 .buttonFixed .btnArea.fix,
-.joinPopup3 .buttonFixed .btnArea.fix{ padding-left:12px !important; padding-right:12px !important; }
+.joinPopup3 .buttonFixed .btnArea.fix{ padding-left:12px !important; padding-right:12px !important;
+  gap:10px; }   /* 취소·다음이 같은 파랑이 되며 붙어 보임 → 살짝 간격(2026-07-31 요청) */
 .joinPopup1 .buttonFixed .btnArea.fix .btn,
 .joinPopup2 .buttonFixed .btnArea.fix .btn,
 .joinPopup3 .buttonFixed .btnArea.fix .btn{ border-radius:8px; margin-bottom:14px; }
+/* [원복 2026-07-31] 회원등록 3단계 본문 배경을 로그인 그라데이션+흰 카드로 바꿨다가
+   사용자 요청("일단 원복")으로 제거 — 본문은 종전 흰 배경 그대로. 재적용 요청 시 이 이력 확인. */
+
+/* 취소 버튼 색 (2026-07-31 확정) — [다음]/[완료] 버튼과 같은 파랑(btnCol02 #218ecb)으로 통일.
+   (처음 어두운 남색 → 밝은 회색 → 사용자 요청 "취소버튼도 변경"으로 파랑 확정 — 재변경 시 이 이력 확인) */
+.joinPopup1 .btnArea.fix .btn.btnCol01,
+.joinPopup2 .btnArea.fix .btn.btnCol01,
+.joinPopup3 .btnArea.fix .btn.btnCol01{ background:#218ecb; color:#fff; }
 </style>
 <div class="popupWrap popupFull joinPopup10">
 	<div class="popupContent popupInner">
@@ -391,6 +402,8 @@
 
 			<div class="buttonFixed">
 				<div class="btnArea fix">
+					<%-- 취소 버튼 추가(2026-07-31) — 1·2단계와 하단 버튼 일관성(취소 + 진행) --%>
+					<a href="#" class="btn btnCol01" onclick="cancelBtn();"><span>취소</span></a>
 					<a href="#" class="btn btnCol02" onclick="registerUser();"><span>완료</span></a>
 				</div>
 			</div>
@@ -437,8 +450,10 @@
         <div class="inputWrap mr10">
           <input type="password" class="inpText mt0" id="authCode_out" placeholder="인증번호 입력" />
         </div>
+        <%-- 확인 버튼 색·크기 통일 (2026-07-31 요청) — 위의 [인증번호 요청]과 같은 크기(w50),
+             색은 어두운 회색(btnCol01 #606477) 대신 테마 블루(btnCol07 #007BFF = 하단 회원탈퇴취소와 동일) --%>
         <div class="btnArea mt0 w50">
-          <a href="#" class="btn btnCol01 round pl20 pr20" onclick="checkAuth_out();">
+          <a href="#" class="btn btnCol07 round pl20 pr20" onclick="checkAuth_out();">
             <span>확 인</span>
           </a>
         </div>
@@ -612,6 +627,22 @@ function checkAuth_out(){
 /* 취소 버튼 */
 function cancelBtn(){
 	location.href = CommonUtil.getContextPath() + "/loginPage.do";
+}
+/* [테스트] 휴대폰번호 칸에 'test' 라고 치면 인증 없이 회원가입 화면(joinPopup1)을 바로 연다 (2026-07-31, UI 확인용).
+   숫자만 남기는 기존 필터는 유지하되 't'→'te'→'tes'→'test' 로 치는 중일 때만 지우지 않는다.
+   실제 가입 저장은 서버 검증을 그대로 거치므로 인증 우회가 아니다(화면 확인 전용). */
+function authPhoneInput(el){
+	var v = el.value;
+	if(/^t(e(s(t)?)?)?$/i.test(v)){
+		if(/^test$/i.test(v)){
+			el.value = '';
+			$("#email").removeAttr("readonly");       // 실제 신규가입 흐름(checkAuth 신규 분기)과 같은 상태로
+			$("#phone").val('01000000000');           // 다음 단계(goJoin2) 휴대폰번호 검증 통과용 더미
+			layerPop('open', 'joinPopup1');
+		}
+		return;
+	}
+	el.value = v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
 function goJoin10(){
 	getSignList("1");

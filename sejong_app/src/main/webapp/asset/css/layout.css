@@ -720,6 +720,20 @@ body.closeHidden {
   font-weight: 500;
   line-height: normal;
 }
+/* [슬라이드 메뉴 하단 변경 2026-07-31 — 기획 이미지] 아이콘 그리드 → 텍스트 바로가기 목록(.etc_links).
+   main.jsp / tiles top.jsp 두 곳의 마크업과 세트. 1:1문의는 기획안대로 제외. */
+.menuWrap .menuList .etc_menu_list.etc_links {
+  display: block;
+  margin-top: calc(4 * var(--vwu, 1vw));
+}
+.menuWrap .menuList .etc_menu_list.etc_links .etc_link {
+  display: block;
+  padding: calc(2.6 * var(--vwu, 1vw)) calc(1 * var(--vwu, 1vw));
+  font-size: calc(4.1 * var(--vwu, 1vw));
+  font-weight: 600;
+  color: #2d303f;
+  text-decoration: none;
+}
 
 .menuWrap .menuList .anchor {
   display: block;

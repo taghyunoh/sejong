@@ -42,27 +42,13 @@
             <span>운동관리</span>
           </a>
         </div>
-        <div class="etc_menu_list">
-          <a class="etc_wrap" href="<c:url value='noticePage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_notice.png'/> " alt="공지사항">
-            <span>공지사항</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='faqPage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_faq.png'/> " alt="FAQ">
-            <span>FAQ</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='asqMain.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_qa.png'/> " alt="1:1문의">
-            <span>1:1문의</span>
-          </a>
-          <a class="etc_wrap" href="javascript:layerPop('open' , 'infoChangePopup')">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_pinf.png'/> " alt="개인정보">
-            <span>개인정보</span>
-          </a>
-          <a class="etc_wrap" href="<c:url value='settingPage.do'/> ">
-            <img src="<c:url value='/asset/images/common/etcmenu_img_set.png'/> " alt="설정">
-            <span>설정</span>
-          </a>
+        <%-- [슬라이드 메뉴 하단 변경 2026-07-31 — 기획 이미지] 아이콘 그리드 → 텍스트 바로가기 목록.
+             1:1문의(asqMain.do)는 기획안대로 제외. login/main.jsp 에도 같은 메뉴가 있다 — 바꿀 때 둘 다 고칠 것. --%>
+        <div class="etc_menu_list etc_links">
+          <a class="etc_link" href="<c:url value='noticePage.do'/> ">&gt; 공지사항 바로가기</a>
+          <a class="etc_link" href="<c:url value='faqPage.do'/> ">&gt; FAQ 바로가기</a>
+          <a class="etc_link" href="javascript:layerPop('open' , 'infoChangePopup')">&gt; 개인정보 변경 바로가기</a>
+          <a class="etc_link" href="<c:url value='settingPage.do'/> ">&gt; 설정 바로가기</a>
         </div>
       </div>
     </div>

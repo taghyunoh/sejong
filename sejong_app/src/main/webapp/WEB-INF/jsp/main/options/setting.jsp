@@ -21,7 +21,8 @@
                 <a href="#" onclick="logout();" class="textBtn">로그아웃</a>
               </div>
             </div>
-            <div class="item">
+            <%-- [2026-07-31 요청] 자동 로그인 토글 숨김(기존 .hide 관례 — 요소는 남겨 스크립트(#autoYn) 무해) --%>
+            <div class="item hide">
               <div class="labelArea">
                 <p class="label">자동 로그인</p>
               </div>
@@ -49,7 +50,8 @@
             </a>
           </div>
         </div>
-        <div class="section">
+        <%-- [2026-07-31 요청] 알림 설정(PUSH) 섹션 숨김 --%>
+        <div class="section hide">
           <p class="sectionTitle">알림 설정</p>
           <div class="list">
             <div class="item">
@@ -126,7 +128,7 @@
             </div> -->
             <div class="item">
               <div class="labelArea">
-                <p class="label">현재 버전 V1.0</p>
+                <p class="label">현재 버전 V3.0</p>
                 <p class="desc">최신버전입니다.</p>
               </div>
             </div>

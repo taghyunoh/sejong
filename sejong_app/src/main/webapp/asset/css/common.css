@@ -7201,3 +7201,8 @@ select {
 #errormsg {
     color: white;
 }
+/* [의료정보변경 팝업 2026-07-31 요청] 취소 버튼 = 확인(btnCol02)과 동일한 파랑 + 버튼 사이 간격 조금.
+   회원가입 3단계(login.jsp)의 취소/다음 처리와 같은 규칙. 팝업이 main.jsp·top.jsp·userSetting.jsp 에
+   복제돼 있어 여기(공통 CSS) 한 곳에서 처리한다. */
+.infoChangePopup .btnArea.bottom { gap: calc(2.4 * var(--vwu, 1vw)); padding-left: calc(3 * var(--vwu, 1vw)); }  /* 취소 버튼 살짝 우측으로(좌측 여백) */
+.infoChangePopup .btnArea.bottom .btn.btnCol01 { background: #218ecb; color: #fff; }
