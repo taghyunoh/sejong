@@ -2495,28 +2495,53 @@
   /* [2026-07-31 기획] 시간대별 혈당 + 식사·운동 마커 그래프 + 하단 식사/운동 2박스.
      환자 앱(patient_main.jsp loadDayChart)과 같은 원천·같은 표현.
      날짜 = 조회기간 종료일(#endDate). 조회 3건은 한 번에 받아 그래프와 두 박스가 같은 자료를 쓴다. */
-  window.aiDayRender = function(){
+  /* ★차트 영역이 '실제로 보일 때'까지 기다렸다 그린다(2026-07-31 — 보였다 안 보였다 하던 원인).
+     탭 전환 애니메이션/렌더 시점이 기기·상황마다 달라 고정 지연(setTimeout)으로는 폭이 0인 채로
+     그려지는 경우가 생겼다. 폭이 잡힐 때까지 50ms 간격으로 확인(최대 2초)한 뒤 실행한다. */
+  function _whenVisible(dom, cb, tries){
+    tries = tries || 0;
+    if((dom.clientWidth > 0 && dom.offsetParent !== null) || tries > 40){ cb(); return; }
+    setTimeout(function(){ _whenVisible(dom, cb, tries + 1); }, 50);
+  }
+  /* ★중복 실행 방지(2026-07-31 '불안하게 뜨네요') — 탭 클릭 핸들러와 감시 안전망이 겹쳐 조회가 두 번 돌면
+     그리는 도중 다시 그려져 깜빡이거나 빈 화면이 스쳤다. 진행 중이면 무시하고, 같은 날짜는 다시 그리지 않는다. */
+  var _aiBusy = false, _aiDrawnKey = '';
+  window.aiDayRender = function(force){
     var dom = document.getElementById('aiDayChart');
-    if(!dom || typeof echarts === 'undefined') return;
-    var dateKey = ($("#end_date").val() || "").substring(0,10);        // 'YYYY-MM-DD' (조회기간 종료일)
+    if(!dom){ console.warn('[AI분석] 차트 영역 없음'); return; }
+    if(typeof echarts === 'undefined'){ dom.innerHTML = '<div class="ai-box" style="color:#d9534f">차트 라이브러리(echarts)를 불러오지 못했습니다.</div>'; return; }
+    if(_aiBusy) return;
+    var _key = ($("#end_date").val() || "").substring(0,10);
+    if(!force && _key && _key === _aiDrawnKey && dom.querySelector('canvas')) return;   // 이미 같은 날짜로 그려져 있음
+    _aiBusy = true;
+    dom.innerHTML = '<div class="ai-box">불러오는 중…</div>';   // 실행 여부를 화면에서 바로 확인(2026-07-31 진단)
+    var dateKey = _key;                                          // 'YYYY-MM-DD' (조회기간 종료일)
     var uid = "${sessionScope['t_user_uuid']}";                        // 선택 환자 UUID(다른 조회와 동일 원천)
-    if(!dateKey || !uid){ dom.innerHTML = '<div class="ai-box">조회 기간을 먼저 선택하세요.</div>'; return; }
+    if(!dateKey || !uid){ _aiBusy = false; dom.innerHTML = '<div class="ai-box">조회 기간/환자 정보가 없습니다. (기간 '+(dateKey||'-')+' / 환자 '+(uid?'있음':'없음')+')</div>'; return; }
     $("#aiDayTitle").text(dateKey + " 시간대별 혈당 추이");
     $(".aiDayTxt").text(dateKey);
     var dc = dateKey.replace(/-/g,'');                                 // 'YYYYMMDD'
     var prev = echarts.getInstanceByDom(dom); if(prev) prev.dispose();
 
+    /* ★조회 3건은 서로 독립 처리한다(2026-07-31) — 종전엔 $.when 으로 묶어, 식사/운동 조회가 하나라도
+       실패하면 done 이 실행되지 않아 <혈당 그래프까지 통째로 비어> 보였다(의사 화면에서 발생).
+       실패한 건은 빈 결과로 바꿔 이어가므로, 혈당만 있어도 그래프는 그려진다. */
+    var _soft = function(req){ return req.then(null, function(){ return $.Deferred().resolve(null).promise(); }); };
     $.when(
-      $.ajax({ url:CommonUtil.getContextPath()+"/getBloodChartData.do", type:"post",
-        data:JSON.stringify({ end:dateKey, userId:uid }), contentType:"application/json", dataType:"json" }),
-      $.ajax({ url:CommonUtil.getContextPath()+"/getFoodInfo.do", type:"post",
-        data:JSON.stringify({ userUuid:uid, eatDate:dc }), contentType:"application/json", dataType:"json" }),
-      $.ajax({ url:CommonUtil.getContextPath()+"/getExerInfo.do", type:"post",
-        data:JSON.stringify({ userUuid:uid, exerDate:dc }), contentType:"application/json", dataType:"json" })
+      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getBloodChartData.do", type:"post",
+        data:JSON.stringify({ end:dateKey, userId:uid }), contentType:"application/json", dataType:"json" })),
+      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getFoodInfo.do", type:"post",
+        data:JSON.stringify({ userUuid:uid, eatDate:dc }), contentType:"application/json", dataType:"json" })),
+      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getExerInfo.do", type:"post",
+        data:JSON.stringify({ userUuid:uid, exerDate:dc }), contentType:"application/json", dataType:"json" }))
     ).done(function(bRes, fRes, eRes){
-      var rows     = Array.isArray(bRes[0]) ? bRes[0] : [];
-      var foodRows = (fRes[0]&&fRes[0].Data) ? fRes[0].Data : [];
-      var exerRows = (eRes[0]&&eRes[0].Data) ? eRes[0].Data : [];
+      // 성공 시 [data, status, xhr] 배열 / 실패로 대체된 건 null
+      var _d = function(r){ return (r && r.length !== undefined && r[1] !== undefined) ? r[0] : r; };
+      var b = _d(bRes), f = _d(fRes), e = _d(eRes);
+      var rows     = Array.isArray(b) ? b : (b && b.Data ? b.Data : []);
+      var foodRows = (f && f.Data) ? f.Data : [];
+      var exerRows = (e && e.Data) ? e.Data : [];
+      console.log('[AI분석]', dateKey, '혈당', rows.length, '식사', foodRows.length, '운동', exerRows.length);
 
       // 시간(HH)별 혈당 평균
       var buckets = {};
@@ -2563,11 +2588,16 @@
       }));
 
       if(!rows.length && !foodRows.length && !exerRows.length){
+        _aiBusy = false; _aiDrawnKey = '';
         dom.innerHTML = '<div class="ai-box">'+dateKey+' 데이터 없음</div>';
         return;
       }
       dom.innerHTML = '';
       var chart = echarts.init(dom);
+      _aiBusy = false; _aiDrawnKey = dateKey;   // 그리기 완료 — 같은 날짜면 재조회하지 않는다
+      // 영역이 보인 뒤에 그리지만, 레이아웃이 늦게 확정되는 경우까지 대비해 몇 차례 더 크기를 맞춘다
+      [0, 120, 350, 800].forEach(function(ms){ setTimeout(function(){ try{ chart.resize(); }catch(e){} }, ms); });
+      $(window).off('resize.aiDay').on('resize.aiDay', function(){ try{ chart.resize(); }catch(e){} });
       chart.setOption({
         tooltip:{ trigger:'axis', formatter:function(params){
           if(!params||!params.length) return '';
@@ -2592,11 +2622,33 @@
         ]
       });
     }).fail(function(xhr){
-      dom.innerHTML = '<div class="ai-box" style="color:#d9534f">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+')</div>';
+      _aiBusy = false; _aiDrawnKey = '';
+      // 3건 중 하나라도 실패하면 done 이 안 돌아 그래프가 빈 채로 남는다 → 원인을 화면·콘솔 양쪽에 남김
+      console.error('[AI분석] 조회 실패', xhr && xhr.status, xhr && xhr.responseText);
+      dom.innerHTML = '<div class="ai-box" style="color:#d9534f">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+') — 콘솔 로그를 확인하세요.</div>';
     });
   };
   // AI 분석 탭 클릭 시 최신 값으로 해석·그래프 갱신
-  $(document).on('click', '#tab5', function(){ setTimeout(function(){ window.aiRender(); window.aiDayRender(); }, 0); });
+  //   ★탭 전환(다른 스크립트가 stab-content 를 보이게 함)이 끝난 뒤 그려야 차트 크기가 0이 되지 않는다(2026-07-31)
+  // AI 분석 탭 진입 감지 — id(#tab5) / 링크(a[href="#sub-tab5"]) 어느 쪽으로 걸려도 잡히게(2026-07-31)
+  $(document).on('click', '#tab5, a[href="#sub-tab5"]', function(){
+    setTimeout(function(){
+      window.aiRender();
+      var dom = document.getElementById('aiDayChart');
+      if(dom) _whenVisible(dom, window.aiDayRender);   // 고정 지연 대신 '보일 때까지' 기다렸다 그린다
+    }, 0);
+  });
+  // 안전망 — 클릭 이벤트를 못 잡는 구조여도 탭이 활성화되면 그린다(0.7초 간격 감시).
+  //   aiDayRender 자체가 '진행 중 무시 / 같은 날짜 재조회 안 함' 이라 중복 조회는 일어나지 않는다.
+  setInterval(function(){
+    var tabEl = document.getElementById('sub-tab5');
+    if(tabEl && tabEl.className.indexOf('active') >= 0 && tabEl.offsetParent !== null){
+      window.aiRender();
+      window.aiDayRender();
+    }
+  }, 700);
+  // 기간(종료일)이 바뀌면 다음 진입 때 새로 그리도록 캐시 해제
+  $(document).on('change', '#end_date, #start_date', function(){ _aiDrawnKey = ''; });
 })();
 </script>
 <style>
