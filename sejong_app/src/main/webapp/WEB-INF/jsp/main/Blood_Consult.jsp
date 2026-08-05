@@ -504,11 +504,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    인라인 `margin-top:40px` 으로 그걸 각자 상쇄한다. 챗봇 블록만 상쇄가 없어 위쪽 약 35px 이
    position:fixed 헤더(높이 12.04vwu ≒ 47px) 밑에 깔려 잘렸다. 스크롤과는 무관한 문제다.
    → 같은 방식으로 이 블록에도 상단 여백을 되돌려 준다.
-   [2026-08-05 2차] 60px 은 헤더 아래가 너무 벌어져 45px 로 좁힘(헤더 밑 약 10px). */
-.chat-overlay.on{ margin-top: 45px; }
-/* 아래쪽도 하단 메뉴에 더 붙인다 — .main-content 의 padding-bottom(20px)이 챗봇 화면에서는
-   빈 띠로만 보여서, 열려 있는 동안만 줄인다. */
-.main-content.chat-on{ padding-bottom: 6px !important; }
+   [2026-08-05 3차] 챗봇 블록에 margin 을 더해 '위치'만 맞추면, 본문 상자 자체는 여전히 60px 만큼
+   화면 아래로 삐져나간다. PC 프레임은 .wrap 이 overflow:hidden 인 고정 높이라 티가 안 났지만,
+   모바일에서는 그 60px 이 화면 밖으로 나가 대화영역이 안에서 스크롤되지 않고 아래로 계속 흘렀다
+   ('새 답변이 계속 밑으로 가서 끌어올려야 한다' — PC 는 되고 모바일만 안 되던 이유).
+   → 챗봇이 열려 있는 동안에는 -60px 자체를 무효화하고, 고정 헤더 높이(12.04vwu)만큼만 위 여백을 준다. */
+.main-content.chat-on{
+  margin-top: 0 !important;
+  padding-top: calc(12.04 * var(--vwu, 1vw) + 10px) !important;   /* 고정 헤더 높이 + 여백 10px */
+  padding-bottom: 6px !important;                                  /* 아래는 하단 메뉴에 바짝 */
+  /* 챗봇 블록이 남는 높이를 받으려면 부모가 확실히 'flex 세로 배치'여야 한다.
+     (다른 규칙에 밀려 block 이 되면 블록이 내용 높이로만 잡혀 아래가 텅 빈다 — 2026-08-05 실제 발생) */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+/* 위 보정으로 블록 자체가 제자리에 오므로 챗봇 블록의 추가 여백은 필요 없다 */
+.chat-overlay.on{ margin-top: 0; }
+/* 모바일 전용 — 주소창이 접혔다 펴지면 100%(=레이아웃 뷰포트)가 실제 보이는 높이보다 커서
+   아래가 화면 밖으로 밀린다. 챗봇이 열린 동안만 '실제 보이는 높이'(dvh)로 고정한다. */
+@media (max-width: 599px){
+  @supports (height: 100dvh){
+    .wrap.chat-open{ height: 100dvh; min-height: 0; }
+  }
+}
 /* 챗봇만 남으면 아래가 짧아 회색 배경이 드러난다 → 그 영역까지 흰색으로 이어 붙여 카드처럼 보이게 (2026-07-31) */
 .contents.chat-on{ background:#fff; }
 .chat-overlay.on{ display:flex; }
@@ -525,8 +545,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    본문은 이미 '남는 높이를 차지하는 flex 컬럼'이고, PC·모바일 모두 그 안에서만 스크롤된다.
    → 챗봇 블록이 그 남는 높이를 그대로 받고(flex:1), 대화영역이 다시 남는 높이를 채우게(flex:1) 하면
      기기·프레임과 무관하게 항상 맞는다. 종전의 실측(_chatFill)은 프레임마다 어긋나 폐기. */
-.chat-overlay.on{ flex:1 1 auto; min-height:0; }
-.chat-overlay .qa-messages{ flex:1 1 auto; height:auto; min-height:120px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+   ※ flex-basis 는 반드시 0 (`flex:1 1 0`). auto 로 두면 기준 크기가 '내용 높이'라
+     대화가 길어질수록 영역이 같이 커져서, 안에서 스크롤되지 않고 입력창·질문칩이 화면 밖으로
+     밀려난다(2026-08-05 '새 답변이 계속 밑으로 가서 끌어올려야 한다'는 지적의 원인).
+     0 으로 두면 영역 크기가 '남는 높이'로 고정되고 내용은 그 안에서만 스크롤된다. */
+.chat-overlay.on{ flex:1 1 0; min-height:0; }
+.chat-overlay .qa-messages{ flex:1 1 0; height:auto; min-height:120px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .chat-overlay .chat-bottom{ flex:0 0 auto; }
 .chat-overlay .qa-trash{ background:#eef2f7 !important; color:#5b6b80 !important; }
 .chat-overlay .qa-input, .chat-overlay .qa-quick{ flex:0 0 auto; }
@@ -553,6 +577,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .qa-quick { display:flex; flex-wrap:wrap; gap:6px; }
 .qbtn { font-size:13px; padding:3px 10px; border-radius:10px; cursor:pointer; border:1px solid #ccc; background:#fff; color:#555; }
+/* [2026-08-05] 방금 누른 질문칩 — 다시 눌러도 동작하지 않는다는 것을 눈으로 알 수 있게 흐리게 */
+.qa-quick .qbtn.used { background:#f1f4f8; border-color:#dde3ea; color:#9aa6b4; cursor:default; }
 .chat-user { position:relative; background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
 .chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
 .chat-del  { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
@@ -778,12 +804,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	       "아래 질문 버튼이 너무 많습니다 / 위 6개로 처리하는게 좋을 듯 합니다" 요청 반영.
 	       나머지 지표(TIR·TAR·TBR·CV·GMI·발생구간)는 직접 입력하면 _chatResponse 가 그대로 답한다. --%>
 	  <div class="qa-quick">
-	    <button type="button" class="qbtn" onclick="_quickQ('주간 평균혈당 어때요?')">주간평균혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('공복 평균혈당 어때요?')">공복평균혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('주간 최고혈당 알려줘')">주간 최고혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('주간 최저혈당 알려줘')">주간 최저혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('음식 추천해줘')">음식추천</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('운동 추천해줘')">운동추천</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 평균혈당 어때요?', this)">주간평균혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('공복 평균혈당 어때요?', this)">공복평균혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 최고혈당 알려줘', this)">주간 최고혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 최저혈당 알려줘', this)">주간 최저혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('음식 추천해줘', this)">음식추천</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('운동 추천해줘', this)">운동추천</button>
 	  </div>
 	  </div><%-- /.chat-bottom --%>
 	</div>
@@ -1154,7 +1180,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), delay); };
   }
   // ===== 혈당 Q&A 채팅 (sejong-web patient_main 포팅) =====
-  function _quickQ(q){ document.getElementById('chatInput').value = q; sendChat(); }
+  /* [2026-08-05] 같은 질문칩을 연달아 누르면 같은 답이 계속 쌓인다 → 방금 누른 칩은 다시 눌러도 무시한다.
+     (다른 질문을 한 번 하면 그 칩은 다시 사용할 수 있다.)
+     답변을 기다리는 동안(_chatBusy)에도 중복 전송을 막는다. */
+  var _lastQuickQ = '', _chatBusy = false;
+  function _quickQ(q, el){
+    if(_chatBusy) return;
+    if(q === _lastQuickQ) return;                  // 방금 누른 그 칩 → 아무 동작 없음
+    _lastQuickQ = q;
+    var btn = el || (window.event && window.event.currentTarget);
+    try{
+      document.querySelectorAll('.qa-quick .qbtn.used').forEach(function(b){ b.classList.remove('used'); });
+      if(btn && btn.classList) btn.classList.add('used');
+    }catch(e){}
+    document.getElementById('chatInput').value = q;
+    sendChat();
+  }
 
   function _addMsg(txt, isUser, extraCls){
     var box = document.getElementById('chatMessages');
@@ -1174,28 +1215,46 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       msg.innerHTML = '<span class="chat-text">' + txt + '</span>';
     }
     box.appendChild(msg);
+    _chatScrollToEnd();
+  }
+  /* [2026-08-05] 새 메시지가 추가되면 항상 맨 아래(최신)로 — 이전 대화가 위로 올라간다.
+     appendChild 직후 한 번만 하면 늦게 그려지는 이모지·줄바꿈 때문에 몇 px 모자라게 멈춘다.
+     다음 프레임에 한 번 더 맞춘다. */
+  function _chatScrollToEnd(){
+    var box = document.getElementById('chatMessages');
+    if(!box) return;
     box.scrollTop = box.scrollHeight;
+    if(window.requestAnimationFrame){
+      requestAnimationFrame(function(){ box.scrollTop = box.scrollHeight; });
+    }
   }
 
   // 대화 전체 삭제 후 인사말만 다시 표시
   function _clearChat(){
     if (!confirm('대화 내용을 모두 지울까요?')) return;
     document.getElementById('chatMessages').innerHTML = '';
+    // [2026-08-05] 대화를 비웠으면 질문칩도 처음 상태로 (다시 눌러 물어볼 수 있게)
+    _lastQuickQ = ''; _chatBusy = false;
+    try{ document.querySelectorAll('.qa-quick .qbtn.used').forEach(function(b){ b.classList.remove('used'); }); }catch(e){}
     _addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
   }
 
   // 동일 질문 캐시: 같은 질문+같은 혈당 컨텍스트면 서버 재호출 없이 이전 답 재사용
   var _chatCache = {};
   function sendChat(){
+    if (_chatBusy) return;                 // [2026-08-05] 답변 대기 중 중복 전송 차단
     var input = document.getElementById('chatInput');
     var q = (input.value || '').trim(); if(!q) return;
     input.value = '';
+    // 직접 입력으로 다른 질문을 하면 질문칩 잠금 해제(같은 칩을 다시 쓸 수 있게)
+    if (q !== _lastQuickQ) _lastQuickQ = '';
     _addMsg(q, true);
 
     // ① 로컬 키워드/데이터 즉답 (blood_qa.js 매칭 + 화면 지표 기반)
     var local = _chatResponse(q);
     if (local != null) {
-      setTimeout(function(){ _addMsg(local, false); }, 280);
+      _chatBusy = true;
+      setTimeout(function(){ _addMsg(local, false); _chatBusy = false; }, 280);
       return;
     }
 
@@ -1203,9 +1262,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _ctxText  = _chatCtxText();
     var _cacheKey = q.toLowerCase() + '|' + _ctxText;
     if (_chatCache[_cacheKey]) {
-      setTimeout(function(){ _addMsg(_chatCache[_cacheKey], false); }, 200);
+      _chatBusy = true;
+      setTimeout(function(){ _addMsg(_chatCache[_cacheKey], false); _chatBusy = false; }, 200);
       return;
     }
+    _chatBusy = true;
 
     // ③ 매칭 실패 → 서버 LLM(Gemini) fallback. "입력 중…" 표시 후 응답으로 교체
     var box = document.getElementById('chatMessages');
@@ -1213,7 +1274,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     typing.className = 'chat-bot';
     typing.innerHTML = '<span class="chat-text">…</span>';
     box.appendChild(typing);
-    box.scrollTop = box.scrollHeight;
+    _chatScrollToEnd();
 
     $.ajax({
       url: CommonUtil.getContextPath() + '/blood/chatAsk.do',
@@ -1230,10 +1291,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         } else {
           _addMsg(_chatFallbackMsg(), false);
         }
+        _chatBusy = false;
       },
       error: function(){
         typing.remove();
         _addMsg(_chatFallbackMsg(), false);
+        _chatBusy = false;
       }
     });
   }
@@ -1496,7 +1559,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
      브라우저가 남는 높이를 정확히 배분한다 — 기기·프레임별 실측 오차가 원천적으로 없다.
      (실측 방식은 프레임마다 값이 어긋나 제목줄 잘림·빈 띠를 반복적으로 만들었다.)
      함수 자체는 남겨 둔다 — 예전 호출 지점이 있어도 안전하게 무시되도록. */
-  function _chatFill(){ /* no-op — CSS flex 가 처리 */ }
+  /* [2026-08-05] 안전망 — 챗봇 블록 높이를 본문 컨테이너 '안쪽 높이'에 한 번만 맞춘다.
+     CSS(flex:1 1 0)만으로도 채워지지만, 이 화면은 .main-content 에 규칙이 여러 겹 얹혀 있어
+     부모가 flex 로 안 잡히는 경우가 있었다(블록이 내용 높이로만 잡혀 아래가 텅 빔).
+     반복 계산 없이 clientHeight − 패딩 한 번만 쓰므로 기기·프레임과 무관하게 안전하다. */
+  function _chatFill(){
+    var ov = document.getElementById('chatOverlay');
+    var mc = document.querySelector('.main-content');
+    if(!ov || !mc || !ov.classList.contains('on')) return;
+    var cs = getComputedStyle(mc);
+    var h = mc.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+    if(h > 160) ov.style.height = h + 'px';
+  }
   function _chatLock(){ /* no-op — 넘치지 않으므로 잠글 필요가 없다 */ }
   function _chatUnlock(){
     document.documentElement.classList.remove('chat-lock');
@@ -1507,6 +1581,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   window.addEventListener('resize', function(){
     var box = document.getElementById('chatMessages');
     if(box){ box.style.height = ''; box.style.boxSizing = ''; }   // 예전 인라인 높이 잔재 제거
+    var ov = document.getElementById('chatOverlay');
+    if(ov) ov.style.height = '';                                  // 다시 재기 전에 초기화
+    setTimeout(_chatFill, 0);
   });
   function openChat(){
     var ov = document.getElementById('chatOverlay');
@@ -1518,11 +1595,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     });
     if(ov) ov.classList.add('on');
     try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.add('chat-on'); }catch(e){}
-    // [2026-08-05] 이 화면의 실제 컨테이너는 .main-content — 열려 있는 동안 아래 여백을 줄인다
+    // [2026-08-05] 이 화면의 실제 컨테이너는 .main-content — 열려 있는 동안 위/아래 여백을 맞춘다
     try{ var mcO=document.querySelector('.main-content'); if(mcO) mcO.classList.add('chat-on'); }catch(e){}
-    // [2026-08-05] 열 때 스크롤 위치만 맨 위로. 높이 배분은 CSS flex 가 처리한다(실측 없음).
+    // 모바일에서 주소창 때문에 아래가 화면 밖으로 밀리는 것 방지 (CSS 에서 dvh 로 고정)
+    try{ var wpO=document.querySelector('.wrap'); if(wpO) wpO.classList.add('chat-open'); }catch(e){}
+    // [2026-08-05] 열 때 스크롤 위치를 맨 위로 + 블록 높이를 컨테이너에 맞춘다(CSS flex 보조).
     window.scrollTo(0,0);
     var sc0 = document.querySelector('.main-content'); if(sc0) sc0.scrollTop = 0;
+    setTimeout(_chatFill, 0); setTimeout(_chatFill, 320);
+    try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(_chatFill); }catch(e){}
     _chatIntroAnalysis();   // 지표가 이미 준비돼 있으면 인사 밑에 분석 표시(아직이면 wkAi 도착 훅으로 1회)
     // [2026-07-31] TIR 이 늦게 와서 분석에서 빠지는 것 방지 — 3종이 다 모일 때까지 기다리되,
     //   4초가 지나면 그때까지 온 지표만이라도 게시(전부 실패 시 빈 게시는 안 함)
@@ -1531,9 +1612,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   function closeChat(){
     var ov = document.getElementById('chatOverlay');
     _chatUnlock();
-    if(ov) ov.classList.remove('on');
+    if(ov){ ov.classList.remove('on'); ov.style.height = ''; }
     try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.remove('chat-on'); }catch(e){}
     try{ var mcC=document.querySelector('.main-content'); if(mcC) mcC.classList.remove('chat-on'); }catch(e){}
+    try{ var wpC=document.querySelector('.wrap'); if(wpC) wpC.classList.remove('chat-open'); }catch(e){}
     // 감춰 둔 카드 원복(메인에서 온 경우엔 그대로 뒤로 가므로 복원해도 무해)
     _chatSiblings(ov).forEach(function(el){
       if(el.getAttribute('data-chat-hidden') !== '1') return;
