@@ -252,11 +252,16 @@
 }
 
 /* [2026-07-31 기획] 주간 혈당관리지표 — 앞장(연속혈당 상세)과 동일한 표현식 목록 + AI 분석 텍스트 */
-.wk-metrics { margin-top: 8px; }
-.wk-metrics .wk-item { padding: 9px 2px; border-bottom: 1px solid #eef2f7; }
-.wk-metrics .wk-item .lb { margin: 0; font-size: 13px; font-weight: 700; color: #2d303f; }
-.wk-metrics .wk-item .lb .hint { color: #8a98a8; font-weight: 500; }
-.wk-metrics .wk-item .v { margin-top: 3px; font-size: 24px; font-weight: 800; color: #2d303f; }
+/* [2026-08-05] 연속혈당 상세 지표(FAHR_00 .p2list)와 같은 배치로 통일 —
+   라벨(권장 기준) 왼쪽 / 값 오른쪽 한 줄. 종전엔 값을 라벨 아래에 쌓아 오른쪽이 통째로 비었다. */
+.wk-metrics { margin-top: 6px; }
+/* [2026-08-05] 구분선이 안 보이던 이유 = 이 패널 배경(.blood_list #eef4f8)과 선 색(#eef2f7)이 사실상 같은 색.
+   연속혈당 상세 지표(.p2list)처럼 보이도록 선을 또렷한 색으로 바꾸고 위아래 간격을 조금 좁힌다. */
+.wk-metrics .wk-item { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 7px 2px; border-bottom: 1px solid #d3dfe9; }
+.wk-metrics .wk-item .lb { margin: 0; font-size: 13px; font-weight: 700; color: #2d303f; line-height: 1.3; }
+.wk-metrics .wk-item .lb .hint { display: block; font-size: 12px; color: #8a98a8; font-weight: 500; }
+.wk-metrics .wk-item .v { flex: 0 0 auto; margin-top: 0; font-size: 24px; font-weight: 800; color: #2d303f; white-space: nowrap; }
 .wk-ai { margin-top: 10px; }
 /* 파란 섹션 머리띠(기획 모양) + 점선 분석 박스 + 코칭 본문 */
 .wk-sechead { margin: 12px 0 8px; padding: 6px 10px; background: #8ca6db; color: #fff;
@@ -492,25 +497,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    fixed + height(100%/100dvh/좌표)는 기기·프레임마다 실제 높이가 달라 하단이 잘리거나 빈 띠가 생겼다.
    연속혈당 1↔2페이지 전환과 같은 방식으로, 챗봇을 열면 이 화면의 다른 카드만 감추고 챗봇 블록을 보인다.
    → 하단 메뉴(footerNav)는 원래 문서 흐름대로 그대로 보이고, 높이 계산이 아예 필요 없다. */
-.chat-overlay{ display:none; background:#fff; flex-direction:column; padding:6px 12px 14px; }
+.chat-overlay{ display:none; background:#fff; flex-direction:column; padding:6px 12px 8px; }
 .chat-overlay.on{ display:flex; }   /* (기존 .on 규칙과 동일 — 화면 전환 방식에서도 flex 유지) */
+/* ★[2026-08-05] 제목줄('🤖 AI 챗봇')이 '고장난 것처럼 일부만 보이던' 진짜 원인 —
+   이 화면은 위쪽 .main-content 에 `margin-top:-60px` 이 걸려 있고(33행), 본문 첫 카드는
+   인라인 `margin-top:40px` 으로 그걸 각자 상쇄한다. 챗봇 블록만 상쇄가 없어 위쪽 약 35px 이
+   position:fixed 헤더(높이 12.04vwu ≒ 47px) 밑에 깔려 잘렸다. 스크롤과는 무관한 문제다.
+   → 같은 방식으로 이 블록에도 상단 여백을 되돌려 준다.
+   [2026-08-05 2차] 60px 은 헤더 아래가 너무 벌어져 45px 로 좁힘(헤더 밑 약 10px). */
+.chat-overlay.on{ margin-top: 45px; }
+/* 아래쪽도 하단 메뉴에 더 붙인다 — .main-content 의 padding-bottom(20px)이 챗봇 화면에서는
+   빈 띠로만 보여서, 열려 있는 동안만 줄인다. */
+.main-content.chat-on{ padding-bottom: 6px !important; }
 /* 챗봇만 남으면 아래가 짧아 회색 배경이 드러난다 → 그 영역까지 흰색으로 이어 붙여 카드처럼 보이게 (2026-07-31) */
 .contents.chat-on{ background:#fff; }
 .chat-overlay.on{ display:flex; }
-.chat-ovhead{ display:flex; align-items:center; gap:8px; padding:4px 2px 10px; border-bottom:1px solid #e3e9f2; margin-bottom:8px; }
+/* 제목줄은 문서 흐름 그대로 둔다. (sticky 로 띄우면 대화 첫 말풍선 위를 덮어 겹쳐 보인다 — 2026-08-05 시도 후 철회) */
+.chat-ovhead{ display:flex; align-items:center; gap:8px; padding:4px 2px 8px; border-bottom:1px solid #e3e9f2; margin-bottom:8px;
+  background:#fff; }
 /* 휴대폰(좁은 폭)에서 제목이 길면 [전체 삭제]가 화면 밖으로 밀림 → 제목은 말줄임, 버튼은 고정(2026-07-31) */
 .chat-ovhead h5{ flex:1 1 auto; min-width:0; margin:0; font-size:16px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-ovhead .qa-clear{ flex:0 0 auto; white-space:nowrap; }
 .chat-back{ border:0; background:none; font-size:19px; color:#2b6fff; cursor:pointer; padding:2px 6px; }
-/* 내용(메시지)부는 남는 높이만 쓰고 필요하면 줄어든다(min-height:0 없으면 flex 자식이 안 줄어
-   입력창·질문칩이 화면 아래로 밀려 안 보임 — 2026-07-31 실제 발생). 하단(입력·칩)은 항상 고정 표시 */
-/* ★대화 영역 = 고정 200px (2026-07-31 최종 — '내용 줄이고 하단 많이 보이게')
-   vh·dvh·실측 계산은 기기마다 어긋나 폐기. 작은 폰에서도 [대화200+입력+칩 전부+하단메뉴]가 들어간다.
-   대화가 길어지면 이 안에서만 세로 스크롤된다. */
-.chat-overlay .qa-messages{ flex:0 0 auto; height:200px; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-  /* [2026-07-31] max-height 52vh 상한 제거 — 실기기에서 내용이 상한에 걸려 칩 아래 빈 띠가 생겼음.
-     flex(1 1 auto)+min-height:0 만으로 남는 높이를 정확히 채우고 하단(입력·칩 2줄)은 밀리지 않는다 */
+/* ★[2026-08-05 최종] 대화영역 높이를 JS 로 재지 않는다.
+   comm_blood.css 의 `.main-content{ display:flex; flex-direction:column; flex:1 }` 덕분에
+   본문은 이미 '남는 높이를 차지하는 flex 컬럼'이고, PC·모바일 모두 그 안에서만 스크롤된다.
+   → 챗봇 블록이 그 남는 높이를 그대로 받고(flex:1), 대화영역이 다시 남는 높이를 채우게(flex:1) 하면
+     기기·프레임과 무관하게 항상 맞는다. 종전의 실측(_chatFill)은 프레임마다 어긋나 폐기. */
+.chat-overlay.on{ flex:1 1 auto; min-height:0; }
+.chat-overlay .qa-messages{ flex:1 1 auto; height:auto; min-height:120px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.chat-overlay .chat-bottom{ flex:0 0 auto; }
 .chat-overlay .qa-trash{ background:#eef2f7 !important; color:#5b6b80 !important; }
 .chat-overlay .qa-input, .chat-overlay .qa-quick{ flex:0 0 auto; }
 /* ★질문 칩 = 줄바꿈으로 전부 표시(2026-07-31 최종)
@@ -598,7 +615,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		       값 채우기는 기존 스크립트 그대로(#gmi/#tir/#tar/#tbr/#cv) — 색·AI 분석은 하단 감시 스크립트(wkAi)가 처리.
 		       종전의 GMI/TIR 큰 패널과 별도 TAR/TBR/CV 카드는 이 목록으로 통합(중복 제거). --%>
 		  <div class="wk-metrics">
-		    <div class="wk-item"><p class="lb">GMI지수(%) <span class="hint">: 혈당 관리지표(참고사항)</span></p>
+		    <div class="wk-item"><p class="lb">GMI지수(%) <span class="hint">혈당 관리지표(참고사항)</span></p>
 		      <div class="v"><span id="gmi" data-value="-">-</span></div></div>
 		    <div class="wk-item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p>
 		      <div class="v"><span id="tir" data-value="-">-</span></div></div>
@@ -757,21 +774,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    <%-- 전체 삭제 — 헤더 우측은 모바일에서 잘려 안 보여 입력줄로 이동(2026-07-31, 아이콘만) --%>
 	    <button type="button" class="qa-send qa-trash" onclick="_clearChat();" title="대화 전체 삭제">🗑</button>
 	  </div>
+	  <%-- [2026-08-05 검토회의] 질문 칩 13개 → 6개.
+	       "아래 질문 버튼이 너무 많습니다 / 위 6개로 처리하는게 좋을 듯 합니다" 요청 반영.
+	       나머지 지표(TIR·TAR·TBR·CV·GMI·발생구간)는 직접 입력하면 _chatResponse 가 그대로 답한다. --%>
 	  <div class="qa-quick">
-	    <button type="button" class="qbtn" onclick="_quickQ('이번 주 혈당 어때요?')">이번주 혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('혈당 정상범위는?')">정상범위</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('공복혈당이란?')">공복혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('식후혈당이란?')">식후혈당</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 대처법은?')">저혈당 대처</button>
-	    <%-- [기획 7] 지표 빠른 질문 칩 추가 --%>
-	    <button type="button" class="qbtn" onclick="_quickQ('목표혈당 유지시간(TIR) 어때요?')">목표혈당 유지시간(TIR)</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('고혈당시간(TAR) 어때요?')">고혈당시간(TAR)</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('저혈당시간(TBR) 어때요?')">저혈당시간(TBR)</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('혈당변동성(CV) 어때요?')">혈당변동성(CV)</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('GMI 어때요?')">(혈당관리표시자)GMI</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('고혈당 구간 알려줘')">고혈당 구간</button>
-	    <button type="button" class="qbtn" onclick="_quickQ('저혈당 구간 알려줘')">저혈당 구간</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 평균혈당 어때요?')">주간평균혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('공복 평균혈당 어때요?')">공복평균혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 최고혈당 알려줘')">주간 최고혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('주간 최저혈당 알려줘')">주간 최저혈당</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('음식 추천해줘')">음식추천</button>
+	    <button type="button" class="qbtn" onclick="_quickQ('운동 추천해줘')">운동추천</button>
 	  </div>
 	  </div><%-- /.chat-bottom --%>
 	</div>
@@ -1065,6 +1077,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       }
       showBloodData(formData.start,formData.end) ;
       showBloodData_max(formData.start,formData.end) ;
+      _loadWeekMinMax(formData.start, formData.end) ;   // [2026-08-05] 챗봇 '주간 최고/최저혈당' 답변용
     };
 
     // CSRF 메타에서 읽기 (Spring Security 사용 시)
@@ -1105,6 +1118,34 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       .then(handleResponse)
       .catch(err => { console.error("REQ FAIL:", err); showLoading(false); fallback(); });
     }
+  }
+
+  /* [2026-08-05 검토회의] 챗봇 '주간 최고혈당/최저혈당' 답변용 원자료.
+     종전에는 최고·최저를 물으면 답을 못 만들어 '저혈당 대처법' 같은 엉뚱한 지식답변이나
+     폴백 안내가 나갔다(회의자료 슬라이드 21·22 '?'). 조회 범위가 바뀔 때마다 한 번 받아 둔다.
+     원천 = 홈에서도 쓰는 /getBloodChartData.do (범위 내 측정값 목록). */
+  var _wkMinMax = null;   // { max:{v,at}, min:{v,at}, from, to } — 아직 못 받았으면 null
+  function _loadWeekMinMax(startYMD, endYMD){
+    const uid = (userId && userId !== "null") ? userId : "";
+    if(!uid) return;
+    CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do", "POST",
+      { userId: uid, start: startYMD + "T00:00:00", end: endYMD + "T23:59:59" },
+      function(list){
+        list = Array.isArray(list) ? list : [];
+        let mx = null, mn = null;
+        list.forEach(function(r){
+          const v = parseInt(r.UPT, 10);
+          if(isNaN(v) || v <= 0) return;
+          const tm = (typeof r.DTM === 'number') ? r.DTM : new Date(String(r.DTM).replace('Z','')).getTime();
+          const at = isNaN(tm) ? '' : _fmtDtm(new Date(tm));
+          if(!mx || v > mx.v) mx = { v:v, at:at };
+          if(!mn || v < mn.v) mn = { v:v, at:at };
+        });
+        _wkMinMax = (mx && mn) ? { max:mx, min:mn, from:startYMD, to:endYMD } : null;
+      });
+  }
+  function _fmtDtm(d){
+    return (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
   }
 
   // ===== 디바운스 유틸 =====
@@ -1207,6 +1248,52 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return isFinite(n) ? n : null;
   }
 
+  /* [2026-08-05] 화면의 TOP3 그리드(음식/운동)에서 앞 N행을 읽어 [순위,이름,양,변동폭] 배열로 반환.
+     '자료없음' 한 칸짜리 행은 건너뛴다. */
+  function _topRows(gridId, n){
+    var g = document.getElementById(gridId);
+    if(!g) return [];
+    var out = [];
+    var rows = g.querySelectorAll('.grid-row');
+    for(var i=0; i<rows.length && out.length<n; i++){
+      var c = rows[i].querySelectorAll('span');
+      if(c.length < 4) continue;                       // '자료없음' 행
+      var vals = [];
+      for(var j=0; j<4; j++) vals.push((c[j].textContent||'').trim());
+      if(!vals[1] || vals[1] === '-') continue;
+      out.push(vals);
+    }
+    return out;
+  }
+
+  /* [2026-08-05 검토회의 슬라이드 19] '현재 내 혈당 상태' 한 덩어리 요약.
+     화면에 이미 계산된 지표 + 'AI 분석'·'생활습관 코칭' 문장을 그대로 재사용한다(별도 계산 없음).
+     지표가 하나도 없으면 null 을 반환해 호출부가 다른 처리를 하도록 한다. */
+  function _chatStatusSummary(){
+    var avg = _metricNum('avgUpt'), tir = _metricNum('tir'), tar = _metricNum('tar'),
+        tbr = _metricNum('tbr'), cv = _metricNum('cv');
+    if (avg == null && tir == null && tar == null && tbr == null) return null;
+
+    var L = [];
+    if (avg != null) L.push('• 주간 평균 <b>' + avg + ' mg/dL</b> — 권장 : 70~180');
+    if (tir != null) L.push('• TIR(목표유지) <b>' + tir + '%</b> — 권장 70% 이상 ' + (tir >= 70 ? '충족' : '<b style="color:#e67e22">미달</b>'));
+    if (tar != null) L.push('• TAR(고혈당) <b>' + tar + '%</b> — 권장 25% 미만 ' + (tar < 25 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+    if (tbr != null) L.push('• TBR(저혈당) <b>' + tbr + '%</b> — 권장 4% 미만 ' + (tbr < 4 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+    if (cv  != null) L.push('• CV(변동성) <b>' + cv + '%</b> — 권장 36% 이하 ' + (cv <= 36 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+
+    var head = (tir != null)
+      ? ('현재 혈당 상태는 ' + (tir >= 70 ? "<b style='color:#2e7d32'>‘정상’</b>" : "<b style='color:#e67e22'>‘관리 필요’</b>") + ' 입니다.')
+      : '현재 혈당 상태입니다.';
+
+    var coach = '';
+    var box = document.getElementById('wkCoach');
+    if (box && box.innerHTML && box.innerHTML.indexOf('불러오면') === -1) {
+      coach = '<br><b>AI 코칭</b><br>' + box.innerHTML;
+    }
+    return head + '<br>' + L.join('<br>') + coach
+         + '<br><small>※ 대한당뇨병학회 관리지표 기준 · 참고용이며 진단이 아닙니다.</small>';
+  }
+
   function _chatResponse(q){
     q = q.toLowerCase();
     var avg = _metricNum('avgUpt'), fasting = _metricNum('avgFastingBlood'), post = _metricNum('after2hBlood');
@@ -1216,25 +1303,54 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     // ── 데이터 의도 여부 (교과서 지식 질문 "정상범위는?" 등은 여기 안 걸리게) ──
     var _dataIntent = /(어때|어땠|어떤|어떻|얼마|몇|상태|관리|괜찮|높은가|낮은가|위험|내 |나의|우리|이번\s*주|주간)/.test(q);
 
+    /* ── [2026-08-05 검토회의] 최고/최저 혈당 ──
+       "최근 일주일간 최고 혈당은", "나의 최고혈당치는?", "최고 최저혈당은?" 처럼 물으면
+       종전에는 지식DB의 '고혈당/저혈당 대처법'이 걸리거나 폴백 안내가 나갔다(슬라이드 21·22 '?').
+       ※ 평균 질문보다 먼저 판정해야 한다 — "주간 최고혈당"에도 '주간'이 들어 있어 평균 규칙에 먼저 걸린다. */
+    if (/(최고|최대|가장\s*높|제일\s*높|최저|최소|가장\s*낮|제일\s*낮)/.test(q) && /(혈당|수치|값)/.test(q)) {
+      if (_wkMinMax == null) {
+        return '최고·최저 혈당을 계산할 측정값이 아직 없습니다.<br>혈당기(CGM) 측정값이 들어오면 알려드릴게요.';
+      }
+      var wantHi = /(최고|최대|가장\s*높|제일\s*높)/.test(q);
+      var wantLo = /(최저|최소|가장\s*낮|제일\s*낮)/.test(q);
+      var mx = _wkMinMax.max, mn = _wkMinMax.min;
+      var out = '조회기간(' + _wkMinMax.from + ' ~ ' + _wkMinMax.to + ') 기준입니다.<br>';
+      if (wantHi) {
+        out += '• 최고 혈당: <b>' + mx.v + ' mg/dL</b>' + (mx.at ? (' (' + mx.at + ')') : '')
+             + '<br>&nbsp;&nbsp;권장 : 180 mg/dL 미만 — ' + (mx.v < 180 ? '충족' : '<b style="color:#e67e22">초과</b>') + '<br>';
+      }
+      if (wantLo) {
+        out += '• 최저 혈당: <b>' + mn.v + ' mg/dL</b>' + (mn.at ? (' (' + mn.at + ')') : '')
+             + '<br>&nbsp;&nbsp;권장 : 70 mg/dL 이상 — ' + (mn.v >= 70 ? '충족' : '<b style="color:#e67e22">미달</b>') + '<br>';
+      }
+      return out + note;
+    }
+
     // ── 이번 주/평균 혈당 ── ('정상범위' 같은 지식 질문은 제외)
-    if (avg != null && _dataIntent && /(이번\s*주|주간|평균|한\s*주|일주일|최근|혈당\s*어때|혈당은|혈당이\s*높|혈당이\s*낮)/.test(q) && !/(정상\s*범위|범위는)/.test(q)) {
+    //   [2026-08-05] 평균값만 보여주지 말고 권장 수치를 함께 보여 달라는 요청(슬라이드 20) 반영.
+    //   ※ '공복 평균혈당 어때요?' 는 '평균'에 먼저 걸리면 안 되므로 공복·식후는 여기서 제외한다(각자 아래 분기).
+    if (avg != null && _dataIntent && /(이번\s*주|주간|평균|한\s*주|일주일|최근|혈당\s*어때|혈당은|혈당이\s*높|혈당이\s*낮)/.test(q)
+        && !/(정상\s*범위|범위는)/.test(q) && !/(공복|식후)/.test(q)) {
       var s = avg <= 140 ? '양호한 상태입니다 👍'
             : avg <= 180 ? '관리가 필요합니다.'
             : '<span style="color:#dc3545;">고혈당 주의</span>가 필요합니다.';
-      var extra = (tir != null) ? ('<br>목표범위 내 비율(TIR): <b>' + tir + '%</b>') : '';
-      return '주간 평균 혈당: <b>' + avg + ' mg/dL</b>' + extra + '<br>' + s + note;
+      var extra = (tir != null)
+        ? ('<br>목표범위 내 비율(TIR): <b>' + tir + '%</b> — 권장 : 70% 이상 '
+           + (tir >= 70 ? '충족' : '<b style="color:#e67e22">미달</b>')) : '';
+      return '주간 평균 혈당: <b>' + avg + ' mg/dL</b><br>권장 : 목표범위 <b>70~180 mg/dL</b>'
+           + extra + '<br>' + s + note;
     }
 
     // ── 공복 (데이터 의도일 때만; "공복혈당이란?" 은 blood_qa.js 로) ──
     if (fasting != null && _dataIntent && /공복/.test(q)) {
       var ft = fasting < 100 ? '정상' : fasting < 126 ? '공복혈당장애' : '<span style="color:#dc3545;">높음</span>';
-      return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')' + note;
+      return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')<br>권장 : <b>80~130 mg/dL</b>' + note;
     }
 
     // ── 식후 (데이터 의도일 때만) ──
     if (post != null && _dataIntent && /(식후|식사\s*후|식사후|밥\s*먹고|먹은\s*후)/.test(q)) {
       var pt = post < 140 ? '정상' : post <= 180 ? '약간 높음' : '<span style="color:#dc3545;">고혈당</span>';
-      return '식후 평균 혈당: <b>' + post + ' mg/dL</b> (' + pt + ')' + note;
+      return '식후 평균 혈당: <b>' + post + ' mg/dL</b> (' + pt + ')<br>권장 : <b>180 mg/dL 미만</b>' + note;
     }
 
     // ── TIR / TAR / TBR / GMI ──
@@ -1263,6 +1379,45 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       var lz = (document.getElementById('avgLow_name') || {}).textContent || '';
       return lz.trim() ? ('저혈당 발생 구간(시간대): <b>' + lz + '</b>' + note)
                        : '이번 주 저혈당 발생 구간 정보가 아직 없습니다.';
+    }
+
+    /* ── [2026-08-05 검토회의] 음식추천 / 운동추천 칩 ──
+       화면에 이미 계산돼 있는 '주의할음식TOP3' · '추천운동TOP3'(주간)을 그대로 읽어 답한다. */
+    if (/(음식|식사|먹을|메뉴).*(추천|뭐|무엇|알려)|추천.*(음식|식사|메뉴)/.test(q)) {
+      var f = _topRows('grid-rows-food', 3);
+      var fh = f.length
+        ? ('최근 일주일 <b>주의할 음식 TOP' + f.length + '</b> 입니다.<br>'
+           + f.map(function(r,i){ return (i+1) + '. ' + r[1] + (r[3] && r[3] !== '-' ? (' — 혈당변동폭 ' + r[3] + ' mg/dL') : ''); }).join('<br>')
+           + '<br><br>')
+        : '';
+      return fh
+           + '식사 요령<br>'
+           + '• 채소·단백질을 먼저 먹고 <b>탄수화물은 나중에</b> 드세요.<br>'
+           + '• 흰쌀·면·빵·단 음식은 줄이고 <b>잡곡·통곡물</b>로 바꿔 보세요.<br>'
+           + '• 식후 <b>20~30분 걷기</b>가 식후 혈당 상승을 완화합니다.' + note;
+    }
+    if (/(운동|활동|걷기).*(추천|뭐|무엇|알려|좋)|추천.*(운동|활동)/.test(q)) {
+      var x = _topRows('grid-rows-exer', 3);
+      var xh = x.length
+        ? ('최근 일주일 <b>추천 운동 TOP' + x.length + '</b> 입니다.<br>'
+           + x.map(function(r,i){ return (i+1) + '. ' + r[1] + (r[2] && r[2] !== '-' ? (' — ' + r[2] + '분') : ''); }).join('<br>')
+           + '<br><br>')
+        : '';
+      return xh
+           + '운동 요령<br>'
+           + '• <b>식후 30분~1시간</b>에 가볍게 걷는 것이 가장 효과적입니다.<br>'
+           + '• 주 <b>150분 이상</b>(하루 20~30분)을 목표로 꾸준히 하세요.<br>'
+           + ((tbr != null && tbr >= 4)
+              ? '• 저혈당(TBR)이 권장보다 높습니다 — <b>공복 운동은 피하세요.</b>'
+              : '• 공복 상태의 격한 운동은 저혈당 위험이 있으니 주의하세요.') + note;
+    }
+
+    /* ── [2026-08-05 검토회의] 준비된 질문이 아닐 때(슬라이드 19) ──
+       "나의 건강상태는?" 처럼 막연히 물어도 폴백 안내가 아니라
+       현재 혈당지표 + AI 분석(코칭) 텍스트를 바로 보여준다. */
+    if (/(건강\s*상태|내\s*상태|나의\s*상태|몸\s*상태|어떤가요|어떻습니까|괜찮은가|괜찮나|종합|전체적)/.test(q)) {
+      var sum = _chatStatusSummary();
+      if (sum) return sum;
     }
 
     // ── 일반 건강 지식: blood_qa.js 의 BLOOD_QA 키워드 매칭 (점수제) ──
@@ -1301,9 +1456,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return null;
   }
 
-  // LLM·매칭 모두 실패했을 때 안내 문구
+  /* LLM·매칭 모두 실패했을 때 — [2026-08-05 검토회의 슬라이드 19]
+     "죄송해요…"로 끝내지 말고, 준비된 답이 없더라도 현재 혈당지표 + AI 분석(코칭)을 보여준다.
+     지표조차 없을 때만 종전의 예시 질문 안내를 낸다. */
   function _chatFallbackMsg(){
-    return '죄송해요, 지금은 답변을 가져오지 못했어요 😅<br><br>이런 질문을 해보세요:<br>• "이번 주 혈당 어때요?"<br>• "혈당 정상범위는?"<br>• "저혈당 증상과 대처법은?"<br>• "운동이 혈당에 좋아요?"<br>• "스트레스와 혈당의 관계는?"';
+    var sum = _chatStatusSummary();
+    if (sum) {
+      return '그 질문에 딱 맞는 답변은 준비하지 못했어요.<br>대신 지금 혈당 상태를 알려드릴게요.<br><br>' + sum;
+    }
+    return '죄송해요, 지금은 답변을 가져오지 못했어요 😅<br><br>이런 질문을 해보세요:<br>• "주간 평균혈당 어때요?"<br>• "주간 최고혈당 알려줘"<br>• "공복 평균혈당 어때요?"<br>• "음식 추천해줘"<br>• "운동 추천해줘"';
   }
 
   // 현재 화면 지표 요약 — LLM 프롬프트 컨텍스트로 전달
@@ -1328,23 +1489,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     for(var i=0;i<kids.length;i++){ if(kids[i] !== ov) out.push(kids[i]); }
     return out;
   }
-  // [2026-07-31] 대화영역 기본 높이는 CSS 고정 200px(작은 폰 기준). 화면이 더 크면 아래에 빈 공간이
-  //   남으므로, '칩 줄 아래끝 ~ 하단메뉴 윗변' 간격을 재서 그만큼만 대화영역을 늘린다.
-  //   ※ 절대 좌표를 추정하지 않고 '지금 남은 간격'만 더하므로 기기·프레임과 무관하게 정확하다.
-  function _chatFill(){
-    var ov = document.getElementById('chatOverlay');
-    if(!ov || !ov.classList.contains('on')) return;
-    var box = document.getElementById('chatMessages');
-    var bot = ov.querySelector('.chat-bottom');
-    var fn  = document.querySelector('.footerNav');
-    if(!box || !bot || !fn) return;
-    var gap = fn.getBoundingClientRect().top - bot.getBoundingClientRect().bottom;
-    if(gap > 8) box.style.height = (box.offsetHeight + gap - 4) + 'px';
+  /* [2026-08-05 최종] 대화영역 높이 실측(_chatFill) 폐기 — CSS flex 가 대신한다.
+     .main-content 는 comm_blood.css 에서 이미 `display:flex; flex-direction:column; flex:1` 이고
+     PC(app-desktop)·모바일(comm_blood @media) 모두 그 안에서만 세로 스크롤된다.
+     챗봇 블록(.chat-overlay.on)과 대화영역(.qa-messages)에 각각 flex:1 을 주면
+     브라우저가 남는 높이를 정확히 배분한다 — 기기·프레임별 실측 오차가 원천적으로 없다.
+     (실측 방식은 프레임마다 값이 어긋나 제목줄 잘림·빈 띠를 반복적으로 만들었다.)
+     함수 자체는 남겨 둔다 — 예전 호출 지점이 있어도 안전하게 무시되도록. */
+  function _chatFill(){ /* no-op — CSS flex 가 처리 */ }
+  function _chatLock(){ /* no-op — 넘치지 않으므로 잠글 필요가 없다 */ }
+  function _chatUnlock(){
+    document.documentElement.classList.remove('chat-lock');
+    var mc = document.querySelector('.main-content');
+    if(mc) mc.classList.remove('chat-lock');
   }
+  function _chatRefit(){ _chatFill(); _chatLock(); }
   window.addEventListener('resize', function(){
     var box = document.getElementById('chatMessages');
-    if(box) box.style.height = '';   // 기본(CSS 200px)으로 되돌린 뒤 다시 채움
-    setTimeout(_chatFill, 0);
+    if(box){ box.style.height = ''; box.style.boxSizing = ''; }   // 예전 인라인 높이 잔재 제거
   });
   function openChat(){
     var ov = document.getElementById('chatOverlay');
@@ -1356,7 +1518,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     });
     if(ov) ov.classList.add('on');
     try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.add('chat-on'); }catch(e){}
-    setTimeout(_chatFill, 0); setTimeout(_chatFill, 300);   // 렌더 직후 + 폰트/이미지 반영 후 한 번 더
+    // [2026-08-05] 이 화면의 실제 컨테이너는 .main-content — 열려 있는 동안 아래 여백을 줄인다
+    try{ var mcO=document.querySelector('.main-content'); if(mcO) mcO.classList.add('chat-on'); }catch(e){}
+    // [2026-08-05] 열 때 스크롤 위치만 맨 위로. 높이 배분은 CSS flex 가 처리한다(실측 없음).
+    window.scrollTo(0,0);
+    var sc0 = document.querySelector('.main-content'); if(sc0) sc0.scrollTop = 0;
     _chatIntroAnalysis();   // 지표가 이미 준비돼 있으면 인사 밑에 분석 표시(아직이면 wkAi 도착 훅으로 1회)
     // [2026-07-31] TIR 이 늦게 와서 분석에서 빠지는 것 방지 — 3종이 다 모일 때까지 기다리되,
     //   4초가 지나면 그때까지 온 지표만이라도 게시(전부 실패 시 빈 게시는 안 함)
@@ -1364,8 +1530,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   function closeChat(){
     var ov = document.getElementById('chatOverlay');
+    _chatUnlock();
     if(ov) ov.classList.remove('on');
     try{ var ct=document.querySelector('.contents'); if(ct) ct.classList.remove('chat-on'); }catch(e){}
+    try{ var mcC=document.querySelector('.main-content'); if(mcC) mcC.classList.remove('chat-on'); }catch(e){}
     // 감춰 둔 카드 원복(메인에서 온 경우엔 그대로 뒤로 가므로 복원해도 무해)
     _chatSiblings(ov).forEach(function(el){
       if(el.getAttribute('data-chat-hidden') !== '1') return;
@@ -1383,13 +1551,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if(tir==null && tar==null && tbr==null) return;
     // TIR(가장 중요한 지표) 포함 보장 — 3종이 다 모이기 전에는 게시하지 않는다(4초 경과 시에만 부분 게시)
     if(!_chatIntroForce && (tir==null || tar==null || tbr==null)) return;
-    // 한 줄 표시(2026-07-31 요청) — 문구를 짧게 + 줄바꿈 금지(nowrap)
-    function ln(s){ return '<span style="white-space:nowrap; display:block;">'+s+'</span>'; }
+    /* [2026-08-05 검토회의 슬라이드 16] 두 가지 수정
+       ① nowrap 제거 — 한 줄 고정 때문에 '충족 👍' 끝이 말풍선 밖으로 잘렸다("범위 벗어남").
+          글자 크기는 그대로 두고 넘칠 때만 접히게 한다.
+       ② 지표 수치 아래에 <b>AI 분석(코칭) 텍스트</b>를 이어 붙인다 — 수치만으로는 해석이 안 되고,
+          코칭을 함께 봐야 본인 혈당 상태를 즉시 알 수 있다는 요청. 문장은 화면의 '생활습관 코칭'을 재사용. */
+    function ln(s){ return '<span style="display:block; word-break:keep-all;">'+s+'</span>'; }
     var L=[];
-    if(tir!=null) L.push(ln('• TIR(목표유지) <b>'+tir+'%</b> — 권장 70%↑ '+(tir>=70?'충족 👍':'<b style="color:#e67e22">미달</b>')));
+    if(tir!=null) L.push(ln('• TIR(목표유지) <b>'+tir+'%</b> — 권장 70%↑ '+(tir>=70?'충족&nbsp;👍':'<b style="color:#e67e22">미달</b>')));
     if(tar!=null) L.push(ln('• TAR(고혈당) <b>'+tar+'%</b> — 권장 25%↓ '+(tar<25?'충족':'<b style="color:#e67e22">초과</b>')));
     if(tbr!=null) L.push(ln('• TBR(저혈당) <b>'+tbr+'%</b> — 권장 4%↓ '+(tbr<4?'충족':'<b style="color:#e67e22">초과</b>')));
-    _addMsg('최근 일주일 지표 분석입니다.'+L.join('')+'<small>※ 대한당뇨병학회 관리지표 기준</small>', false);
+    var coach = '';
+    var cbox = document.getElementById('wkCoach');
+    if(cbox && cbox.innerHTML && cbox.innerHTML.indexOf('불러오면') === -1){
+      coach = '<br><b>AI 코칭</b><br>' + cbox.innerHTML;
+    }
+    _addMsg('최근 일주일 지표 분석입니다.'+L.join('')+coach+'<small>※ 대한당뇨병학회 관리지표 기준</small>', false);
     _chatIntroDone = true;
   }
   window._chatIntroHook = _chatIntroAnalysis;   // wkAi upd() 가 지표를 채울 때마다 호출(1회 게시 가드 내장)

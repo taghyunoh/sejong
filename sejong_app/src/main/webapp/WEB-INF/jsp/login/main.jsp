@@ -31,12 +31,14 @@
 .mainState{ background:#fff; border:1px solid #dfe6f0; border-radius:calc(2.8 * var(--vwu,1vw));
   padding:calc(4.2 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw)) calc(3 * var(--vwu,1vw));
   margin-top:calc(4 * var(--vwu,1vw)); box-shadow:0 2px 8px rgba(18,38,99,.08); }
-.mainState .stateText{ font-size:calc(4.26 * var(--vwu,1vw)); color:#2d303f; font-weight:500; }
+/* [2026-08-05 검토회의] 홈 혈당상태 카드 글씨 키움(상태 문장·기준 안내 모두) */
+.mainState .stateText{ font-size:calc(5 * var(--vwu,1vw)); color:#2d303f; font-weight:500; line-height:1.4; }
 .mainState .stateText em{ font-style:normal; font-weight:800; }
 .mainState .stateText em.st-good{ color:#2e7d32; }   /* 정상 */
 .mainState .stateText em.st-warn{ color:#e67e22; }   /* 관리 필요 */
 .mainState .stateText em.st-none{ color:#8a98a8; }   /* 측정값 없음/확인 중 */
-.mainState .tirTxt{ display:block; margin-top:calc(1.2 * var(--vwu,1vw)); font-size:calc(3.1 * var(--vwu,1vw)); color:#8a98a8; }
+.mainState .tirTxt{ display:block; margin-top:calc(1.6 * var(--vwu,1vw)); font-size:calc(3.8 * var(--vwu,1vw));
+  line-height:1.45; color:#6b7889; word-break:keep-all; }
 .mainState .stateLink{ display:block; text-align:right; margin-top:calc(2.2 * var(--vwu,1vw));
   font-size:calc(3.7 * var(--vwu,1vw)); font-weight:800; color:#218ecb; text-decoration:underline; text-underline-offset:3px; }
 .mainAiMenu{ margin-top:calc(3.5 * var(--vwu,1vw)); display:flex; flex-direction:column; gap:calc(2.8 * var(--vwu,1vw)); }
@@ -527,62 +529,72 @@ function _setCgmNotice(html){
     }
     $e.css('display', html ? 'block' : 'none');
 }
+/* [2026-08-05 검토회의 — 홈 혈당상태 기준 변경] '오늘 하루' → '오늘 기준 과거 일주일'.
+   Case1(최근 일주일에 측정값 있음) : "오늘 기준 과거 일주일간 발생한 혈당지표 상태입니다."
+   Case2(최근 일주일에 측정값 없음) : "<마지막 측정일> 이후 발생한 혈당 측정값이 없습니다
+                                    (마지막 일주일 기준 상태입니다)"
+     → Case2 는 마지막 측정일로 끝나는 일주일로 상태를 계산해 표시한다.
+   상태 판정은 종전과 동일하게 TIR(70~180 mg/dL 범위 내 비율) 70% 기준. */
+function _ymd(d){
+    return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+}
+/* 일주일(끝나는 날 포함 7일) 범위의 측정값을 받아 TIR 계산 → cb(tir 또는 null) */
+function _weekTir(uid, endDate, cb){
+    var start = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    start.setDate(start.getDate() - 6);
+    CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do","POST",
+        { userId: uid, start: _ymd(start)+"T00:00:00", end: _ymd(endDate)+"T23:59:59" }, function(list){
+            list = Array.isArray(list) ? list : [];
+            var vals = [];
+            list.forEach(function(r){
+                var v = parseInt(r.UPT,10);
+                if(!isNaN(v) && v > 0) vals.push(v);
+            });
+            if(!vals.length){ cb(null); return; }
+            var inR = vals.filter(function(v){ return v >= 70 && v <= 180; }).length;
+            cb(Math.round(inR * 100 / vals.length));
+        });
+}
+function _paintBloodState(tir, tirTxt){
+    _setStable('#bloodState', (tir>=70) ? "'정상'" : "'관리 필요'", (tir>=70) ? 'st-good' : 'st-warn');
+    _setStable('#bloodTir', tirTxt);
+}
 function updateBloodState(data){
     var el = $("#bloodState");
     if(!el.length) return;
-    var rows = (data||[]).filter(function(r){ return +r.UPT_VALUE > 0; });
-    var vals = rows.map(function(r){ return +r.UPT_VALUE; });
-    if(!vals.length){
-        // [2026-07-31 깜빡임 개선] 여기서 즉시 '측정값 없음'을 쓰면, 잠시 뒤 마지막 측정일 조회 결과로
-        //   다시 '정상/관리 필요'로 바뀌며 화면이 새로고침되는 것처럼 보였다.
-        //   → 조회가 끝난 뒤 최종 상태를 '한 번만' 반영한다(조회 전에는 초기 '확인 중' 유지).
-        var uid = (typeof userId !== 'undefined' && userId && userId !== "null") ? userId : "";
-        if(uid){
-            CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do","POST",{ userId: uid },function(res){
-                if(res && res.IsSucceed && res.Data){
-                    var t = String(res.Data).replace('T',' ').substring(0,16);   // 'YYYY-MM-DD HH:mm'
-                    // 마지막 측정일 하루치로 수치·그날 TIR·상태를 함께 계산해 한 번에 표시
-                    var day = String(res.Data).substring(0,10);
-                    CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do","POST",
-                        { userId: uid, start: day+"T00:00:00", end: day+"T23:59:59" }, function(list){
-                            list = Array.isArray(list) ? list : [];
-                            var last=null, dv=[];
-                            list.forEach(function(r){
-                                var v = parseInt(r.UPT,10);
-                                if(isNaN(v) || v <= 0) return;
-                                dv.push(v);
-                                var tm = (typeof r.DTM==='number') ? r.DTM : new Date(String(r.DTM).replace('Z','')).getTime();
-                                if(!isNaN(tm) && (!last || tm > last.tm)) last = { tm:tm, v:v };
-                            });
-                            if(!dv.length){   // 그날 값이 없으면 일시만
-                                _setStable('#bloodState', "측정값 없음", 'st-none');
-                                _setStable('#bloodTir', "마지막 측정 " + t + " — 이후 들어온 측정값이 없습니다");
-                                return;
-                            }
-                            var inR = dv.filter(function(v){ return v >= 70 && v <= 180; }).length;
-                            var dTir = Math.round(inR * 100 / dv.length);
-                            _setStable('#bloodState', (dTir>=70) ? "'정상'" : "'관리 필요'", (dTir>=70) ? 'st-good' : 'st-warn');
-                            _setStable('#bloodTir', "마지막 측정 " + t + (last ? (" · " + last.v + " mg/dL") : "")
-                                + " · 그날 TIR " + dTir + "% (목표범위 70~180 내 비율) — 이후 들어온 측정값이 없습니다");
-                        });
-                }else{
-                    _setStable('#bloodState', "측정값 없음", 'st-none');
-                    _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
-                }
-            });
-        }else{
-            _setStable('#bloodState', "측정값 없음", 'st-none');
-            _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
-        }
+    var uid = (typeof userId !== 'undefined' && userId && userId !== "null") ? userId : "";
+    if(!uid){
+        _setStable('#bloodState', "측정값 없음", 'st-none');
+        _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
         return;
     }
-    var inRange = vals.filter(function(v){ return v >= 70 && v <= 180; }).length;
-    var tir = Math.round(inRange * 100 / vals.length);
-    _setStable('#bloodState', (tir>=70) ? "'정상'" : "'관리 필요'", (tir>=70) ? 'st-good' : 'st-warn');
-    // 언제 것·마지막 수치 함께 표시 — 오늘 최신 행(getTodayBlood 첫 행)
-    var lastAt = (rows[0] && rows[0].formatedDate) ? (' · 마지막 측정 ' + rows[0].formatedDate) : '';
-    var lastVal = (rows[0] && rows[0].UPT_VALUE != null) ? (' · ' + rows[0].UPT_VALUE + ' mg/dL') : '';
-    _setStable('#bloodTir', "오늘 TIR " + tir + "% (목표범위 70~180 내 비율)" + lastAt + lastVal);
+    // [2026-07-31 깜빡임 개선] 조회 전에는 초기 '확인 중'을 유지하고, 결과가 나온 뒤 한 번만 반영한다.
+    _weekTir(uid, new Date(), function(tir){
+        if(tir != null){   // Case1 — 최근 일주일에 측정값 있음
+            _paintBloodState(tir, "오늘 기준 과거 일주일간 발생한 혈당지표 상태입니다.");
+            return;
+        }
+        // Case2 — 최근 일주일에 측정값 없음 → 마지막 측정일 기준 일주일로 대체 표시
+        CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do","POST",{ userId: uid },function(res){
+            if(!(res && res.IsSucceed && res.Data)){
+                _setStable('#bloodState', "측정값 없음", 'st-none');
+                _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
+                return;
+            }
+            var day  = String(res.Data).substring(0,10);                       // 'YYYY-MM-DD'
+            var parts = day.split('-');
+            var lastD = new Date(+parts[0], +parts[1]-1, +parts[2]);
+            var msg   = day + " 이후 발생한 혈당 측정값이 없습니다 (마지막 일주일 기준 상태입니다)";
+            _weekTir(uid, lastD, function(lastTir){
+                if(lastTir == null){
+                    _setStable('#bloodState', "측정값 없음", 'st-none');
+                    _setStable('#bloodTir', msg);
+                    return;
+                }
+                _paintBloodState(lastTir, msg);
+            });
+        });
+    });
 }
 function todayBlod() {
     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getTodayBlood.do", "POST", '', function(response) {
