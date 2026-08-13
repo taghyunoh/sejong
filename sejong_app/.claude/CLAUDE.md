@@ -115,6 +115,78 @@
 - 반영 확인은 로컬과 동일하게 `testUser2.do` → `chatAsk.do` (위 "로컬 개발 환경" 절의 curl). `IsSucceed:true` + 한글 답변이면 성공, `"LLM 미설정"` 이면 환경변수가 JVM 에 안 들어간 것.
 - 참고: **서버에 추가로 넣을 환경변수는 `GEMINI_API_KEY` 하나뿐.** `OPENAI_API_KEY` 는 AiController 가 비활성이라 미사용이고, 나머지 시크릿(Google OAuth client-secret · i-Sens `blood.client.secret` · kakao js key)은 `application.properties` 에 **평문으로 커밋되어 있다** — 그래서 서버 설정은 불필요하지만, 저장소(github.com/taghyunoh/sejong)에 노출된 상태라 Gemini 키처럼 환경변수로 빼는 정리가 필요하다. → 아래 대기 항목.
 
+## ★★운영 서버(139.150.73.139) — 실측 2026-08-13
+
+- **접속** : `guser@139.150.73.139`. **SSHPiper 중계**를 거쳐 윈도우 OpenSSH(`ssh`/`scp`)는 키교환 직후 끊긴다 —
+  ***MobaXterm 저장세션(`2.세종_TP(hannetit02)`)으로만 접속·전송이 된다.*** 파일은 **SFTP 패널에 드래그**.
+- **톰캣** : `/web/tomcat9`(catalina.base=home), JDK17, `guser` 로 기동. 포트 **8080 / 8443**.
+  ⚠**konet 이 같은 톰캣에 함께 떠 있다**(`webapps/{ROOT,app,konet}`) — 재기동하면 konet 도 같이 내려간다.
+- **Sejong_APP = `webapps/ROOT`**(루트 컨텍스트, 로컬 9060 과 같은 구조). WAR 원본은 `/web/*.war`.
+- **`reloadable` 설정이 없다** ⇒ 클래스만 바꿔도 자동 반영 안 됨. manager 계정도 전부 기본값(`<must-be-changed>`)이라 못 쓴다.
+  ⇒ **컨텍스트만 재적재하는 법** : `touch webapps/ROOT/WEB-INF/web.xml` → 12초 뒤 `catalina.out` 에
+  `HostConfig.reload 컨텍스트 []` 가 찍히면 성공(톰캣·konet 안 건드림). **실측으로 통했다.**
+- **키(`GEMINI_API_KEY`)는 `/web/tomcat9/bin/setenv.sh`** 에 `export` 로 들어 있다(중복 2줄 — 무해).
+  ⚠**서버에는 이미 새 유료 키가 들어가 있었다**(2026-08-13 확인). 로컬 HKCU 값과 동일.
+- **검증 절차(서버)** — `testUser2.do` 는 **배포본에 없어 404**다. 세션 없이도 챗봇은 응답하므로 이것으로 충분 :
+  ```
+  cd /tmp && printf '{"q":"혈당 관리 팁 한 줄만"}' > q.json      # ★파라미터명은 q (question 아님)
+  curl -s -X POST http://localhost:8080/blood/chatAsk.do \
+    -H "Content-Type: application/json;charset=UTF-8" -H "X-Requested-With: XMLHttpRequest" \
+    --data-binary @q.json -m 40
+  ```
+  ⚠⚠**`chatAsk.do` 의 HTTP 코드로 유료/무료를 판별하면 안 된다** — Gemini 가 429 여도 **앱은 200 을 돌려주고
+  본문만 `IsSucceed:false`** 다. 2026-08-13 에 이 방식으로 「25건 전원 200 → 유료」라 오판했다.
+  ***반드시 아래 둘 중 하나로 본다*** :
+  ```
+  # ⓐ API 를 직접 때린다(가장 확실)
+  for i in $(seq 1 12); do curl -s -o r$i.txt -w "%{http_code}\n" -X POST \
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent" \
+    -H "x-goog-api-key: $GEMINI_API_KEY" -H "Content-Type: application/json" \
+    -d '{"contents":[{"parts":[{"text":"ping"}]}]}' & done; wait; grep -l FreeTier r*.txt | wc -l
+  # ⓑ 앱으로 몰고 나서 로그를 본다
+  grep -c FreeTier /web/tomcat9/logs/catalina.out      # ★시각까지 확인할 것(누적 파일이다)
+  ```
+
+### ✅[2026-08-13] 서버 챗봇 복구 — **키가 아니라 코드가 문제였다**
+
+증상 : 서버 챗봇 무응답. 원인 : **오늘 14:03 올린 WAR 가 `thinkingLevel` 수정(ed58f40) 이전 빌드**였다
+(배포된 `BloodController.class` 에 `thinkingLevel` 0건, 7/31자 파일). 키는 이미 유료로 바뀌어 있었으므로
+***키 교체만 했다면 계속 죽어 있었을 상황*** — 「키 설정 + 코드 배포는 세트」가 실제로 증명됐다.
+
+조치(최소 변경) : 로컬에서 `BloodController.java` 만 컴파일 → SFTP 로 `/web` 업로드 →
+`.bak-20260813` 백업 후 배포본 클래스 교체 → `web.xml` touch 로 ROOT 재적재 → 검증.
+결과 : `IsSucceed:true` + 한글 답변 → **서버 챗봇 복구 완료.**
+
+### ✅[2026-08-13 저녁] 유료 키 배포 완료 — **서버는 유료 확정**
+
+위 무료 판정 뒤 **새 유료 키(`AQ.Ab8RN6Ie…`)를 서버에 배포**했다 :
+`setenv.sh` 를 heredoc 으로 **한 줄로 재작성**(중복 2줄 제거) → **톰캣 재기동**(konet 동시 중단) →
+API 직접 12건 동시 **전원 200 · FreeTier 0**(직전 같은 조건에서 5×429 였다) ⇒ **유료 확정.**
+
+⚠**남은 것 : 로컬 PC 는 아직 옛 무료 키다.** `setx GEMINI_API_KEY "새키"` + **Eclipse 완전 재시작** 필요.
+⚠키 입력은 `read -s` 로 하되 ***프롬프트에 「키만」 붙여넣을 것*** — 블록을 통째로 붙여넣으면
+  `read` 가 **다음 명령줄을 키로 먹는다**(실제로 발생: `GEMINI_API_KEY="cat > /web/…"` 가 됐다).
+  검증은 `echo "길이=${#K}"` → **53** 이면 정상.
+
+### ⛔[2026-08-13 오후] (경위) 키가 무료 티어였다 — 유료 전환이 안 먹고 있었다
+
+같은 날 확인 : 로컬 HKCU 키와 서버 `setenv.sh` 키가 **해시까지 완전히 동일**하고,
+그 키로 **API 를 직접** 12건 동시 호출하면 **7×200 / 5×429**, 본문에
+`quotaId: ...-FreeTier`, `quotaValue: 5`, `model: gemini-3.6-flash` 가 그대로 박혀 나온다.
+
+- **서버 `setenv.sh` 는 6/29 자 파일** — 이 `AQ.…` 키는 오늘 만든 것이 아니라 **6월부터 쓰던 키**다.
+  ⇒ ***오늘 발급한 유료 키는 로컬·서버 어디에도 안 들어가 있다.***
+- 원인 후보 : ⓐ**키가 속한 프로젝트 ≠ 결제를 건 프로젝트**(결제는 프로젝트 단위) ⓑ유료 키를 발급만 하고 미배포.
+- 확인 : [AI Studio → API keys](https://aistudio.google.com/apikey) 에서 **그 키의 프로젝트 이름**과 결제 상태.
+  프로젝트가 다르면 **유료 프로젝트에서 키를 새로 발급**해야 한다.
+- ⚠**그때까지 환자 CGM 혈당이 무료 티어로 나간다 = 구글 학습에 사용**([[sejong-gemini-patient-data-tier]]).
+- 새 키를 받으면 : ①서버 `setenv.sh` 의 **두 줄 다** 교체(중복이라 아래 줄이 이긴다) ②**톰캣 재기동**
+  (환경변수는 프로세스 생성 때 상속 — 컨텍스트 리로드로는 안 바뀐다. ⚠konet 도 같이 내려간다)
+  ③로컬은 `setx GEMINI_API_KEY` + **Eclipse 완전 재시작** ④위 ⓐ 방식으로 재검증.
+
+⚠**정식 정리 필요** : 지금은 클래스 1개만 갈아 끼운 상태다. 다음 배포 때 **소스 최신으로 다시 빌드한 WAR**
+(`Sejong_APP-1.0.0.war`)를 올려야 한다 — 안 그러면 다음 WAR 배포에서 **다시 옛 코드로 되돌아간다.**
+
 ## 대기/미완
 - [대기] AI 챗봇 서버 LLM(/blood/chatAsk.do)·blood_qa.js 지식 확장, 식사/운동 미등록 시 안내문(기획 주석) 여부.
 - [대기] 평문 시크릿을 Gemini 키와 같은 `${ENV:}` 방식으로 이관. **이미 git 이력에 올라간 값이라 이관과 함께 재발급(폐기)이 필요**하다. 2026-07-11 에 OpenAI 키를 같은 이유로 제거한 선례 있음. 범위(2026-08-13 전수 확인):
