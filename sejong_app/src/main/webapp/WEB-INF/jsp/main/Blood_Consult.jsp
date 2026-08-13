@@ -1196,6 +1196,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
      (다른 질문을 한 번 하면 그 칩은 다시 사용할 수 있다.)
      답변을 기다리는 동안(_chatBusy)에도 중복 전송을 막는다. */
   var _lastQuickQ = '', _chatBusy = false;
+  var _chatLLMFollow = false;   // [2026-08-13] 수치 즉답 뒤 LLM 가이드를 이어붙일지 (_chatResponse 가 판단)
   function _quickQ(q, el){
     if(_chatBusy) return;
     if(q === _lastQuickQ) return;                  // 방금 누른 그 칩 → 아무 동작 없음
@@ -1266,12 +1267,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var local = _chatResponse(q);
     if (local != null) {
       _chatBusy = true;
-      setTimeout(function(){ _addMsg(local, false); _chatBusy = false; }, 280);
+      setTimeout(function(){
+        _addMsg(local, false); _chatBusy = false;
+        /* [2026-08-13] "내 최고혈당 관련 운동, 식사 가이드"처럼 수치+가이드를 함께 물으면
+           수치 즉답으로 끝내지 않고 LLM 가이드 답변을 이어붙인다(사용자 지적).
+           화면의 주의음식·추천운동 TOP3 도 참고자료로 함께 넘긴다. */
+        if (_chatLLMFollow) { _chatLLMFollow = false; _askLLM(q, _chatGuideCtx()); }
+      }, 280);
       return;
     }
+    _askLLM(q, '');
+  }
 
+  /* 화면에 이미 계산돼 있는 주의음식·추천운동 TOP3 이름만 뽑아 LLM 참고자료로 (수치는 안 보낸다) */
+  function _chatGuideCtx(){
+    var f = _topRows('grid-rows-food', 3).map(function(r){ return r[1]; }).filter(Boolean);
+    var x = _topRows('grid-rows-exer', 3).map(function(r){ return r[1]; }).filter(Boolean);
+    var p = [];
+    if (f.length) p.push('이번 주 혈당을 많이 올린 주의 음식: ' + f.join(', '));
+    if (x.length) p.push('앱이 추천하는 운동: ' + x.join(', '));
+    return p.join(' / ');
+  }
+
+  // ②동일 질문 캐시 ③서버 LLM(Gemini) — sendChat 에서 분리(2026-08-13, 수치 즉답 뒤에도 부르기 위해)
+  function _askLLM(q, extraCtx){
     // ② 동일 질문 캐시
     var _ctxText  = _chatCtxText();
+    if (extraCtx) _ctxText = _ctxText ? (_ctxText + ' / ' + extraCtx) : extraCtx;
     var _cacheKey = q.toLowerCase() + '|' + _ctxText;
     if (_chatCache[_cacheKey]) {
       _chatBusy = true;
@@ -1397,6 +1419,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     // ── 데이터 의도 여부 (교과서 지식 질문 "정상범위는?" 등은 여기 안 걸리게) ──
     var _dataIntent = /(어때|어땠|어떤|어떻|얼마|몇|상태|관리|괜찮|높은가|낮은가|위험|내 |나의|우리|이번\s*주|주간)/.test(q);
 
+    /* [2026-08-13] 수치 질문에 운동·식사·가이드 요청이 섞여 있으면(예: "내 최고혈당 관련 운동, 식사 가이드")
+       아래 수치 즉답 뒤에 LLM 가이드를 이어붙이도록 표시한다. 수치 구간에서 return 될 때만 의미가 있고,
+       음식추천·운동추천 구간부터는 가이드 자체가 답이므로 다시 끈다. */
+    _chatLLMFollow = /(가이드|추천|조언|요령|방법|관리법|팁|어떻게|운동|식사|음식|먹)/.test(q);
+
     /* ── [2026-08-05 검토회의] 최고/최저 혈당 ──
        "최근 일주일간 최고 혈당은", "나의 최고혈당치는?", "최고 최저혈당은?" 처럼 물으면
        종전에는 지식DB의 '고혈당/저혈당 대처법'이 걸리거나 폴백 안내가 나갔다(슬라이드 21·22 '?').
@@ -1474,6 +1501,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       return lz.trim() ? ('저혈당 발생 구간(시간대): <b>' + lz + '</b>' + note)
                        : '이번 주 저혈당 발생 구간 정보가 아직 없습니다.';
     }
+
+    _chatLLMFollow = false;   // 여기부터는 가이드 자체가 답 — LLM 이어붙임 없음
 
     /* ── [2026-08-05 검토회의] 음식추천 / 운동추천 칩 ──
        화면에 이미 계산돼 있는 '주의할음식TOP3' · '추천운동TOP3'(주간)을 그대로 읽어 답한다. */
