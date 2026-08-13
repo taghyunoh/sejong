@@ -45,10 +45,25 @@
   | `login_back.jsp`·`Blood_Consult_back.jsp` | 각 3·2곳 | **죽은 파일**(컨트롤러가 반환하지 않음) |
   | `tiles/popup/header.jsp` | css/js 4곳 | **죽은 레이아웃**(`.popup/*` 뷰를 쓰는 컨트롤러 없음). 참조 파일 자체가 이 앱에 없다 |
   | `asset/js/jquery/common.js` | `/PHSS/loginOut.do`·`/com/checkBtnYn.do` | **타 프로젝트 잔재**, 호출하는 화면 0곳 |
-- **[미해결·별건] `webapps/app/index.jsp`(welcome-file)가 옛 로그인 화면이다** — `https://allcare24.kr/app/`
-  로 들어오면 이게 뜬다(제목 "로그인 페이지"). 참조하는 `/css/login.css`·`/js/jquery-3.5.1.min.js` 는
-  **이 앱에 없는 파일**이라 운영에선 루트(sejong-web)의 것을 주워 쓰거나 404 다. 정상 진입은 `/app/index.do`.
-  → 지우거나 `index.do` 로 리다이렉트시키는 정리가 필요(이번엔 손대지 않음 — 동작 중인 진입 경로라 확인 후 처리).
+- **[완료] `index.jsp`(welcome-file) 정리** — 컨텍스트 루트(`/app/`)로 들어오면 **옛 로그인 화면**
+  (ID/PW 폼, 없는 css/js 참조)이 떴다. **`index.do` 로 넘기는 리다이렉트만 남겼다** — 세션 있으면
+  `mainPage.do`, 없으면 `loginPage.do`. 파일을 지우지 않은 이유는 그 주소를 북마크한 사용자를 살리기 위함.
+  (PWA 시작주소는 `manifest.webmanifest` 의 `start_url=loginPage.do` 라 이 파일과 무관.)
+
+## ★[완료 2026-08-13] 의료정보변경 팝업 — 키(height) 수정 불가
+
+- **증상**: 팝업에서 **키 칸만 회색으로 잠겨** 수정이 안 됨(몸무게는 됨).
+- **원인이 세 겹이었다** — `disabled` 만 떼면 *입력은 되는데 저장이 안 되는* 더 나쁜 상태가 된다:
+  1. `<input id="height" … **disabled**>`
+  2. `updateUserInfo()` 가 **키를 payload 에 안 담았다**(`weight`·`blodGb` 만)
+  3. `Option_SQL.xml` 의 `updateUserInfo` 가 **`SET WEIGHT, BLOD_GB` 뿐**이라 HEIGHT 를 안 고쳤다
+- **조치**: ①②를 **팝업이 복제된 3파일 전부**에 적용(`login/main.jsp` · `options/userSetting.jsp` ·
+  `tiles/main/top.jsp` — ***이 팝업은 항상 3곳을 같이 고쳐야 한다***), ③ SQL 에 `HEIGHT = #{height}` 추가.
+  `UserDTO.height` 는 이미 있어 자바 변경은 없다.
+- ⚠**배포**: **매퍼 XML 이 바뀌었으므로 재기동(컨텍스트 재적재) 전까지는 키가 저장되지 않는다.**
+  실측 확인함 — XML 만 갈아 끼우고 그대로 호출하면 `IsSucceed:true` 가 오는데 **값은 안 바뀐다**(옛 SQL).
+  운영은 `webapps/app/WEB-INF/classes/…/Option_SQL.xml` 교체 후 **`touch webapps/app/WEB-INF/web.xml`**
+  로 컨텍스트만 재적재하면 된다(톰캣 전체·konet 안 건드림). 로컬은 Eclipse 서버 Restart.
 
 ## ★[완료 2026-08-13] 운동·식사 등록 "시스템오류입니다 다시 입력하세요!" — CDN jQuery 중복 로드
 

@@ -70,7 +70,7 @@
           <dl class="formList">
             <dt><span>키</span></dt>
             <dd>
-              <div class="inputWrap"><input type="text" class="inpText" id="height" value="" disabled><span
+              <div class="inputWrap"><input type="text" class="inpText" id="height" value=""><span
                   class="add_inf">cm</span>
               </div>
             </dd>
@@ -226,6 +226,7 @@ function getUserInfo(){
 
 function updateUserInfo(){
 	const data = {};
+	data.height = $("#height").val();
 	data.weight = $("#weight").val();
 	data.blodGb = $('input[name=rdo_sugar]:checked').val();
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/updateUserInfo.do","POST",data,function(response){

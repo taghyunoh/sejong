@@ -11,8 +11,9 @@
 	</select>
 	
 	<update id="updateUserInfo" parameterType="egovframework.sejong.login.model.UserDTO" >
-		UPDATE T_USER_TRAN 
-		SET WEIGHT = #{weight},
+		UPDATE T_USER_TRAN
+		SET HEIGHT  = #{height},
+			WEIGHT  = #{weight},
 			BLOD_GB = #{blodGb}
 		WHERE
 			USER_UUID = #{userUuid}
