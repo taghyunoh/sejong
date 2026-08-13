@@ -31,7 +31,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/main.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <%-- [주의] 여기서 jQuery 를 다시 싣지 말 것.
+       레이아웃(tiles/main/header.jsp)이 jQuery 3.5.1 을 먼저 싣고 그 위에 commonUtil.js 가
+       전역 $(document).ajaxError 를 걸어 둔다(세션 만료 401 → 로그인 화면 이동).
+       여기서 CDN jQuery 를 또 실으면 window.$ 가 통째로 교체되어 그 핸들러가 사라지고,
+       세션이 만료돼도 로그인으로 못 돌아간 채 "시스템오류" 알림만 뜬다(2026-08-13 장애).
+       fullcalendar·flatpickr 는 jQuery 에 의존하지 않으므로 위 두 줄만으로 충분하다. --%>
   <link href="${pageContext.request.contextPath}/asset/css/comm_style.css?date=<%= nowTime %>" rel="stylesheet">
 <!-- Select2 라이브러리 예시 -->
 
@@ -291,6 +296,15 @@ td.food-name {
 <script>
 let foodData = [];
 
+/* [필수] 서버 호출은 반드시 이 접두사를 붙인다.
+   로컬은 루트(/)에 배포되지만 운영은 컨텍스트 `/app` 아래에 있다(allcare24.kr/app/).
+   그래서 "/updateFood.do" 처럼 루트 절대경로로 부르면 운영에서는 이 앱이 아니라
+   도메인 루트의 다른 앱(sejong-web)으로 요청이 가고, 그쪽이 404/500 을 내면
+   앞단 nginx 가 외부 오류페이지(errdoc.gabia.net)로 302 시킨다.
+   → XHR 이 다른 출처로 리다이렉트되어 브라우저가 차단 = status 0
+     ("서버에 연결하지 못했습니다"). ***로컬에서만 멀쩡한 이유가 이것이다.*** (2026-08-13 장애) */
+const CTX = "${pageContext.request.contextPath}";
+
 /* ========== 공통 유틸 ========== */
 function hhmmToHHMMSS(v){
   if(!v) return "";
@@ -302,6 +316,26 @@ function pickHHMM(elId){
   const el = document.getElementById(elId);
   if(!el) return "";
   return hhmmToHHMMSS(el.value || "");
+}
+
+/* 실패 원인을 사용자에게 그대로 알린다.
+   종전에는 상태코드·서버 메시지를 버리고 "시스템오류" 한 줄만 띄워, 세션 만료인지
+   저장 실패인지 화면만 보고는 구분할 수 없었다(2026-08-13 원인 추적에 애먹은 이유).
+   401 = 세션 만료 → 알림 확인 후 commonUtil.js 전역 핸들러가 로그인 화면으로 보낸다. */
+function ajaxFailMsg(xhr, what) {
+  if (xhr && xhr.status === 401) {
+    return "로그인이 만료되었습니다.\n다시 로그인한 뒤 " + what + "해 주세요.";
+  }
+  var detail = "";
+  if (xhr) {
+    if (xhr.responseJSON && xhr.responseJSON.Message) detail = xhr.responseJSON.Message;
+    else if (xhr.responseText) detail = xhr.responseText;
+  }
+  detail = String(detail).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 200);
+  if (xhr && xhr.status === 0) detail = "서버에 연결하지 못했습니다. 통신 상태를 확인해 주세요.";
+  return what + "하지 못했습니다."
+       + (xhr && xhr.status ? " (오류 " + xhr.status + ")" : "")
+       + (detail ? "\n" + detail : "");
 }
 
 /* ========== 저장/삭제/조회 ========== */
@@ -327,7 +361,7 @@ function saveFood() {
 
   if (confirm("입력하시겠습니까?")) {
     $.ajax({
-      url: "/updateFood.do",
+      url: CTX + "/updateFood.do",
       type: "POST",
       contentType: "application/json",
       data: JSON.stringify([data]),
@@ -339,7 +373,7 @@ function saveFood() {
         document.getElementById("foodMseq").value = "";
         getFoodList("2");
       },
-      error: function(){ alert("시스템오류입니다 다시 입력하세요!"); }
+      error: function(xhr){ alert(ajaxFailMsg(xhr, "식사기록을 저장")); }
     });
   }
 }
@@ -347,7 +381,7 @@ function saveFood() {
 function delExercise(foodSeq, rowElement) {
   const data = { userUuid: document.getElementById("userUuid").value, foodSeq };
   $.ajax({
-    url: "/deleteFood.do",
+    url: CTX + "/deleteFood.do",
     type: "POST",
     contentType: "application/json",
     data: JSON.stringify([data]),
@@ -355,7 +389,7 @@ function delExercise(foodSeq, rowElement) {
       alert("식사기록이 삭제되었습니다.");
       if (rowElement) { rowElement.remove(); getFoodList("1"); getFoodList("2"); }
     },
-    error: function(){ alert("시스템오류입니다 다시 입력하세요!"); }
+    error: function(xhr){ alert(ajaxFailMsg(xhr, "식사기록을 삭제")); }
   });
 }
 
@@ -403,7 +437,7 @@ function getFoodList(gubun) {
     return;
   }
 
-  fetch('/getFoodList.do', {
+  fetch(CTX + '/getFoodList.do', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(param)
@@ -563,7 +597,7 @@ function initFoodAutosuggest(){
   function search(q){
     if (lastController) lastController.abort();
     lastController = new AbortController();
-    return fetch('/getFoodMstList.do', {
+    return fetch(CTX + '/getFoodMstList.do', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ findData: q }),

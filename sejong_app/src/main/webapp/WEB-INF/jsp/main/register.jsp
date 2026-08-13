@@ -77,7 +77,7 @@
 		        };
 
 		        $.ajax({
-		            url: '/getAuth.do',
+		            url: '${pageContext.request.contextPath}/getAuth.do',
 		            type: 'POST',
 		            data: JSON.stringify(formData),
 		            contentType: 'application/json',
@@ -156,7 +156,7 @@
 	        console.log("4444 accessToken : " + accessToken);
 	       
 			$.ajax({
-				url: '/authToken.do',
+				url: '${pageContext.request.contextPath}/authToken.do',
 				type: 'GET',
 				data: {
 			            accessToken : accessToken,
@@ -214,7 +214,7 @@
 	        console.log("666 !!!accessToken : " + accessToken);
 	        console.log("666 !!!useUUId : " + useUUId);
 	        $.ajax({
-			    url: '/getBloodData.do',
+			    url: '${pageContext.request.contextPath}/getBloodData.do',
 				type: 'GET',
 				data: {
 					start: '2024-08-18T00:00:00+09:00', // 시작 시간
@@ -245,7 +245,7 @@
 	        console.log("777 accessToken : " + accessToken);
 	        //getTokenFunc();
 			$.ajax({
-				url: '/getData.do',
+				url: '${pageContext.request.contextPath}/getData.do',
 				type: 'GET',
 				data: {
 						start: '2024-08-11T00:00:00+09:00', // 시작 시간

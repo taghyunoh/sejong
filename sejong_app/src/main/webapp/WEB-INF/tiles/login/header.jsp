@@ -19,7 +19,7 @@
 	
 	
 	<!-- JQuery 관련 -->
-	<script type="text/javascript" src='/asset/js/jquery/common.js'></script>
+	<script type="text/javascript" src="<c:url value='/asset/js/jquery/common.js'/>"></script>
 	<script type="text/javascript" src="<c:url value='/asset/js/jquery-3.5.1.min.js'/>"></script> 
 	<script type="text/javascript" src="<c:url value='/asset/js/commonUtil.js'/>?date=<%= nowTime %>"></script> 
 	<script type="text/javascript" src="<c:url value='/asset/js/app-common.js'/>?date=<%= nowTime %>"></script>

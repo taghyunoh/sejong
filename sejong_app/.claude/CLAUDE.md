@@ -6,8 +6,72 @@
   cp src/main/webapp/...파일 target/Sejong_APP-1.0.0/...같은경로
   ```
   2026-07-31 "색이 안 바뀐다" 원인이 전부 이것. 수정 후 반드시 동기화할 것. CSS는 브라우저 캐시 → Ctrl+F5.
+- **[실측 2026-08-13] Eclipse 톰캣(9060)이 실제로 서빙하는 건 `target/` 이 아니라 Eclipse 배포본**이다 :
+  `C:\Users\HYUN\eclipse-workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp5\wtpwebapps\Sejong_APP\`
+  (tmp 번호는 서버 추가 순서라 바뀔 수 있다 — `wtpwebapps\Sejong_APP` 로 찾을 것).
+  **CLI 로 `src/` 를 고치면 Eclipse 가 모르므로 F5(Refresh) 해야 배포된다.** 급히 확인만 하려면 위 폴더에
+  JSP 를 직접 복사하면 즉시 반영된다(다음 publish 때 Eclipse 가 덮으므로 `src/` 가 언제나 정본).
 - git 저장소는 **상위 폴더(C:\Users\user\git\sejong) 하나**로 sejong_app + sejong-web을 함께 관리.
 - 백업: `C:\Users\user\git\sejong\backup_20260731\` (소스 2종 + .git 이력 zip).
+
+## ★★[완료 2026-08-13] 운동·식사 등록 저장 실패 — ***URL 을 루트 절대경로로 불러서***
+
+> ***"로컬은 되는데 운영만 안 된다" 면 이 항목부터 볼 것.*** 아래 CDN jQuery 건과 두 겹으로 겹쳐 있었다.
+
+- **★진짜 원인**: **운영은 컨텍스트 `/app` 아래에 있다** — `https://allcare24.kr/app/foodMain.do`.
+  (도메인 루트 `allcare24.kr/` 은 **sejong-web(관리자)** 이다. 톰캣 `webapps/{ROOT=sejong-web, app=Sejong_APP, konet}`.
+  ※이 문서 아래 "운영 서버" 절의 *Sejong_APP = webapps/ROOT* 는 **틀린 기록** — 실측 `webapps/app`.)
+  그런데 JSP 가 `url:"/updateFood.do"` · `fetch('/getFoodList.do')` 처럼 **루트 절대경로**로 불렀다.
+  → 운영에서 요청이 **이 앱이 아니라 sejong-web 으로 간다.** 거기서 404/500 이 나면
+  **앞단 nginx 가 외부 오류페이지(`errdoc.gabia.net`)로 302** 시키고, XHR 이 **다른 출처로 리다이렉트**되어
+  브라우저가 차단 → jQuery 는 **status 0**. 화면엔 "서버에 연결하지 못했습니다".
+  **로컬은 컨텍스트가 루트(`/`)라 같은 코드가 멀쩡히 동작한다 — 그래서 재현이 안 됐다.**
+- **조치**: 두 JSP 에 `const CTX = "${pageContext.request.contextPath}";` 를 두고 **호출 7곳 전부 접두**
+  (`updateHealth`·`deleteHealth`·`getExercise` / `updateFood`·`deleteFood`·`getFoodList`·`getFoodMstList`).
+  로컬은 `CTX=""` 로 렌더되어 종전과 동일하게 동작한다(회귀 없음).
+- **[함정] status 0 을 통신장애로 오해하기 쉽다** — 실제로는 *요청이 엉뚱한 앱에 갔고, 그 오류를 nginx 가
+  외부 도메인 리다이렉트로 바꿔서* 브라우저가 막은 것이다. **앱 로그를 아무리 봐도 안 나온다.**
+  판별법: 운영 엔드포인트를 컨텍스트 붙여 직접 때려 본다 — `/app/updateFood.do` 는 **401 JSON** 이
+  정상적으로 오는데 `/updateFood.do` 는 **302 → errdoc.gabia.net** 이면 이 건이다.
+- **[재발 방지] 새 화면에서도 서버 호출·정적자원은 반드시 contextPath 를 붙일 것**
+  (JSP 는 `${pageContext.request.contextPath}` 또는 `<c:url value='…'/>`).
+- **[전수 점검 완료 2026-08-13] 앱 전체(JSP·JS)에서 루트 절대경로를 훑은 결과** — 아래가 전부다.
+  | 파일 | 내용 | 판정 |
+  |---|---|---|
+  | `exercise/exerMain.jsp`·`food/foodMain.jsp` | 호출 7곳 | **장애 원인 — 수정함** |
+  | `tiles/main/header.jsp`·`tiles/login/header.jsp` | `src='/asset/js/jquery/common.js'` (바로 다음 줄들은 `<c:url>` 쓰는데 이 줄만 빠졌다) | **수정함.** 운영에서 sejong-web 의 동명 파일을 싣고 있었다 — 지금은 두 앱 내용이 같아 무증상이었지만 한쪽만 고치면 조용히 깨진다 |
+  | `main/register.jsp` | `getAuth`·`authToken`·`getBloodData`·`getData` 4곳 | **수정함**(현재 화면에서 연결된 링크는 없음 — `goRegisterPage.do` 직접 호출뿐이라 사실상 사장. 살아날 때를 대비) |
+  | `login/login.jsp` | `/v1/user/access_token_info`·`/v2/user/me` | **문제 아님** — `Kakao.API.request` 라 kapi.kakao.com 기준 상대경로다. 건드리지 말 것 |
+  | `login_back.jsp`·`Blood_Consult_back.jsp` | 각 3·2곳 | **죽은 파일**(컨트롤러가 반환하지 않음) |
+  | `tiles/popup/header.jsp` | css/js 4곳 | **죽은 레이아웃**(`.popup/*` 뷰를 쓰는 컨트롤러 없음). 참조 파일 자체가 이 앱에 없다 |
+  | `asset/js/jquery/common.js` | `/PHSS/loginOut.do`·`/com/checkBtnYn.do` | **타 프로젝트 잔재**, 호출하는 화면 0곳 |
+- **[미해결·별건] `webapps/app/index.jsp`(welcome-file)가 옛 로그인 화면이다** — `https://allcare24.kr/app/`
+  로 들어오면 이게 뜬다(제목 "로그인 페이지"). 참조하는 `/css/login.css`·`/js/jquery-3.5.1.min.js` 는
+  **이 앱에 없는 파일**이라 운영에선 루트(sejong-web)의 것을 주워 쓰거나 404 다. 정상 진입은 `/app/index.do`.
+  → 지우거나 `index.do` 로 리다이렉트시키는 정리가 필요(이번엔 손대지 않음 — 동작 중인 진입 경로라 확인 후 처리).
+
+## ★[완료 2026-08-13] 운동·식사 등록 "시스템오류입니다 다시 입력하세요!" — CDN jQuery 중복 로드
+
+> 위 URL 문제와 **별개의 두 번째 결함**. 이것 때문에 원인이 가려져 있었다(무슨 오류인지 화면이 안 알려줌).
+
+- **증상**: 운동등록·식사등록에서 [입력] 시 위 알림만 뜨고 저장 안 됨. **두 화면만** 같은 증상.
+- **원인은 데이터·SQL 이 아니다**(확인함) — 화면과 똑같은 payload 를 로컬 서버로 보내면 둘 다 **200 OK**.
+  로컬은 운영 DB 를 그대로 보므로 컬럼 길이·제약도 같은 조건이다. 빈 `exerInt`, 미전송 `exerCnt`·`foodDanwi`,
+  쉼표로 긴 음식명("공기밥, 김치찌개, 삶은닭살") 모두 정상 저장됐다.
+- **진짜 원인**: 레이아웃 [header.jsp](../src/main/webapp/WEB-INF/tiles/main/header.jsp) 가 jQuery 3.5.1 →
+  `commonUtil.js` 순으로 실어 **전역 `$(document).ajaxError`**(401 → 로그인 화면 이동)를 걸어 두는데,
+  본문 JSP 가 `code.jquery.com/jquery-3.6.4` 를 **한 번 더 실어 `window.$` 를 통째로 교체**했다.
+  → 저장 `$.ajax` 는 핸들러 없는 새 jQuery 를 타고, **세션 만료(401)가 와도 리다이렉트 없이**
+  로컬 `error` 콜백의 "시스템오류" 알림만 떴다. **세션 만료를 시스템 장애로 오인**하게 만든 것.
+- ***어느 JSP 든 jQuery 를 다시 싣는 순간 세션 만료 안전망이 죽는다*** — 이게 이 건의 교훈.
+  같은 패턴이 남아 있는 파일: **`asqmain/asqMain.jsp`(3.6.4) · `Blood_Consult.jsp`(3.6.4, defer)**
+  (이번엔 손대지 않음 — 챗봇 레이아웃이 걸려 있어 별도 확인 필요).
+- **조치**: exerMain.jsp·foodMain.jsp 에서 CDN jQuery 줄 제거(주석으로 이유 명시. fullcalendar·flatpickr 는
+  jQuery 비의존이라 안전) + **`ajaxFailMsg(xhr, what)`** 신설 — 401 은 "로그인이 만료되었습니다",
+  그 외는 **상태코드 + 서버 메시지**를 함께 보여 준다(종전엔 상태코드·본문을 버려서 원인 추적이 어려웠다).
+- **검증**: 렌더 결과 jQuery 1회 로드 · 옛 문구 0건 · 인라인 JS `node --check` 통과 ·
+  세션 없이 `updateHealth.do` 호출 시 `401 {"sessionExpired":true}` 확인.
+- **배포**: JSP 만 — 파일 교체(WAR 재빌드 불필요). 로컬은 Eclipse **F5 후 publish**.
 
 ## 구조
 - eGov JSP + Tiles(.main/* = top.jsp 래핑, .raw 아님). 뷰: `WEB-INF/jsp/`, 공용 CSS `asset/css/`(common/layout/comm_style/blood_fahr).
@@ -125,7 +189,11 @@
   ***MobaXterm 저장세션(`2.세종_TP(hannetit02)`)으로만 접속·전송이 된다.*** 파일은 **SFTP 패널에 드래그**.
 - **톰캣** : `/web/tomcat9`(catalina.base=home), JDK17, `guser` 로 기동. 포트 **8080 / 8443**.
   ⚠**konet 이 같은 톰캣에 함께 떠 있다**(`webapps/{ROOT,app,konet}`) — 재기동하면 konet 도 같이 내려간다.
-- **Sejong_APP = `webapps/ROOT`**(루트 컨텍스트, 로컬 9060 과 같은 구조). WAR 원본은 `/web/*.war`.
+- ~~**Sejong_APP = `webapps/ROOT`**(루트 컨텍스트, 로컬 9060 과 같은 구조).~~ WAR 원본은 `/web/*.war`.
+  ⚠**[정정 2026-08-13 실측] Sejong_APP 은 `webapps/app`(컨텍스트 `/app`)이다** — 접속 주소는
+  `https://allcare24.kr/app/`. `webapps/ROOT` 는 **sejong-web(관리자)** 이고 `allcare24.kr/` 이 그쪽이다.
+  판별: `curl -s -o /dev/null -w '%{http_code}' https://allcare24.kr/app/sw.js` → **200**(sw.js·manifest 는
+  Sejong_APP 에만 있다). ***로컬(루트)과 컨텍스트가 다르다는 점이 URL 하드코딩 장애의 원인이었다*** — 맨 위 절 참조.
 - **`reloadable` 설정이 없다** ⇒ 클래스만 바꿔도 자동 반영 안 됨. manager 계정도 전부 기본값(`<must-be-changed>`)이라 못 쓴다.
   ⇒ **컨텍스트만 재적재하는 법** : `touch webapps/ROOT/WEB-INF/web.xml` → 12초 뒤 `catalina.out` 에
   `HostConfig.reload 컨텍스트 []` 가 찍히면 성공(톰캣·konet 안 건드림). **실측으로 통했다.**
