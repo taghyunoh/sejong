@@ -581,6 +581,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .qa-quick .qbtn.used { background:#f1f4f8; border-color:#dde3ea; color:#9aa6b4; cursor:default; }
 .chat-user { position:relative; background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
 .chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
+/* [2026-08-13] AI 응답 대기 진행바 — 종전 「…」 한 글자는 멈춘 것처럼 보였다.
+   .cp-bar 의 width 는 JS 가 90% 까지 점근시키고, 응답이 오면 100% 로 닫는다. */
+.chat-progress { min-width:160px; padding-top:12px; padding-bottom:12px; }
+.chat-progress .cp-track { height:4px; border-radius:99px; background:#eef2f4; overflow:hidden; }
+.chat-progress .cp-bar   { height:100%; width:0; border-radius:99px;
+  background:#2f9e8f; transition:width .18s ease; }
 .chat-del  { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
 .chat-user:hover .chat-del, .chat-bot:hover .chat-del { opacity:1; }
 .chat-intro { max-width:100% !important; align-self:stretch !important; font-size:13.5px !important; }
@@ -1269,12 +1275,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     _chatBusy = true;
 
     // ③ 매칭 실패 → 서버 LLM(Gemini) fallback. "입력 중…" 표시 후 응답으로 교체
+    /* [2026-08-13] 「…」 한 글자 → **동적 진행바**. Gemini 호출은 2~5초가 걸려
+       점 하나로는 멈춘 것처럼 보인다(사용자 지적). 진행바는 응답이 오면 100% 로 끝난다. */
     var box = document.getElementById('chatMessages');
     var typing = document.createElement('div');
-    typing.className = 'chat-bot';
-    typing.innerHTML = '<span class="chat-text">…</span>';
+    typing.className = 'chat-bot chat-progress';
+    typing.innerHTML =
+      '<div class="cp-label">AI가 답변을 작성 중입니다…</div>' +
+      '<div class="cp-track"><div class="cp-bar"></div></div>';
     box.appendChild(typing);
     _chatScrollToEnd();
+    var _cpBar = typing.querySelector('.cp-bar'), _cpPct = 0;
+    /* 응답 시간을 알 수 없으므로 **90% 까지만 점근**시킨다(가짜 100% 로 기다리게 하지 않는다).
+       남는 10% 는 응답이 실제로 왔을 때 채운다. */
+    var _cpTimer = setInterval(function(){
+      _cpPct += Math.max(0.6, (90 - _cpPct) * 0.08);
+      if (_cpPct > 90) _cpPct = 90;
+      if (_cpBar) _cpBar.style.width = _cpPct.toFixed(1) + '%';
+    }, 120);
+    function _cpDone(cb){
+      clearInterval(_cpTimer);
+      if (_cpBar) _cpBar.style.width = '100%';
+      setTimeout(function(){ try { typing.remove(); } catch(e){} cb(); }, 180);
+    }
 
     $.ajax({
       url: CommonUtil.getContextPath() + '/blood/chatAsk.do',
@@ -1283,20 +1306,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       contentType: 'application/json',
       dataType: 'json',
       success: function(r){
-        typing.remove();
-        if (r && r.IsSucceed && r.Data) {
-          var _ans = String(r.Data);
-          _chatCache[_cacheKey] = _ans;   // 성공 답변만 캐시
-          _addMsg(_ans, false);
-        } else {
-          _addMsg(_chatFallbackMsg(), false);
-        }
-        _chatBusy = false;
+        _cpDone(function(){
+          if (r && r.IsSucceed && r.Data) {
+            var _ans = String(r.Data);
+            _chatCache[_cacheKey] = _ans;   // 성공 답변만 캐시
+            _addMsg(_ans, false);
+          } else {
+            _addMsg(_chatFallbackMsg(), false);
+          }
+          _chatBusy = false;
+        });
       },
       error: function(){
-        typing.remove();
-        _addMsg(_chatFallbackMsg(), false);
-        _chatBusy = false;
+        _cpDone(function(){
+          _addMsg(_chatFallbackMsg(), false);
+          _chatBusy = false;
+        });
       }
     });
   }
@@ -1531,14 +1556,36 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   // 현재 화면 지표 요약 — LLM 프롬프트 컨텍스트로 전달
+  /* [2026-08-13 기획 「AI 답변 Sample」] 수치는 **화면(기존 자료)** 것을 그대로 쓰고,
+     문장만 Gemini 가 만든다. 그래서 컨텍스트에 TIR/TAR/TBR 을 **원값 그대로** 실어 보낸다.
+     ⚠TAR·TBR 이 빠져 있던 것이 종전 문제 — 고혈당형/저혈당형을 구분할 근거가 없어
+       LLM 이 일반론만 답했다. 기획안의 4유형(우수/고혈당/저혈당/변동)은 이 세 값이 있어야 갈린다. */
+  /* ★★숫자를 **LLM 에 보내지 않는다.** 「답변에 수치를 쓰지 마」라고 지시해도 모델은
+       받은 숫자를 되읽는다(2026-08-13 실측 — 4유형 전부 TIR/TAR 를 그대로 나열했다).
+       ⇒ 되읽을 숫자 자체를 주지 않는 것이 유일하게 확실한 방법이다.
+       수치는 화면 표(#tir/#tar/#tbr/#cv)가 이미 보여준다 — 기획 「수치는 기존자료, 문장은 AI」 그대로. */
   function _chatCtxText(){
-    var avg = _metricNum('avgUpt'), fasting = _metricNum('avgFastingBlood'), post = _metricNum('after2hBlood'), tir = _metricNum('tir');
+    var tir = _metricNum('tir'), tar = _metricNum('tar'), tbr = _metricNum('tbr'), cv = _metricNum('cv');
+    if (tir == null && tar == null && tbr == null && cv == null) return '';
     var parts = [];
-    if (avg != null)     parts.push('주간 평균 ' + avg);
-    if (fasting != null) parts.push('공복 평균 ' + fasting);
-    if (post != null)    parts.push('식후 평균 ' + post);
-    if (tir != null)     parts.push('목표범위(TIR) ' + tir + '%');
-    return parts.length ? (parts.join(' / ') + ' mg/dL 기준') : '';
+    if (tir != null) parts.push(tir >= 70 ? '목표범위 유지 양호' : (tir >= 50 ? '목표범위 유지 다소 부족' : '목표범위 유지 낮음'));
+    if (tar != null) parts.push(tar >= 25 ? '고혈당 시간 김'     : (tar >= 10 ? '고혈당 시간 다소 있음'   : '고혈당 거의 없음'));
+    if (tbr != null) parts.push(tbr >= 4  ? '저혈당 반복'        : (tbr >= 1  ? '저혈당 가끔'             : '저혈당 거의 없음'));
+    if (cv  != null) parts.push(cv  > 36  ? '혈당 변동 큼'       : '혈당 변동 안정적');
+    var t = _chatGlucoseType(tir, tar, tbr, cv);
+    return parts.join(' / ') + (t ? (' / 판정유형 ' + t) : '');
+  }
+
+  /* 혈당 유형 자동 판정 — 기획안 §「혈당 유형 자동 판정」 4유형.
+     ★판정은 **우리가 한다**(대한당뇨병학회 CGM 기준: TIR≥70·TAR<25·TBR<4·CV≤36).
+       LLM 에 맡기면 같은 수치에 다른 유형이 나올 수 있다 — 수치·판정은 기존 자료, 문장만 AI. */
+  function _chatGlucoseType(tir, tar, tbr, cv){
+    if (tir == null && tar == null && tbr == null) return '';
+    if (tbr != null && tbr >= 4)  return '저혈당형';
+    if (tar != null && tar >= 25) return '고혈당형';
+    if (cv  != null && cv  > 36)  return '변동형';
+    if (tir != null && tir >= 70) return '우수';
+    return '변동형';
   }
 
   // [2026-07-31 기획 7] 챗봇 오버레이 열기/닫기 — 메인 [AI 챗봇](goBloodPage2.do?chat=1) 진입 시 자동 오픈

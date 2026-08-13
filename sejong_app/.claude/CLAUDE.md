@@ -57,6 +57,10 @@
 - 자동 로그인·알림 PUSH 숨김(.hide), 버전 V3.0.
 
 ## ★서버 LLM(Gemini) — `BloodController.callGemini()`
+
+> **다른 PC에서 개발을 시작한다면** → [docs/개발PC_Gemini키_설정_2026-08-13.md](../docs/개발PC_Gemini키_설정_2026-08-13.md)
+> (키 등록·Eclipse 재시작·유료 검증 2단계·밟았던 함정 3개를 절차로 정리해 두었다)
+
 ### 키
 - **평문 금지.** `application.properties` 는 `api.gemini.key = ${GEMINI_API_KEY:}` 참조만 하고, 실제 값은 **Windows 사용자 환경변수**(`HKCU\Environment\GEMINI_API_KEY`) 한 곳에만 둔다. sejong_app · sejong-web 이 같은 값을 공유하므로 **레지스트리 하나만 바꾸면 양쪽 반영**(소스·target 복사 불필요 — 위 배포 함정 해당 없음).
   ```
@@ -163,10 +167,19 @@
 `setenv.sh` 를 heredoc 으로 **한 줄로 재작성**(중복 2줄 제거) → **톰캣 재기동**(konet 동시 중단) →
 API 직접 12건 동시 **전원 200 · FreeTier 0**(직전 같은 조건에서 5×429 였다) ⇒ **유료 확정.**
 
-⚠**남은 것 : 로컬 PC 는 아직 옛 무료 키다.** `setx GEMINI_API_KEY "새키"` + **Eclipse 완전 재시작** 필요.
-⚠키 입력은 `read -s` 로 하되 ***프롬프트에 「키만」 붙여넣을 것*** — 블록을 통째로 붙여넣으면
-  `read` 가 **다음 명령줄을 키로 먹는다**(실제로 발생: `GEMINI_API_KEY="cat > /web/…"` 가 됐다).
-  검증은 `echo "길이=${#K}"` → **53** 이면 정상.
+**로컬도 같은 날 완료** — HKCU 값 교체 + **Eclipse 완전 재시작**(17:31) → 새 셸 키로 API 12건 동시 **전원 200**,
+`testUser2.do` → `chatAsk.do` **`IsSucceed:true`**. ⇒ 로컬·서버 **양쪽 다 새 유료 키**로 동작한다.
+
+### ⚠키를 넣을 때 밟은 함정 3개 (다음에 또 겪는다)
+
+1. **`read -s` 프롬프트엔 「키만」 붙여넣을 것** — 블록을 통째로 붙여넣으면 `read` 가 **다음 명령줄을 키로 먹는다**
+   (실제 발생: `GEMINI_API_KEY="cat > /web/…"`). 검증 = `echo "길이=${#K}"` → **53**.
+2. **클립보드로 우회하지 말 것** — 「명령을 복사해 붙여넣으라」고 안내하는 순간 **클립보드가 그 명령으로 덮인다.**
+   `Get-Clipboard` 로 키를 읽으려다 355자(명령문)를 환경변수에 써 버렸다([[secret-paste-clipboard-clobber]] 그대로).
+   ⇒ **사용자 셸에서 `Read-Host -AsSecureString` → 같은 세션에서 `SetEnvironmentVariable`** 이 가장 안전하다.
+3. **HKCU 값 ≠ 실행 중 프로세스의 값** — 레지스트리엔 새 키가 있어도 Eclipse/톰캣은 옛 키를 쥔다.
+   확인법 : `[Environment]::GetEnvironmentVariable('GEMINI_API_KEY','User') -eq $env:GEMINI_API_KEY` 가 **False** 면
+   아직 재시작 안 된 것. (해시 앞 12자만 비교하면 평문 노출 없이 확인된다)
 
 ### ⛔[2026-08-13 오후] (경위) 키가 무료 티어였다 — 유료 전환이 안 먹고 있었다
 
@@ -194,3 +207,24 @@ API 직접 12건 동시 **전원 200 · FreeTier 0**(직전 같은 조건에서 
   - `egovframework/conf/globals.properties` — NCP `accessKey`·`secretKey` / Gabia `sms.apiKey`
   - `egovframework/spring/context-datasource.xml` — **DB 접속정보 평문**(url·username·password)
 - [완료 2026-08-13] 새 Gemini 키 **paid tier 확인됨**. 무료/유료는 호출 성공 여부로는 구분되지 않고 **RPM 한도로 판별**한다 — 무료 tier 는 flash 계열 약 10 RPM 이라 동시 요청을 몰면 429 가 뜨고 에러 본문의 quota 이름에 `FreeTier` 문자열이 그대로 박혀 나온다. 50건 동시 요청 전원 200(429 0건) → 유료. `chatAsk.do` 로 25건 동시 요청해도 전원 성공하므로 **앱 JVM 이 쥔 키도 유료 키**임이 함께 확인된다(환경변수가 제대로 상속됐다는 뜻).
+
+## ✅[2026-08-13 저녁] 챗봇 — 기획 「AI 응답 Sample」 반영 + 동적 진행바
+
+기획 원본 = `D:\세종TP\화면 기능개선(3차전달자료)_AI.pptx` (4유형 샘플 + 프롬프트 실험 2종).
+**컨셉 = 수치·판정은 기존 자료(화면), 문장만 유료 Gemini.** 고친 곳 :
+
+- **`Blood_Consult.jsp` `_chatCtxText()`** — TAR/TBR/CV 를 컨텍스트에 추가하고(종전엔 TIR 뿐이라
+  고혈당형/저혈당형을 못 갈랐다), **4유형 판정은 우리가 한다**(`_chatGlucoseType`, 학회 기준
+  TIR≥70/TAR<25/TBR<4/CV≤36 — LLM 에 맡기면 같은 수치에 다른 유형이 나온다).
+- ★★**숫자를 LLM 에 보내지 않는다** — 「수치를 쓰지 마」라고 지시해도 모델은 받은 숫자를
+  되읽는다(4유형 전부 실측). ⇒ 컨텍스트를 **정성 표현**(`목표범위 유지 양호 / 저혈당 반복 / …`)으로
+  바꿔 보내니 한 번에 해결. ***되읽을 숫자를 주지 않는 것이 유일하게 확실한 방법.***
+- **`BloodController` 프롬프트** — 3단계 구조(상태→이유→행동, 기획 결론 그대로) · 100자 내외 ·
+  유형별 행동 방향 4종 명시 · **번호(①②③)·머리기호 금지**(넣으면 그대로 찍힌다 — 실측).
+- **「…」 → 동적 진행바**(`.chat-progress`) — Gemini 2~5초 대기가 멈춘 것처럼 보였다(사용자 지적).
+  90% 까지 점근(가짜 100% 로 안 기다리게) + 응답 오면 100% 닫고 제거. 실측 1.0s=7% → 6.0s=100%.
+- ⚠배포는 **세 곳** — src(정본) · `target/Sejong_APP-1.0.0/`(빌드 산출) · **tmp2 wtpwebapps(실제 서빙)**.
+  JSP 는 wtpwebapps 에 안 넣으면 화면에 안 나온다(§배포 함정의 로컬 확장판).
+  ⚠클래스를 wtpwebapps 에 넣으면 **컨텍스트 자동 재적재 → 세션 전부 끊김**(testUser2 재로그인).
+- 검증 : 규칙 매칭(①②단계)에 안 걸리는 질문이어야 LLM 경로(③)가 탄다 — "혈당 상태 어때"는
+  로컬 규칙이 가로챈다. 서버(운영) 반영은 **다음 WAR 빌드에 자동 포함**(src 에 커밋됐으므로).
