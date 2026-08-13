@@ -583,10 +583,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
 /* [2026-08-13] AI 응답 대기 진행바 — 종전 「…」 한 글자는 멈춘 것처럼 보였다.
    .cp-bar 의 width 는 JS 가 90% 까지 점근시키고, 응답이 오면 100% 로 닫는다. */
-.chat-progress { min-width:160px; padding-top:12px; padding-bottom:12px; }
-.chat-progress .cp-track { height:4px; border-radius:99px; background:#eef2f4; overflow:hidden; }
-.chat-progress .cp-bar   { height:100%; width:0; border-radius:99px;
-  background:#2f9e8f; transition:width .18s ease; }
+.chat-progress { min-width:180px; }
+.chat-progress .cp-label { font-size:12px; color:#6b7c86; margin-bottom:5px; }
+/* [2026-08-13] 「일반적인 진행바」 — 부트스트랩식 파란 줄무늬 바(굵기 10px, 줄무늬가 흐른다) */
+.chat-progress .cp-track { height:10px; border-radius:6px; background:#e9ecef; overflow:hidden; }
+.chat-progress .cp-bar   { height:100%; width:0; border-radius:6px;
+  background-color:#0d6efd; transition:width .18s ease;
+  background-image:linear-gradient(45deg,rgba(255,255,255,.25) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.25) 50%,rgba(255,255,255,.25) 75%,transparent 75%,transparent);
+  background-size:16px 16px; animation:cpStripe .8s linear infinite; }
+@keyframes cpStripe { 0%{background-position:16px 0} 100%{background-position:0 0} }
+@media (prefers-reduced-motion: reduce) { .chat-progress .cp-bar { animation:none; } }
 .chat-del  { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
 .chat-user:hover .chat-del, .chat-bot:hover .chat-del { opacity:1; }
 .chat-intro { max-width:100% !important; align-self:stretch !important; font-size:13.5px !important; }
@@ -803,8 +809,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	  <div class="qa-input">
 	    <input type="text" id="chatInput" placeholder="질문을 입력하세요…" onkeypress="if(event.key==='Enter')sendChat();">
 	    <button type="button" class="qa-send" onclick="sendChat();">전송</button>
-	    <%-- 전체 삭제 — 헤더 우측은 모바일에서 잘려 안 보여 입력줄로 이동(2026-07-31, 아이콘만) --%>
-	    <button type="button" class="qa-send qa-trash" onclick="_clearChat();" title="대화 전체 삭제">🗑</button>
+	    <%-- 전체 삭제 🗑 버튼은 2026-08-13 사용자 요청으로 제거(개별 말풍선 × 삭제는 유지).
+	         복원 시: <button type="button" class="qa-send qa-trash" onclick="_clearChat();">🗑</button> --%>
 	  </div>
 	  <%-- [2026-08-05 검토회의] 질문 칩 13개 → 6개.
 	       "아래 질문 버튼이 너무 많습니다 / 위 6개로 처리하는게 좋을 듯 합니다" 요청 반영.
@@ -1281,7 +1287,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var typing = document.createElement('div');
     typing.className = 'chat-bot chat-progress';
     typing.innerHTML =
-      '<div class="cp-label">AI가 답변을 작성 중입니다…</div>' +
+      '<div class="cp-label">AI 생각중…</div>' +
       '<div class="cp-track"><div class="cp-bar"></div></div>';
     box.appendChild(typing);
     _chatScrollToEnd();
