@@ -1,0 +1,3 @@
+# git 워크트리 임시 폴더 — 저장소 안에 만들어지지만 커밋 대상이 아니다.
+# (커밋되면 gitlink(160000)+null SHA 로 기록돼 GitHub 푸시가 index-pack failed 로 거부된다)
+sejong_app/.claude/worktrees/

@@ -55,7 +55,13 @@
   /* 날짜 구간 입력 */
   .date-range{display:flex;gap:8px;align-items:center;margin:6px 0 10px}
   .date-range input[type="date"]{
-    padding:4px 5px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;font-size:11px
+    /* ★16px 미만으로 내리지 말 것 — iOS Safari 는 폰트가 16px 보다 작은 입력칸을 탭하면
+       읽을 수 있게 화면을 자동 확대하는데, 포커스가 빠져도 배율을 되돌리지 않는다.
+       (확대된 화면에서 나머지 조작을 계속하게 되어 사실상 화면이 깨진 것처럼 보인다)
+       이 파일에는 .date-range input[type="date"] 규칙이 두 벌 있다 — 특이도가 같아
+       뒤에 나오는 쪽(flex:1 / text-align:center 가 있는 블록)이 실제로 적용되고 여기는 덮인다.
+       한쪽만 고치면 효과가 없으므로 둘 다 16px 로 맞춰 둔다. */
+    padding:4px 5px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;font-size:16px
   }
   .date-range .tilde{color:#888}
   .date-range .btn.apply{
@@ -423,7 +429,13 @@
   min-width: 0;
   width: auto;
   padding: 6px 5px;        /* 내부 여백 */
-  font-size: 13px;         /* 날짜 폰트 */
+
+  /* ★16px 미만 금지 — iOS Safari 는 폰트가 16px 보다 작은 입력칸을 탭하면 화면을 자동 확대하고,
+     포커스가 빠져도 원래 배율로 되돌리지 않는다. 종전 13px 이 딱 이 증상이었다.
+     ⚠이 값은 '읽기 편하라고' 키운 게 아니라 확대를 막는 하한선이다. 되돌리면 증상이 그대로 재발한다.
+     칸을 작게 보이려면 글자가 아니라 height/padding 으로 줄인다.
+     (foodMain.jsp · exerMain.jsp 의 .date-input 도 같은 이유로 16px 로 못박았다) */
+  font-size: 16px;
   font-weight: 400;
   text-align: center;
   border: 1px solid #ccc;
@@ -433,8 +445,28 @@
   letter-spacing: -0.4px;  /* 글자 밀도 조정 */
 }
 
+/* [360px 대응] 위에서 13px → 16px 로 올리면 이 화면만 한 줄에 안 들어간다.
+   이 화면은 날짜칸이 **두 개**(시작·종료)라 Exercise/Food_Consult(한 개, max-width 220px)와 사정이 다르다.
+   360px 실측(카드 안쪽 폭 324px) — 조정 전에는 두 칸이 각각 136px 을 요구하는데 119px 만 받아
+   날짜 글자가 잘렸다(합계 357px 필요 / 324px 가용 = 33px 초과).
+   flex:1 + min-width:0 이라 줄이 넘치지는 않고 '조용히 잘리기만' 해서 더 알아채기 어렵다.
+   세 군데(gap ↓ / 아래 .tilde 여백 제거 / 달력 아이콘 숨김)로 33px 을 회수한다
+   → 360px 실측 결과 필요 299.4px / 가용 324px, 여유 +24.6px, 잘림 없음. */
+.date-range {
+  gap: 4px;                /* 8px → 4px. 칸이 5개라 gap 이 4군데(32px)나 든다 */
+}
+.date-range input[type="date"]::-webkit-calendar-picker-indicator {
+  /* 달력 아이콘 숨김 — 한 칸당 약 16px 을 먹는데, 이 두 칸은 readonly 라 눌러도 피커가 열리지 않고
+     기간 이동은 좌우 ◀/▶ 버튼이 전담한다. 즉 여기서는 장식일 뿐이다.
+     아이콘을 남기면 여유가 2.6px 밖에 안 남아 기기 폰트 차이만으로 다시 잘린다(실측). */
+  display: none;
+}
+
 .date-range .tilde {
-  margin: 0 5px;           /* 여백 약간 줄임 */
+  /* [360px 대응] 0 5px → 0. 이 화면의 .tilde 는 <span class="tilde"></span> 로 **내용이 비어 있어**
+     폭 0 인데 좌우 여백 10px 만 차지하고 있었다. 위 16px 상향분을 메우는 데 그 10px 을 쓴다.
+     (여기서 지정해야 한다 — 위쪽에 같은 특이도로 먼저 써 봐야 이 블록이 뒤에 있어 덮인다) */
+  margin: 0;
   font-size: 17px;
   font-weight: 600;
   color: #444;

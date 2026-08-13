@@ -65,8 +65,13 @@
   width: 100%;
   height: 36px;          /* 기본 40~44px → 36px */
   padding: 6px 10px;     /* 패딩 축소 */
-  font-size: 14px;       /* 폰트 축소 */
+  /* [함정] 16px 미만으로 내리지 말 것 — iOS Safari 는 글자가 16px 보다 작은
+     입력칸을 탭하면 읽으라고 화면을 통째로 확대하고, 입력이 끝나도 원래
+     배율로 돌려주지 않는다(사용자가 매번 손으로 축소해야 했던 원인).
+     칸을 작게 보이려면 글자가 아니라 height/padding 으로 줄인다. */
+  font-size: 16px;
   border-radius: 8px;
+  box-sizing: border-box;
 }
 
 /* 커스텀 셀렉트 드롭다운 글씨/간격 축소 */
@@ -89,10 +94,11 @@
   font-size: 14px;
 }
 
+/* 기간 필터 날짜칸. 폭·여백·정렬은 comm_style.css 의 `.date-range input[type="date"]`
+   가 flex 로 관리한다(안드로이드에서 끝이 잘리던 문제) — 여기서 고정 width 를
+   다시 주지 말 것. 글자 크기만 16px 로 못박는다(12px 이면 iOS 가 화면을 확대한다). */
 .date-input {
-    font-size: 12px !important;   /* 글자 크기 강제 적용 */
-    padding: 1px 3px;
-    width: 118px;
+    font-size: 16px !important;
 }
 /* 예전에 있던 `#historyTab { margin-left: -11px }` 를 제거했다.
    본문을 왼쪽으로 끌어당겨 좌우가 어긋났고(왼쪽 37px / 오른쪽 48px),

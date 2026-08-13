@@ -200,7 +200,16 @@
   width: auto;
   max-width: 220px;
   padding: 7px 6px;       /* 내부 여백 */
-  font-size: 13px;        /* 날짜 폰트 */
+
+  /* ★16px 미만 금지 — iOS Safari 는 폰트가 16px 보다 작은 입력칸을 탭하면 화면을 자동 확대하고,
+     포커스가 빠져도 원래 배율로 되돌리지 않는다. 종전 13px 이 딱 이 증상이었다.
+     ⚠읽기 편하라고 키운 값이 아니라 확대를 막는 하한선이다. 되돌리면 증상이 재발한다.
+     칸을 작게 보이려면 글자가 아니라 height/padding 으로 줄인다.
+     (foodMain.jsp · exerMain.jsp 의 .date-input 도 같은 이유로 16px 로 못박았다)
+     폭 영향 없음 — 360px 실측(가용 324px): 날짜칸 1개짜리 화면이라 16px 에서도
+     필요 206px / 여유 118px 로 한 줄에 여유롭게 들어간다.
+     (날짜칸이 두 개인 Blood_Consult.jsp 는 같은 변경에 폭 조정이 따로 필요했다) */
+  font-size: 16px;
   font-weight: 400;
   text-align: center;
   border: 1px solid #ccc;

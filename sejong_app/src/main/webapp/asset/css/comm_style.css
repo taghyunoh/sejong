@@ -226,19 +226,40 @@ button {
   align-items: center;
   margin: 16px 0;
   font-weight: bold;
-  gap: 8px;
+  /* [360px] 8px → 4px. 글자를 16px 로 올리면(iOS 확대 방지) 날짜칸이 그만큼 넓어지는데
+     이 행은 자식이 4개(날짜·구분자·날짜·조회)라 gap 이 3군데나 든다.
+     8px 이면 360px 에서 칸당 약 5px 이 모자라 오른쪽 달력 아이콘이 잘렸다. */
+  gap: 4px;
   font-size: 1rem;
   white-space: nowrap;
+  max-width: 100%;
 }
 
+/* [함정·안드로이드] 날짜칸에 고정 width 를 주면 안 된다.
+   크롬(안드로이드)의 input[type=date] 은 값 옆에 달력 아이콘을 같이 그려서
+   iOS 보다 min-content 폭이 넓다. flex 자식은 기본이 min-width:auto 라
+   그 폭 밑으로는 안 줄어들고, .date-range 가 nowrap 이라 줄바꿈도 못 해
+   행이 통째로 넘쳐 <끝(두 번째 날짜·조회 버튼)이 잘려 안 보인다>.
+   iOS 는 min-content 가 좁아 우연히 들어맞아 멀쩡해 보였을 뿐이다.
+   → 고정폭 대신 남는 폭을 나눠 갖게 하고 min-width:0 으로 축소를 허용한다. */
 .date-range input[type="date"] {
-  padding: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  /* [360px] 좌우만 6px → 4px. 위 gap 축소와 합쳐 약 20px 을 회수한다.
+     ⚠아래 font-size 를 줄여서 맞추면 안 된다 — 1rem(16px) 미만이면 iOS Safari 가
+     탭할 때 화면을 확대하고 되돌리지 않는다. 폭이 모자라면 글자가 아니라 여백을 줄인다. */
+  padding: 6px 4px;
   font-size: 1.0rem;
+  /* 기기마다 기본 정렬이 달라(안드로이드 좌측 / iOS 중앙) 두 칸이 어긋나 보인다 — 명시 고정 */
+  text-align: center;
   border: 1px solid #ccc;
   border-radius: 4px;
+  box-sizing: border-box;
 }
 
 .date-range button {
+  flex: 0 0 auto;        /* 조회 버튼은 줄어들지 않게 */
   background: none;
   border: none;
   font-size: 1.5rem;     /* ✅ 더 크게 */
