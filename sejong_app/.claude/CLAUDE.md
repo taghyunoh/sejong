@@ -97,6 +97,22 @@
   ```
 - 미로그인 상태로 `*.do` AJAX 호출 시 **401 + `sessionExpired:true`** 가 정상 응답이다(엔드포인트가 죽은 게 아님).
 
+## ★서버(운영) 배포 시 체크리스트 — 키는 서버에 따로 넣어야 한다
+- **`GEMINI_API_KEY` 는 소스에도 WAR 에도 없다.** 로컬 PC 의 OS 환경변수에만 있으므로 **WAR 만 올리면 서버 챗봇은 죽는다.** 증상은 `{"IsSucceed":false,"Message":"LLM 미설정"}` → 화면엔 에러 없이 안내문구만 뜬다. **정상처럼 보여서 놓치기 쉬움.**
+- **★로컬처럼 `setx`(사용자 변수/HKCU) 로 넣으면 서버에선 안 먹는다.** Tomcat 이 Windows 서비스로 돌면 SYSTEM/서비스 계정으로 실행되어 HKCU 를 보지 않는다. 구동 방식별로:
+  | 서버 구동 방식 | 설정 위치 |
+  |---|---|
+  | **Windows 서비스** | 관리자 권한 `setx /M GEMINI_API_KEY "키"`(시스템 변수=HKLM) 후 **서비스 재시작**<br>또는 `Tomcat9w.exe` → Java 탭 → Java Options 에 `-DGEMINI_API_KEY=키` |
+  | startup.bat 수동 기동 | `bin\setenv.bat` 에 `set GEMINI_API_KEY=키` |
+  | Linux Tomcat | `bin/setenv.sh` 에 `export GEMINI_API_KEY=키` |
+  - 어느 경우든 **JVM 재기동 필수**(프로세스 생성 시점에 환경변수를 상속). 로컬의 "Eclipse 완전 재시작"과 같은 이유.
+  - `-D` 시스템 프로퍼티가 통하는 이유: `@PropertySource("classpath:application.properties")`(LoginController.java) + `<context:property-placeholder>`(dispatcher-servlet.xml) → `PropertySourcesPlaceholderConfigurer` 가 Environment 를 `systemProperties` → `systemEnvironment` 순으로 조회한다. **단 실측 검증된 경로는 환경변수 쪽뿐**(2026-08-13).
+  - **`application.properties` 에 키를 직접 적지 말 것** — 커밋되고 WAR 에 그대로 들어간다.
+- **★키만 넣으면 안 된다 — 코드도 같이 올려야 한다.** 위 "모델 별칭" 절의 `BloodController` 수정(thinkingLevel 등)이 빠진 채 키만 넣으면 여전히 `"LLM 응답 없음"` 이 뜬다. **키 설정 + 코드 배포는 세트.**
+- 반영 확인은 로컬과 동일하게 `testUser2.do` → `chatAsk.do` (위 "로컬 개발 환경" 절의 curl). `IsSucceed:true` + 한글 답변이면 성공, `"LLM 미설정"` 이면 환경변수가 JVM 에 안 들어간 것.
+- 참고: **서버에 추가로 넣을 환경변수는 `GEMINI_API_KEY` 하나뿐.** `OPENAI_API_KEY` 는 AiController 가 비활성이라 미사용이고, 나머지 시크릿(Google OAuth client-secret · i-Sens `blood.client.secret` · kakao js key)은 `application.properties` 에 **평문으로 커밋되어 있다** — 그래서 서버 설정은 불필요하지만, 저장소(github.com/taghyunoh/sejong)에 노출된 상태라 Gemini 키처럼 환경변수로 빼는 정리가 필요하다. → 아래 대기 항목.
+
 ## 대기/미완
 - [대기] AI 챗봇 서버 LLM(/blood/chatAsk.do)·blood_qa.js 지식 확장, 식사/운동 미등록 시 안내문(기획 주석) 여부.
+- [대기] `application.properties` 평문 시크릿을 Gemini 키와 같은 `${ENV:}` 방식으로 이관 — Google OAuth client-secret / i-Sens `blood.client.secret` / kakao js key. **이미 git 이력에 올라간 값이라 이관과 함께 재발급(폐기)이 필요**하다. 2026-07-11 에 OpenAI 키를 같은 이유로 제거한 선례 있음.
 - [완료 2026-08-13] 새 Gemini 키 **paid tier 확인됨**. 무료/유료는 호출 성공 여부로는 구분되지 않고 **RPM 한도로 판별**한다 — 무료 tier 는 flash 계열 약 10 RPM 이라 동시 요청을 몰면 429 가 뜨고 에러 본문의 quota 이름에 `FreeTier` 문자열이 그대로 박혀 나온다. 50건 동시 요청 전원 200(429 0건) → 유료. `chatAsk.do` 로 25건 동시 요청해도 전원 성공하므로 **앱 JVM 이 쥔 키도 유료 키**임이 함께 확인된다(환경변수가 제대로 상속됐다는 뜻).
