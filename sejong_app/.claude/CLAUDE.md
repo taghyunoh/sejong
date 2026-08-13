@@ -56,5 +56,47 @@
 ### 설정(setting.jsp)
 - 자동 로그인·알림 PUSH 숨김(.hide), 버전 V3.0.
 
+## ★서버 LLM(Gemini) — `BloodController.callGemini()`
+### 키
+- **평문 금지.** `application.properties` 는 `api.gemini.key = ${GEMINI_API_KEY:}` 참조만 하고, 실제 값은 **Windows 사용자 환경변수**(`HKCU\Environment\GEMINI_API_KEY`) 한 곳에만 둔다. sejong_app · sejong-web 이 같은 값을 공유하므로 **레지스트리 하나만 바꾸면 양쪽 반영**(소스·target 복사 불필요 — 위 배포 함정 해당 없음).
+  ```
+  setx GEMINI_API_KEY "새키"
+  ```
+- 바꾼 뒤 **Eclipse를 완전히 종료 후 재시작**해야 한다. 서버(Tomcat)만 restart 하면 JVM이 Eclipse 실행 시점의 환경변수를 그대로 물고 있어 **옛 키로 계속 호출**된다.
+- 키가 비어 있으면 chatAsk.do 가 `IsSucceed=false, "LLM 미설정"` 을 반환하고 화면은 안내문구로 폴백한다.
+
+### ★모델 별칭이 움직이면 조용히 깨진다 (2026-08-13)
+- URL 이 `models/gemini-flash-latest` 라 **Google이 별칭을 옮기면 코드 변경 없이 동작이 바뀐다.** 실제로 별칭이 **`gemini-3.6-flash`(Gemini 3 계열)** 로 이동하면서 챗봇이 통째로 죽어 있었다. 증상은 화면상 `"LLM 응답 없음"` 뿐이라 원인 파악이 어렵다 — **키 문제로 오인하기 쉬움**(당시 유료 키 교체 중이었으나 무관했다).
+- 원인 3가지, 모두 Gemini 3 에서 바뀐 규약:
+  1. `thinkingConfig.thinkingBudget = 0`(추론 끄기) → **400 INVALID_ARGUMENT**. Gemini 3 는 추론 완전 비활성이 불가하고 **`thinkingLevel`("low"/"high")** 을 쓴다.
+  2. **추론 토큰이 `maxOutputTokens` 를 함께 소모**한다. 1024 로 두면 추론이 900+ 를 먹고 답변이 잘린다(`finishReason: MAX_TOKENS`). → **2048** 로 상향.
+  3. 응답 `parts` 에 **text 없이 `thoughtSignature` 만 든 추론 조각**이 섞여 온다. `parts[0].text` 만 보면 null 이 될 수 있어 → **text 있는 조각을 전부 이어붙이도록** 수정.
+- 확정 설정: `temperature 0.4` / `maxOutputTokens 2048` / `thinkingConfig.thinkingLevel = "low"` → `finishReason: STOP`, `<br>` 포맷·200자 제한 정상.
+- **증상이 비슷하면 별칭 이동부터 의심할 것.** 원 API 를 직접 때려 보면 3초 만에 갈린다:
+  ```
+  curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent" \
+    -H "x-goog-api-key: $GEMINI_API_KEY" -H "Content-Type: application/json" \
+    -d '{"contents":[{"parts":[{"text":"ping"}]}]}'
+  ```
+  응답의 `modelVersion` 이 현재 별칭이 가리키는 실제 모델이다. 안정성이 필요하면 URL 을 특정 버전으로 고정할 것.
+
+## 로컬 개발 환경 (실측 2026-08-13)
+- Eclipse 워크스페이스는 **`C:\Users\HYUN\eclipse-workspace`** (현재 로그인 계정 SRC 와 폴더명이 다름 — 헷갈리지 말 것). Tomcat 8.5.66 인스턴스 **3개**가 동시에 뜬다:
+  | 포트 | catalina.base | 앱 | 컨텍스트 |
+  |---|---|---|---|
+  | **9060** | tmp2 | **Sejong_APP** | `/` (루트) |
+  | 8080 | tmp1 | wnn_medcost | `/` |
+  | 9080 | tmp0 | wnn_consult | `/wnn_consult` |
+- Context `reloadable="true"` → 배포본 `WEB-INF/classes` 의 .class 를 바꾸면 **컨텍스트가 자동 재적재**된다. Eclipse 밖에서 고친 java 를 급히 확인할 때 유용(단, 나중에 Eclipse F5+빌드로 정식 반영할 것).
+- **API 단독 테스트용 세션**: `POST /testUser.do`·`/testUser2.do` 가 하드코딩 계정으로 세션을 만들어 준다(`SessionCheckInterceptor.PUBLIC_URIS` 에 등록됨). `testUser.do`(01036721855)는 현재 DB에 없어 500 → **`testUser2.do` 를 쓸 것**. 이후 쿠키를 물려 보호 엔드포인트 호출 가능.
+  ```
+  curl -c j.txt -X POST http://localhost:9060/testUser2.do -H "X-Requested-With: XMLHttpRequest"
+  curl -b j.txt -X POST http://localhost:9060/blood/chatAsk.do \
+    -H "Content-Type: application/json;charset=UTF-8" -H "X-Requested-With: XMLHttpRequest" \
+    --data-binary @q.json      # 한글 본문은 -d 대신 UTF-8 파일로 (인라인 -d 는 400)
+  ```
+- 미로그인 상태로 `*.do` AJAX 호출 시 **401 + `sessionExpired:true`** 가 정상 응답이다(엔드포인트가 죽은 게 아님).
+
 ## 대기/미완
 - [대기] AI 챗봇 서버 LLM(/blood/chatAsk.do)·blood_qa.js 지식 확장, 식사/운동 미등록 시 안내문(기획 주석) 여부.
+- [확인필요] 새 Gemini 키가 **결제 연결된 프로젝트 소속인지**(= 실제 paid tier 인지). 무료 키도 호출은 성공하므로 API 응답만으로는 구분 불가 → Cloud Console 에서 Billing 확인.

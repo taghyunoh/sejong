@@ -1050,11 +1050,15 @@ public class BloodController {
 
 			JsonObject genCfg = new JsonObject();
 			genCfg.addProperty("temperature", 0.4);
-			genCfg.addProperty("maxOutputTokens", 1024);
-			// thinking(추론) 비활성화 — 켜두면 추론 토큰이 maxOutputTokens 를 잠식해
-			// 답변이 중간에 잘림(finishReason=MAX_TOKENS). 단순 건강 Q&A 라 불필요.
+			// 추론 토큰도 maxOutputTokens 를 함께 소모하므로 넉넉히 잡는다.
+			// (1024 로 두면 추론에 900+ 를 써버려 답변이 잘림 = finishReason:MAX_TOKENS)
+			genCfg.addProperty("maxOutputTokens", 2048);
+			// thinking(추론) 최소화 — 단순 건강 Q&A 라 깊은 추론이 불필요.
+			//   ※ gemini-flash-latest 별칭이 Gemini 3 계열(gemini-3.6-flash)로 바뀌면서
+			//     기존 thinkingBudget:0 은 400 INVALID_ARGUMENT 로 거부된다(추론 완전 비활성 불가).
+			//     Gemini 3 부터는 thinkingLevel("low"/"high") 을 사용한다.
 			JsonObject thinkingCfg = new JsonObject();
-			thinkingCfg.addProperty("thinkingBudget", 0);
+			thinkingCfg.addProperty("thinkingLevel", "low");
 			genCfg.add("thinkingConfig", thinkingCfg);
 
 			JsonObject reqBody = new JsonObject();
@@ -1089,7 +1093,9 @@ public class BloodController {
 				return null;
 			}
 
-			// 응답 파싱: candidates[0].content.parts[0].text
+			// 응답 파싱: candidates[0].content.parts[*].text
+			//   Gemini 3 는 parts 에 추론 전용 조각(text 없이 thoughtSignature 만)이 섞여 올 수 있어
+			//   parts[0] 만 보면 null 이 되므로 text 가 있는 조각을 모두 이어붙인다.
 			JsonObject root = gson.fromJson(sb.toString(), JsonObject.class);
 			JsonArray candidates = root.getAsJsonArray("candidates");
 			if (candidates == null || candidates.size() == 0) return null;
@@ -1098,8 +1104,12 @@ public class BloodController {
 			if (candContent == null) return null;
 			JsonArray parts = candContent.getAsJsonArray("parts");
 			if (parts == null || parts.size() == 0) return null;
-			JsonElement textEl = parts.get(0).getAsJsonObject().get("text");
-			return textEl != null ? textEl.getAsString() : null;
+			StringBuilder text = new StringBuilder();
+			for (int i = 0; i < parts.size(); i++) {
+				JsonElement textEl = parts.get(i).getAsJsonObject().get("text");
+				if (textEl != null && !textEl.isJsonNull()) text.append(textEl.getAsString());
+			}
+			return text.length() == 0 ? null : text.toString();
 
 		} catch (Exception e) {
 			log.error("callGemini error: " + e.getMessage(), e);
