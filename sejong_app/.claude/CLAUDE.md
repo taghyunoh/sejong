@@ -98,6 +98,9 @@
 - 미로그인 상태로 `*.do` AJAX 호출 시 **401 + `sessionExpired:true`** 가 정상 응답이다(엔드포인트가 죽은 게 아님).
 
 ## ★서버(운영) 배포 시 체크리스트 — 키는 서버에 따로 넣어야 한다
+- **환경 분리(dev/prod)가 프로젝트에 아예 없다**(2026-08-13 전수 확인). profile 파일도, 환경별 properties 도 없고 **DB 조차 `context-datasource.xml` 에 원격 주소가 하드코딩**(`jdbc:mysql://211.47.75.102:3306/dbhannetit02`)되어 **로컬·서버가 같은 DB 를 본다.** → WAR 하나가 어디서든 동일하게 동작하므로 **서버에서 갈아끼울 설정은 `GEMINI_API_KEY` 하나뿐**이다.
+  - ※ 뒤집어 말하면 **로컬 테스트가 운영 데이터에 붙는다.** `testUser2.do` 로 잡히는 것도 실계정이다. 쓰기가 있는 기능을 로컬에서 시험할 땐 주의.
+- 프로젝트 "바깥" 설정 2가지: ① **Google·Kakao 콘솔에 서버 도메인/리디렉션 URI 등록**(코드 아님, 배포만으로 안 됨) ② 서버에서 `generativelanguage.googleapis.com:443` **아웃바운드 허용**(막히면 증상이 똑같이 `"LLM 응답 없음"`).
 - **`GEMINI_API_KEY` 는 소스에도 WAR 에도 없다.** 로컬 PC 의 OS 환경변수에만 있으므로 **WAR 만 올리면 서버 챗봇은 죽는다.** 증상은 `{"IsSucceed":false,"Message":"LLM 미설정"}` → 화면엔 에러 없이 안내문구만 뜬다. **정상처럼 보여서 놓치기 쉬움.**
 - **★로컬처럼 `setx`(사용자 변수/HKCU) 로 넣으면 서버에선 안 먹는다.** Tomcat 이 Windows 서비스로 돌면 SYSTEM/서비스 계정으로 실행되어 HKCU 를 보지 않는다. 구동 방식별로:
   | 서버 구동 방식 | 설정 위치 |
@@ -114,5 +117,8 @@
 
 ## 대기/미완
 - [대기] AI 챗봇 서버 LLM(/blood/chatAsk.do)·blood_qa.js 지식 확장, 식사/운동 미등록 시 안내문(기획 주석) 여부.
-- [대기] `application.properties` 평문 시크릿을 Gemini 키와 같은 `${ENV:}` 방식으로 이관 — Google OAuth client-secret / i-Sens `blood.client.secret` / kakao js key. **이미 git 이력에 올라간 값이라 이관과 함께 재발급(폐기)이 필요**하다. 2026-07-11 에 OpenAI 키를 같은 이유로 제거한 선례 있음.
+- [대기] 평문 시크릿을 Gemini 키와 같은 `${ENV:}` 방식으로 이관. **이미 git 이력에 올라간 값이라 이관과 함께 재발급(폐기)이 필요**하다. 2026-07-11 에 OpenAI 키를 같은 이유로 제거한 선례 있음. 범위(2026-08-13 전수 확인):
+  - `application.properties` — Google OAuth client-secret / i-Sens `blood.client.secret` / kakao js key
+  - `egovframework/conf/globals.properties` — NCP `accessKey`·`secretKey` / Gabia `sms.apiKey`
+  - `egovframework/spring/context-datasource.xml` — **DB 접속정보 평문**(url·username·password)
 - [완료 2026-08-13] 새 Gemini 키 **paid tier 확인됨**. 무료/유료는 호출 성공 여부로는 구분되지 않고 **RPM 한도로 판별**한다 — 무료 tier 는 flash 계열 약 10 RPM 이라 동시 요청을 몰면 429 가 뜨고 에러 본문의 quota 이름에 `FreeTier` 문자열이 그대로 박혀 나온다. 50건 동시 요청 전원 200(429 0건) → 유료. `chatAsk.do` 로 25건 동시 요청해도 전원 성공하므로 **앱 JVM 이 쥔 키도 유료 키**임이 함께 확인된다(환경변수가 제대로 상속됐다는 뜻).
