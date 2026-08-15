@@ -28,8 +28,9 @@
 .p2list{ margin: calc(0.6 * var(--vwu,1vw)) calc(4 * var(--vwu,1vw)) calc(1.5 * var(--vwu,1vw)); }
 .p2list .p2item{ display:flex; align-items:center; justify-content:space-between; gap: calc(3 * var(--vwu,1vw));
   padding: calc(2 * var(--vwu,1vw)) 0; border-bottom:1px solid #eef2f7; }
-.p2list .p2item .lb{ font-size: calc(3.6 * var(--vwu,1vw)); color:#2d303f; font-weight:700; margin:0; line-height:1.35; }
-.p2list .p2item .lb .hint{ display:block; font-size: calc(3.1 * var(--vwu,1vw)); color:#8a98a8; font-weight:500; }
+/* [2026-08-15] 라벨을 우측 값 크기에 가깝게 키우고(3.6→5.5), 권장 힌트도 조금 크게(3.1→4.0) */
+.p2list .p2item .lb{ font-size: calc(5.5 * var(--vwu,1vw)); color:#2d303f; font-weight:700; margin:0; line-height:1.35; }
+.p2list .p2item .lb .hint{ display:block; font-size: calc(4.0 * var(--vwu,1vw)); color:#8a98a8; font-weight:500; }
 .p2list .p2item .v{ flex:0 0 auto; font-size: calc(6.4 * var(--vwu,1vw)); font-weight:800; color:#2d303f; white-space:nowrap; }
 /* 아래 '현재 혈당 변화' 설명 블록은 촘촘하게 */
 #bloodPage1 .blood-detail-section{ margin: calc(0.8 * var(--vwu,1vw)) 0 !important; }
@@ -49,12 +50,12 @@
         <div class="gap_wrap">
           <div class="up_row">
             <!-- 화살표 .up .down 클래스 추가 -->
-			<span class="blood_arrow">
-			      <img  id="bloodArrow" src="<c:url value='/asset/images/blood/blood_arrow.svg'/>" alt="안정적" class="bl_nomal">
-			</span>
+			<%-- [2026-08-16] 이미지 화살표 → 글자 화살표: 숫자(diff)와 같은 색을 입히기 위해 텍스트로 전환 --%>
+			<span class="blood_arrow" id="bloodArrow" style="color:#2f9e63;">→</span>
             <span class="diff" id="diff">5.0</span>
           </div>
-          <div class="down_row">mg/dL/min</div>
+          <%-- [2026-08-15] 표시 숫자 = 직전 측정(5분 간격) 대비 변화량이라 단위 표기를 /min → /5분 으로 --%>
+          <div class="down_row">mg/dL/5분</div>
         </div>
         <div class="now_wrap">
           <div class="data" id="nowBloodUpt"></div>
@@ -716,70 +717,60 @@
 		      	 		// [2026-07-11] avgUpt 요소가 없으면 null → textContent 설정에서 에러(함수 중단) → null-safe 처리
 		      	 		var _avgUptEl = document.getElementById('avgUpt'); if (_avgUptEl) _avgUptEl.textContent = Math.round(response.aveUpt)|| 0;
 		      	 		 			      	 		
-		      	 		document.getElementById('diff').textContent = (parseInt(nowUpt, 10) - parseInt(prevUpt, 10));	  
-		      	 		
+		      	 		// [2026-08-15] 화살표가 늘 '안정적'에 머물던 문제 수정.
+		      	 		//   종전에는 인접 측정(5분 간격) 차이에 30분 기준 임계값(±31/61/91)을 적용해
+		      	 		//   사실상 화살표가 움직일 수 없었다. 표시 숫자(직전 측정 대비 변화량)와 같은 값으로
+		      	 		//   ±2 / ±5 / ±10 단계 판정 → 화살표가 변화 방향·속도를 그대로 보여준다.
+		      	 		let point = (parseInt(nowUpt, 10) - parseInt(prevUpt, 10));
+		      	 		const _hasBoth = !!(prevData.DTM && nowData.DTM);
+		      	 		const _diffEl = document.getElementById('diff');
+		      	 		_diffEl.textContent = _hasBoth ? point : 0;
+		      	 		// [2026-08-15] 색 구분: 상승(+2 이상)=빨강 / 하강(-2 이하)=파랑 / 안정(±1)=초록 (숫자·화살표 공통)
+		      	 		const _dirColor = (!_hasBoth || (point > -2 && point < 2)) ? '#2f9e63' : (point >= 2 ? '#dc3545' : '#0d6efd');
+		      	 		_diffEl.style.color = _dirColor;
+		      	 		_diffEl.style.fontWeight = '700';
+
 		      	 		let blood_status = "";
 		      	 		let blood_name   = "";
-		      	 		let point = (parseInt(nowUpt, 10) - parseInt(prevUpt, 10));
+		      	 		let _arrowKey    = "normal";
 
-		      	 		if (point >= 91) {
-		      	 		    blood_status = "빠르게 증가";
-		      	 		    blood_name   = "혈당이 지난 30분동안  91 mg/dL  이상 증가하고 있습니다";
-		      	 		} else if (point >= 61 && point <= 90) {
-		      	 		    blood_status = "증가";
-		      	 		    blood_name   = "혈당이 지난 30분동안  61-90 mg/dL  증가하고 있습니다";
-		      	 		} else if (point >= 31 && point <= 60) {
-		      	 		    blood_status = "서서히 증가";
-		      	 		    blood_name   = "혈당이 지난 30분동안  31-60 mg/dL  증가하고 있습니다";
-		      	 		} else if (point >= -30 && point <= 30) {
-		      	 		    blood_status = "안정적";
-		      	 		    blood_name   = "혈당이 지난 30분동안  30 mg/dL  이하 증가 또는 감소하고 있습니다";
-		      	 		} else if (point <= -91) {
-		      	 		    blood_status = "빠르게 감소";
-		      	 		    blood_name   = "혈당이 지난 30분동안  91 mg/dL  이상 감소하고 있습니다"
-		      	 		} else if (point >= -90 && point <= -61) {   
-		      	 		    blood_status = "감소";
-		      	 		    blood_name   = "혈당이 지난 30분동안  61-90 mg/dL  감소하고 있습니다";
-		      	 		} else if (point >= -60 && point <= -31) {
-		      	 		    blood_status = "서서히 감소";
-		      	 		    blood_name   = "혈당이 지난 30분동안  31-60 mg/dL  감소하고 있습니다";
-		      	 		} else {
+		      	 		if (!_hasBoth) {
 		      	 		    blood_status = "알수없음";
 		      	 		    blood_name   = "혈당값 변화의 속도와 방향을 계산할 수 없습니다";
+		      	 		} else if (point >= 10) {
+		      	 		    blood_status = "빠르게 증가"; _arrowKey = "fastUp";
+		      	 		    blood_name   = "혈당이 직전 측정보다 10 mg/dL 이상 빠르게 증가하고 있습니다";
+		      	 		} else if (point >= 5) {
+		      	 		    blood_status = "증가"; _arrowKey = "up";
+		      	 		    blood_name   = "혈당이 직전 측정보다 5-9 mg/dL 증가하고 있습니다";
+		      	 		} else if (point >= 2) {
+		      	 		    blood_status = "서서히 증가"; _arrowKey = "slowUp";
+		      	 		    blood_name   = "혈당이 직전 측정보다 2-4 mg/dL 증가하고 있습니다";
+		      	 		} else if (point > -2) {
+		      	 		    blood_status = "안정적"; _arrowKey = "normal";
+		      	 		    blood_name   = "혈당이 직전 측정과 거의 같은 수준으로 안정적입니다";
+		      	 		} else if (point > -5) {
+		      	 		    blood_status = "서서히 감소"; _arrowKey = "slowDn";
+		      	 		    blood_name   = "혈당이 직전 측정보다 2-4 mg/dL 감소하고 있습니다";
+		      	 		} else if (point > -10) {
+		      	 		    blood_status = "감소"; _arrowKey = "down";
+		      	 		    blood_name   = "혈당이 직전 측정보다 5-9 mg/dL 감소하고 있습니다";
+		      	 		} else {
+		      	 		    blood_status = "빠르게 감소"; _arrowKey = "fastDn";
+		      	 		    blood_name   = "혈당이 직전 측정보다 10 mg/dL 이상 빠르게 감소하고 있습니다";
 		      	 		}
 
 		      	 		document.getElementById('blood_status').textContent = blood_status;
 		      	 		document.getElementById('blood_name').textContent   = blood_name;
 
+		      	 		// [2026-08-16] 글자 화살표 — 숫자와 동일한 색(_dirColor) 적용
 		      	 		const arrowEl = document.getElementById('bloodArrow');
 		      	 	    if (!arrowEl) return; // 엘리먼트가 없다면 조용히 종료
+		      	 	    const ARROW_TXT = { fastUp:'↑↑', up:'↑', slowUp:'↗', normal:'→', slowDn:'↘', down:'↓', fastDn:'↓↓' };
+		      	 	    arrowEl.textContent = ARROW_TXT[_arrowKey] || '→';
+		      	 	    arrowEl.style.color = _dirColor;
+		      	 	    arrowEl.title = blood_status;
 
-		      	 	    if (point >= 91) {
-		      	 	      arrowEl.src = BLOOD_IMG.fastUp;
-		      	 	      arrowEl.alt = "빠르게 증가";
-		      	 	    } else if (point >= 61 && point <= 90) {
-		      	 	      arrowEl.src = BLOOD_IMG.up;
-		      	 	      arrowEl.alt = "증가";
-		      	 	    } else if (point >= 31 && point <= 60) {
-		      	 	      arrowEl.src = BLOOD_IMG.slowUp;
-		      	 	      arrowEl.alt = "서서히 증가";
-		      	 	    } else if (point >= -30 && point <= 30) {
-		      	 	      arrowEl.src = BLOOD_IMG.normal;
-		      	 	      arrowEl.alt = "안정적";
-		      	 	    } else if (point <= -91) {
-		      	 	      arrowEl.src = BLOOD_IMG.fastDn;
-		      	 	      arrowEl.alt = "빠르게 감소";
-		      	 	    } else if (point >= -90 && point <= -61) {
-		      	 	      arrowEl.src = BLOOD_IMG.down;
-		      	 	      arrowEl.alt = "감소";
-		      	 	    } else if (point >= -60 && point <= -31) {
-		      	 	      arrowEl.src = BLOOD_IMG.slowDn;
-		      	 	      arrowEl.alt = "서서히 감소";
-		      	 	    } else {
-		      	 	      arrowEl.src = BLOOD_IMG.normal;
-		      	 	      arrowEl.alt = "알수없음";
-		      	 	    }
-		      	 	 
 	          }
 	  	)	  	
 	  	

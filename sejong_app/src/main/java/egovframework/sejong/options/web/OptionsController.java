@@ -61,7 +61,7 @@ public class OptionsController {
 	// FAQ 페이지 이동
 	@RequestMapping("/faqPage.do")
 	public String faqPage(HttpSession session,Model model) {
-		model.addAttribute("menuName","FAQ");
+		model.addAttribute("menuName","자주하는 질문");
 		return ".main/options/faq";
 	}
 	// getNotiList 

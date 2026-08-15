@@ -46,7 +46,7 @@
              1:1문의(asqMain.do)는 기획안대로 제외. login/main.jsp 에도 같은 메뉴가 있다 — 바꿀 때 둘 다 고칠 것. --%>
         <div class="etc_menu_list etc_links">
           <a class="etc_link" href="<c:url value='noticePage.do'/> ">&gt; 공지사항 바로가기</a>
-          <a class="etc_link" href="<c:url value='faqPage.do'/> ">&gt; FAQ 바로가기</a>
+          <a class="etc_link" href="<c:url value='faqPage.do'/> ">&gt; 자주하는 질문 바로가기</a>
           <a class="etc_link" href="javascript:layerPop('open' , 'infoChangePopup')">&gt; 개인정보 변경 바로가기</a>
           <a class="etc_link" href="<c:url value='settingPage.do'/> ">&gt; 설정 바로가기</a>
         </div>
