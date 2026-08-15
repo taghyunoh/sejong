@@ -511,66 +511,114 @@
 	        { nm:'매우 낮음',    p:vl,  goal:'1% 미만 (14분 미만/일)',         g:1,  big:false }
 	    ];
 	    // ── 세로 막대: 비율대로, 0% 구간도 최소 두께로 표시(참고 시안과 동일한 인상) ──
-	    var H = 372, MINH = 14;   // [2026-08-15] 0% 구간도 참고 시안처럼 도톰하게(경계 숫자 겹침 완화 겸)
+	    var H = 372, MINH = 16;   // [2026-08-15] 0% 구간도 참고 시안처럼 도톰하게. 16px = 높음·낮음 행 높이(45/19)와 블록 중심이 정확히 맞는 값 — 같이 조정할 것
 	    // [2026-08-15] 참고 시안 색: 매우높음·낮음 = 진회색(위아래 동일), 높음 = 주황, 목표 = 초록, 매우낮음 = 진홍
     var COL = { vh:'#616161', hi:'#F5A623', nor:'#00A651', lo:'#616161', vl:'#8E1B1B' };
-	    var hs = {}, outerSum = 0;
-	    [['vh',vh],['hi',hi],['lo',lo],['vl',vl]].forEach(function(a){ hs[a[0]] = Math.max(MINH, Math.round(a[1]/100*H)); outerSum += hs[a[0]]; });
-	    hs.nor = Math.max(MINH, H - outerSum);
-	    var tot = hs.vh + hs.hi + hs.nor + hs.lo + hs.vl;
-	    if(tot > H){ ['vh','hi','nor','lo','vl'].forEach(function(k){ hs[k] = Math.round(hs[k]*H/tot); }); }
-	    var y = 0, seg = '', bounds = [];
-	    ['vh','hi','nor','lo','vl'].forEach(function(k, i){
-	        seg += '<div style="position:absolute; left:0; width:100%; top:'+y+'px; height:'+hs[k]+'px; background:'+COL[k]+';'
-	             + (i===0 ? ' border-radius:6px 6px 0 0;' : '') + (i===4 ? ' border-radius:0 0 6px 6px;' : '') + '"></div>';
+	    // [2026-08-15] 참조화면(LibreView): 매우 높음 블록은 자기 밑줄(58) "아래"에 매달리고(4px 세로선 연결),
+	    //   막대 본체(높음·목표·낮음)는 그 아래(BODYTOP)부터 430까지. 매우 낮음 블록은 본체 아래, 자기 밑줄(456) 위.
+	    var hs = {};
+	    [['vh',vh],['hi',hi],['lo',lo],['vl',vl]].forEach(function(a){ hs[a[0]] = Math.max(MINH, Math.round(a[1]/100*H)); });
+	    var GAP = 3;
+	    var BARTOP = 58, BOT = 26, TOTALH = H + BARTOP + BOT;
+	    var vhH = Math.max(6, hs.vh - GAP), vlH = Math.max(6, hs.vl - GAP);
+	    var BODYTOP = BARTOP + 4 + vhH + GAP, BODYH = BARTOP + H - BODYTOP;
+	    hs.nor = Math.max(MINH, BODYH - hs.hi - hs.lo);
+	    var tot = hs.hi + hs.nor + hs.lo;
+	    if(tot > BODYH){ ['hi','nor','lo'].forEach(function(k){ hs[k] = Math.round(hs[k]*BODYH/tot); }); }
+	    var y = 0, seg = '', bounds = [0];
+	    ['hi','nor','lo'].forEach(function(k, i){
+	        var segH = Math.max(6, hs[k] - (i < 2 ? GAP : 0));
+	        seg += '<div style="position:absolute; left:0; width:100%; top:'+y+'px; height:'+segH+'px; background:'+COL[k]+';"></div>';
 	        y += hs[k];
-	        if(i < 4) bounds.push(y);
+	        if(i < 2) bounds.push(y);
 	    });
+	    bounds.push(BODYH);
 	    // 경계 숫자(250/180/70/54) 겹침 방지 — 구간이 얇으면 숫자를 최소 16px 간격으로 밀어낸다
 	    var labY = bounds.map(function(b){ return b - 9; });
 	    var li;
 	    for(li = 1; li < labY.length; li++){ if(labY[li] - labY[li-1] < 16) labY[li] = labY[li-1] + 16; }
 	    for(li = labY.length - 1; li >= 0; li--){
-	        if(labY[li] > H - 6) labY[li] = H - 6;
+	        if(labY[li] > BODYH - 6) labY[li] = BODYH - 6;
 	        if(li < labY.length - 1 && labY[li+1] - labY[li] < 16) labY[li] = labY[li+1] - 16;
 	    }
 	    var axis = [250,180,70,54].map(function(v, j){
 	        return '<span style="position:absolute; right:6px; top:'+labY[j]+'px; font-weight:700; font-size:14px; color:#333;">'+v+'</span>';
 	    }).join('');
-	    var barHtml = '<div style="position:relative; flex:0 0 158px; height:'+(H+28)+'px;">'
-	        + '<span style="position:absolute; left:0; top:'+(28+Math.round(H/2)-9)+'px; font-size:12px; color:#888;">mg/dL</span>'
-	        + '<div style="position:absolute; left:46px; top:28px; width:44px; height:'+H+'px;">'+axis+'</div>'
-	        + '<div style="position:absolute; left:96px; top:28px; width:56px; height:'+H+'px;">'+seg+'</div>'
+	    // [2026-08-15] 참조화면 배치: 매우 높음 블록 [62..62+vhH](밑줄 58 아래), 본체 [BODYTOP..430],
+	    //   매우 낮음 블록 [432..432+vlH](밑줄 456 위). 훅 = 블록 가로 중앙(x124) 세로선이 각 밑줄(왼쪽 연장)과 ㄱ/ㄴ자로 연결.
+	    var vlBot = BARTOP + H + 2 + vlH;
+	    var outerBlocks =
+	          '<div style="position:absolute; left:96px; width:56px; top:'+(BARTOP + 4)+'px; height:'+vhH+'px; background:'+COL.vh+';"></div>'
+	        + '<div style="position:absolute; left:96px; width:56px; top:'+(BARTOP + H + 2)+'px; height:'+vlH+'px; background:'+COL.vl+';"></div>';
+	    var hooks =
+	          '<span style="position:absolute; left:124px; top:'+BARTOP+'px; width:0; height:4px; border-left:2.5px solid #8a8a8a;"></span>'
+	        + '<span style="position:absolute; left:124px; top:'+vlBot+'px; width:0; height:'+(TOTALH - 2 - vlBot)+'px; border-left:2.5px solid #8a8a8a;"></span>';
+	    var barHtml = '<div style="position:relative; flex:0 0 158px; height:'+TOTALH+'px;">'
+	        + '<span style="position:absolute; left:0; top:'+(BARTOP+Math.round(H/2)-9)+'px; font-size:12px; color:#888;">mg/dL</span>'
+	        + '<div style="position:absolute; left:46px; top:'+BODYTOP+'px; width:44px; height:'+BODYH+'px;">'+axis+'</div>'
+	        + '<div style="position:absolute; left:96px; top:'+BODYTOP+'px; width:56px; height:'+BODYH+'px;">'+seg+'</div>'
+	        + outerBlocks
+	        + hooks
 	        + '</div>';
 	    // ── 우측 표: 5행 + 상/하 그룹 소계(세로 괄선) + 목표·목표 대비 ──
 	    function row(r, gr, ln){
-	        // ln = 행 밑 가로 안내선이 걸치는 열 범위(참고 시안의 줄선). 그룹 행은 소계 괄선 앞(1/4), 단독 행은 목표 열 앞(1/5)까지.
-	        return '<span style="grid-row:'+gr+'; grid-column:'+ln+'; align-self:end; height:0; border-bottom:1.5px solid #9a9a9a; margin-right:-11px;"></span>'
+	        // ln = 행 밑 가로 안내선이 걸치는 열 범위. 그룹 행은 소계 괄선 앞(1/4), 단독 행은 목표 열 앞(1/5)까지.
+	        // [2026-08-15] 선 굵기·색은 소계선과 통일(2.5px #8a8a8a). 그룹 행(1/4)은 괄선 세로선에서 딱 멈추고,
+	        //   단독 행(1/5)은 목표 열 앞 세로 점선을 넘지 않게 점선 직전에서 끝냄.
+	        var mr = (ln === '1 / 4') ? '1px' : '3px';
+	        // 매우 높음(2행)·매우 낮음(8행) 밑줄은 왼쪽으로 연장해 블록 중앙 세로 훅 선(x124)과 연결
+	        var mlh = (gr === 2 || gr === 8) ? ' margin-left:-46px;' : '';
+	        return '<span style="grid-row:'+gr+'; grid-column:'+ln+'; align-self:end; height:0; border-bottom:2.5px solid #8a8a8a; margin-right:'+mr+';'+mlh+'"></span>'
 	             + '<span style="grid-row:'+gr+'; grid-column:1; font-size:15px; font-weight:700; color:#222; word-break:keep-all;">'+r.nm+'</span>'
 	             + '<b style="grid-row:'+gr+'; grid-column:2; font-size:'+(r.big?'20px':'16px')+'; color:#111; text-align:right; padding-right:4px;">'+r.p+'%</b>'
 	             + '<span style="grid-row:'+gr+'; grid-column:3; font-size:13px; color:#777;">('+tm(r.p)+')</span>'
 	             + '<span style="grid-row:'+gr+'; grid-column:5; font-size:14px; font-weight:600; color:#333; word-break:keep-all;">'+r.goal+'</span>'
 	             + '<span style="grid-row:'+gr+'; grid-column:6;">'+chip(r.p, r.g)+'</span>';
 	    }
-	    function comb(p, gr){
-	        return '<span style="grid-row:'+gr+'; grid-column:4; align-self:stretch; display:flex; flex-direction:column; justify-content:center;'
-	             + ' border-left:2px solid #9a9a9a; padding-left:12px; margin:5px 0;">'
-	             + '<b style="font-size:16px; color:#111;">'+p+'%</b><small style="color:#777; font-size:12px;">('+tm(p)+')</small></span>';
+	    // [2026-08-15] 목표 내 범위(단독 행) — %·시간을 소계와 같은 열 위치(4열, 같은 padding)에 두어
+	    //   위(21%)·아래(1%) 소계와 세로로 정렬되게 한다. 밑줄은 기존처럼 목표 열 앞까지.
+	    function midRow(r, gr){
+	        return '<span style="grid-row:'+gr+'; grid-column:1 / 5; align-self:end; height:0; border-bottom:2.5px solid #8a8a8a; margin-right:3px;"></span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:1; font-size:15px; font-weight:700; color:#222; word-break:keep-all;">'+r.nm+'</span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:4; display:flex; align-items:baseline; justify-content:space-between; padding:0 18px 0 16px;">'
+	             + '<b style="font-size:20px; color:#111;">'+r.p+'%</b>'
+	             + '<small style="color:#777; font-size:13px; white-space:nowrap;">('+tm(r.p)+')</small></span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:5; font-size:14px; font-weight:600; color:#333; word-break:keep-all;">'+r.goal+'</span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:6;">'+chip(r.p, r.g)+'</span>';
 	    }
-	    var gridHtml = '<div style="flex:1; min-width:620px; height:'+(H+28)+'px; display:grid;'
-	        + ' grid-template-columns: 96px 60px 112px 100px minmax(210px,1fr) 100px;'
-	        + ' grid-template-rows: 28px 38px 38px minmax(20px,1fr) 50px minmax(20px,1fr) 38px 38px;'
+	    // [2026-08-15] 참고 시안 괄선: 소계 [%·(분/일)]이 선 "위"에 오고, 그 아래 굵은(2.5px) 가로선이
+	    //   괄선 세로선부터 목표 열 앞까지 길게 이어진다. gr=소계가 걸치는 두 행, connGr=세로 연결선이 차지하는 아래 행.
+	    function comb(p, gr, connGr){
+	        // [2026-08-15] 세로 괄선도 소계선과 같은 굵기·색. 오른쪽은 목표 열 글자에 닿지 않게 선·글자 모두 안쪽에서 끝냄.
+	        return '<span style="grid-row:'+connGr+'; grid-column:4; align-self:stretch; justify-self:start; width:0; margin-left:-11px; border-left:2.5px solid #8a8a8a;"></span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:4; align-self:center; display:flex; flex-direction:column; gap:4px;">'
+	             + '<span style="display:flex; align-items:baseline; justify-content:space-between; padding:0 18px 0 16px;">'
+	             + '<b style="font-size:16px; color:#111;">'+p+'%</b>'
+	             + '<small style="color:#777; font-size:12px; white-space:nowrap;">('+tm(p)+')</small></span>'
+	             + '<span style="height:0; border-bottom:2.5px solid #8a8a8a; margin-left:-11px;"></span>'
+	             + '</span>';
+	    }
+	    // [2026-08-15] 참고 시안: 소계(4열)를 늘림폭 담당(1fr)으로 두어 목표·목표 대비 열을 우측 끝으로 밀착
+	    // 행 구성: 헤더 28 | 매우 높음 30(밑줄 58, 블록은 그 아래 매달림) | 높음 36(주황 블록 옆) | fr | 목표 50 | fr
+	    //   | 낮음 22(밑줄 430=본체 끝=회색 블록 끝, 글자가 매우 낮음과 겹치지 않게 위로 여유) | 매우 낮음 26(블록은 본체 아래, 밑줄 456)
+	    //   ※ MINH=16·GAP=3 기준으로 블록과 밑줄·텍스트가 맞물리도록 계산된 값
+	    var gridHtml = '<div style="flex:1; min-width:620px; height:'+TOTALH+'px; display:grid;'
+	        + ' grid-template-columns: 96px 60px 112px minmax(120px,1fr) auto 110px;'
+	        + ' grid-template-rows: 28px 30px 36px minmax(20px,1fr) 50px minmax(20px,1fr) 22px 26px;'
 	        + ' align-items:center; column-gap:10px;">'
 	        + '<b style="grid-row:1; grid-column:5; font-size:14px; color:#333;">목표</b>'
 	        + '<b style="grid-row:1; grid-column:6; font-size:14px; color:#333;">목표 대비</b>'
 	        // 목표 · 목표 대비 열 앞 세로 점선(참고 시안)
 	        + '<span style="grid-row:1 / 9; grid-column:5; align-self:stretch; justify-self:start; width:0; margin-left:-12px; border-left:1px dashed #ccc;"></span>'
 	        + '<span style="grid-row:1 / 9; grid-column:6; align-self:stretch; justify-self:start; width:0; margin-left:-12px; border-left:1px dashed #ccc;"></span>'
-	        + row(ROWS[0], 2, '1 / 4') + row(ROWS[1], 3, '1 / 4') + comb(vh + hi, '2 / 4')
-	        + row(ROWS[2], 5, '1 / 5')
-	        + row(ROWS[3], 7, '1 / 4') + row(ROWS[4], 8, '1 / 4') + comb(lo + vl, '7 / 9')
+	        + row(ROWS[0], 2, '1 / 4') + row(ROWS[1], 3, '1 / 4') + comb(vh + hi, '2 / 4', 3)
+	        + midRow(ROWS[2], 5)
+	        + row(ROWS[3], 7, '1 / 4') + row(ROWS[4], 8, '1 / 4') + comb(lo + vl, '7 / 9', 8)
 	        + '</div>';
-	    wrap.innerHTML = '<div style="display:flex; align-items:flex-start; gap:12px; padding:6px 2px; flex-wrap:wrap;">' + barHtml + gridHtml + '</div>';
+	    // [2026-08-15] 참고 시안 상단 안내문구(파란 글씨)
+	    var noteHtml = '<div style="font-size:13px; font-weight:600; color:#1a73e8; line-height:1.55; margin:2px 0 4px 4px;">'
+	        + '5% 이상 증가해야 임상적으로 유의미합니다.<br>각 1% Time in range = 약 15분.</div>';
+	    wrap.innerHTML = noteHtml + '<div style="display:flex; align-items:flex-start; gap:12px; padding:6px 2px; flex-wrap:wrap;">' + barHtml + gridHtml + '</div>';
 	}
 
 	function drawBloodBarChart(day_after_start_date, end_date,userId) {
@@ -2287,7 +2335,8 @@
 						 	<h5>
 								목표 내 혈당 <span>기간 내 평균 혈당 비율 및 시간을 나타냅니다.</span>
 							</h5>
-							<div id="tirGoalWrap" style="min-height:410px;"></div>
+							<%-- [2026-08-15] width:100% 필수 — content-box가 align-items:flex-start 라 없으면 내용 최소폭으로 줄어 목표 열이 왼쪽에 붙음 --%>
+							<div id="tirGoalWrap" style="width:100%; min-height:410px;"></div>
 						</section>
 		
 
