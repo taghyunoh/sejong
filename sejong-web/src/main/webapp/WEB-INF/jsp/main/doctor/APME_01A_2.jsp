@@ -2485,8 +2485,8 @@
       head='혈당 변동 폭이 큰 편입니다. 저혈당과 고혈당이 번갈아 나타날 수 있습니다.';
       tips=['식사 시간 규칙화, 과식·결식 회피','간식 패턴 점검','활동량을 일정하게 유지'];
     }else if(!isNaN(tir)){
-      head='현재 혈당이 안정적으로 관리되고 있습니다.';
-      tips=['현재 생활습관 유지','꾸준한 센서 착용·기록 독려'];
+      head='지난 일주일 혈당이 안정적으로 관리되고 있습니다.';
+      tips=['현재 생활습관을 그대로 유지하세요.','꾸준한 측정과 기록을 계속해 주세요.'];
     }
     var c=document.getElementById('aiCoach');
     if(c) c.innerHTML = head ? (head + '<ul class="ai-tips">' + tips.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>')
