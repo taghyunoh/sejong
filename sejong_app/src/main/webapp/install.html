@@ -35,20 +35,15 @@
       padding:19px; border-radius:14px}
     .cta:active{background:var(--blue2)}
     button.cta{width:100%; border:0; cursor:pointer; font-family:inherit}
-    .cta.install{background:#0a7d3c}
-    .cta.install:active{background:#0b6e36}
     /* hidden 속성이 .cta{display:block} 에 덮이지 않도록 — 설치 가능할 때만 버튼 노출 */
     .cta[hidden]{display:none !important}
     .hint{ text-align:center; font-size:13.5px; color:var(--muted); margin:2px 0 8px }
 
-    /* 접이식 — 설치 방법은 접어둠 */
+    /* 수동 안내 — 자동 설치가 안 되는 브라우저에서 '앱 설치하기'를 눌렀을 때만 노출 */
     .more{border:1px solid var(--line); border-radius:14px; margin:16px 0 0; overflow:hidden}
-    .more>summary{list-style:none; cursor:pointer; padding:15px 16px; font-size:15.5px;
-      font-weight:700; color:var(--blue); display:flex; align-items:center; justify-content:space-between}
-    .more>summary::-webkit-details-marker{display:none}
-    .more>summary::after{content:"\25BC"; font-size:12px; color:var(--muted); transition:transform .2s}
-    .more[open]>summary::after{transform:rotate(180deg)}
-    .more-body{padding:0 16px 10px}
+    .more h3{margin:0; padding:15px 16px 0; font-size:15.5px; color:var(--blue)}
+    .more .lead{margin:6px 0 0; padding:0 16px; font-size:13px; color:var(--muted); line-height:1.5}
+    .more-body{padding:10px 16px 10px}
 
     .card{border:0; padding:6px 0 0; margin:6px 0}
     .card+.card{border-top:1px solid var(--line); padding-top:12px; margin-top:12px}
@@ -77,23 +72,24 @@
     <div class="top">
       <img src="asset/images/pwa/icon-192.png" alt="allCare">
       <h1>allCare</h1>
-      <p>아래 버튼을 누르면 바로 시작돼요</p>
+      <p>한 번만 설치하면 다음부터 아이콘으로 열려요</p>
     </div>
 
-    <!-- 큰 버튼: 설치 없이 바로 시작 (대부분 이것만 누르면 끝) -->
-    <a class="cta" href="loginPage.do">앱 시작하기(설치) →</a>
-
-    <!-- 홈 화면에 추가: 설치 가능하면 즉시(깔끔한 앱 아이콘), 아니면 아래 수동 안내를 펼침(죽은 버튼 방지) -->
-    <button class="cta install" id="installBtn">홈 화면에 추가하는 방법</button>
-
-    <p class="hint">설치 없이 바로 사용할 수 있어요.</p>
+    <!-- 메인: 홈 화면에 아이콘 설치. 설치 가능하면 즉시 프롬프트, 아니면 수동 안내를 펼침(죽은 버튼 방지)
+         '앱 시작하기'를 메인으로 두면 아이콘이 안 생겨 매번 QR을 다시 찍는 것으로 오해함 → 설치가 메인 -->
+    <button class="cta" id="installBtn">앱 설치하기 (아이콘 만들기)</button>
+    <p class="hint">홈 화면에 아이콘이 생겨요. <b>다음부터는 QR 없이</b> 아이콘만 누르면 됩니다.</p>
 
     <!-- 이미 설치되어 앱으로 열린 경우 -->
     <div class="note hidden" id="installedNote">✅ 이미 설치된 앱으로 실행 중이에요. 바로 이용하시면 됩니다.</div>
+    <!-- 방금 설치가 끝난 경우 -->
+    <div class="note hidden" id="doneNote">✅ 아이콘이 생겼어요! 이제 홈 화면의 <b>allCare 아이콘</b>을 누르면 열립니다.</div>
 
-    <!-- 접이식: 홈 화면에 아이콘 추가하는 방법 (원하는 사람만 펼쳐봄) -->
-    <details class="more">
-      <summary>홈 화면에 아이콘 추가하는 방법</summary>
+    <!-- 수동 설치 안내: 자동 설치 프롬프트가 없는 브라우저(아이폰·인앱 등)에서
+         '앱 설치하기'를 눌렀을 때만 노출. 평소엔 숨겨서 '추가로 할 일'처럼 보이지 않게 -->
+    <div class="more hidden" id="guide">
+      <h3>이제 아래 순서대로만 따라 하면 끝이에요</h3>
+      <p class="lead">따로 더 누를 것은 없어요 — <b>①②③이 설치의 전부</b>입니다.</p>
       <div class="more-body">
         <!-- 안드로이드 -->
         <div class="card" id="androidCard">
@@ -119,15 +115,15 @@
           </ol>
         </div>
       </div>
-    </details>
+    </div>
 
     <!-- QR (다른 기기 공유/인쇄용) -->
     <div class="qr">
       <img src="asset/images/pwa/install-qr.png" alt="allCare 설치 QR">
-      <p>다른 기기에서 열려면 이 QR을 스캔하세요</p>
+      <p>다른 기기에서 열려면 이 QR을 스캔하세요<br>QR은 처음 한 번만 필요해요 — 설치 후엔 아이콘으로!</p>
     </div>
 
-    <div class="foot">연속혈당 allCare · v8</div>
+    <div class="foot">연속혈당 allCare · v13</div>
   </div>
 
   <script>
@@ -141,8 +137,9 @@
       function show(id){ var e=document.getElementById(id); if(e){ e.classList.remove('hidden'); e.hidden=false; } }
       function hide(id){ var e=document.getElementById(id); if(e) e.classList.add('hidden'); }
 
-      // 이미 설치되어 앱으로 열린 경우
-      if (isStandalone) { show('installedNote'); }
+      // 이미 설치되어 앱으로 열린 경우 — '시작하기' 버튼이 없으므로 바로 로그인으로 보낸다
+      // (구형 iOS 는 start_url 대신 추가 당시 페이지(install.html)로 아이콘이 열릴 수 있음)
+      if (isStandalone) { show('installedNote'); location.replace('loginPage.do'); return; }
 
       // 플랫폼별 카드만 표시(접이식 안)
       if (isAndroid) { hide('iosCard'); }
@@ -166,17 +163,15 @@
             alert('이미 앱으로 설치되어 있어요.\n홈 화면의 allCare 아이콘을 누르면 열립니다.');
             return;
           }
-          var d = document.querySelector('details.more');
-          if (d){ d.open = true; }
-          if (isIOS){
-            alert('아이폰은 사파리에서 설치돼요.\n\n① 화면 아래 공유 버튼(□ 위에 ↑)\n② "홈 화면에 추가"\n③ 오른쪽 위 "추가"\n\n설치 없이 바로 쓰려면 "앱 시작하기"를 누르세요.');
-          } else {
-            alert('홈 화면에 아이콘을 만들려면\n브라우저 메뉴( ⋮ 또는 화면 아래 ≡ )에서\n"홈 화면에 추가"( 또는 "현재 페이지 추가" )를 누르세요.\n\n그냥 바로 쓰려면 "앱 시작하기"를 누르면 됩니다.');
+          // 프롬프트가 없는 환경(아이폰·인앱 브라우저 등): 알림창 대신 해당 기기 안내만 조용히 펼친다
+          var g = document.getElementById('guide');
+          if (g){
+            g.classList.remove('hidden');
+            try{ g.scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(e){}
           }
-          if (d){ try{ d.scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(e){} }
         });
       }
-      window.addEventListener('appinstalled', function(){ show('installedNote'); });
+      window.addEventListener('appinstalled', function(){ show('doneNote'); });
     })();
   </script>
 </body>
