@@ -58,10 +58,34 @@
     font-weight: 700;
     text-align: center;
   }
-  #login .login-wrap .mb-3 {         /* "처음 방문하셨나요?" 배너 */
-    margin-bottom: 16px !important;
-    padding: 9px !important;
-    font-size: 14px;
+  #login .login-wrap .login-visual { /* 회원가입 배너 (그림 + 링크) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #f2f8ff, #e4eefc);
+    border: 1px solid #cfe2ff;
+    border-radius: 8px;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: background .15s, border-color .15s;
+  }
+  #login .login-wrap .login-visual:hover {
+    background: #e2eefc;
+    border-color: #9fc6f5;
+  }
+  #login .login-wrap .login-visual .lv-art {
+    flex: 0 0 auto;
+    width: 150px;
+    height: auto;
+  }
+  #login .login-wrap .login-visual .lv-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1976d2;
+    line-height: 1;
   }
   #login .login-wrap .id-box {
     margin-top: 4px;
@@ -75,11 +99,6 @@
     padding-bottom: 9px;
     font-size: 14px;
     margin-top: 8px !important;
-  }
-  #login .login-wrap .id-box > div[style*="font-size:12px"] {  /* 안내문구 (※) */
-    margin-top: 10px !important;
-    font-size: 13px !important;
-    line-height: 1.5;
   }
   #login .login-wrap .form-check {   /* 아이디 저장 */
     margin-top: 18px !important;
@@ -151,7 +170,7 @@ if (typeof window._alertBox !== 'function') { window._alertBox = function(m,o){ 
 function loginproc2(){
 	var id = $.trim($("#userId").val());
 	var pw = $("#userPw").val();
-	if (!id) { _alertBox("아이디 또는 전화번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }}); return; }
+	if (!id) { _alertBox("아이디를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }}); return; }
 	if (!pw) { _alertBox("비밀번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userPw").focus(); }}); return; }
 
 	// 통합 로그인: 의료진(T_ADMIN_MST) 우선 → 환자(T_USER_TRAN) 자동 분기
@@ -242,19 +261,24 @@ function fnPwdClear(){
       <div class="login-wrap">
         <h1>AI 기반 디지털 헬스케어 서비스 플랫폼 실증</h1>
 
-        <!-- 사용자 회원가입 안내 (상단 강조) -->
-        <div class="w-100 mb-3 p-2" style="background:#eef5ff; border:1px solid #cfe2ff; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <span style="color:#333; font-size:16px; line-height:1;">처음 방문하셨나요?</span>
-          <a href="/patient/register.do" class="btn btn-link p-0" style="font-weight:700; font-size:16px; line-height:1; vertical-align:baseline;">사용자 회원가입 →</a>
-        </div>
+        <!-- 사용자 회원가입 배너 (그림 + 링크) -->
+        <a href="/patient/register.do" class="login-visual w-100">
+          <svg class="lv-art" viewBox="0 0 150 48" aria-hidden="true" focusable="false">
+            <polyline points="4,26 44,26 54,26 62,10 72,44 80,20 88,26 104,26"
+                      fill="none" stroke="#1976d2" stroke-width="2.4"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="124" cy="24" r="18" fill="#dbe9fc"/>
+            <path d="M124 36 c-7-4.5-11.5-8.3-11.5-13.5 a6 6 0 0 1 11.5-3 a6 6 0 0 1 11.5 3 c0 5.2-4.5 9-11.5 13.5 z" fill="#1976d2"/>
+            <rect x="122.1" y="18.5" width="3.8" height="11"  rx="1" fill="#ffffff"/>
+            <rect x="118.5" y="22.1" width="11"  height="3.8" rx="1" fill="#ffffff"/>
+          </svg>
+          <span class="lv-text">사용자 회원가입</span>
+        </a>
 
         <div class="id-box w-100">
           <h2>로그인</h2>
-          <input name="userId" class="form-control" type="text" id="userId" placeholder="아이디 또는 전화번호" aria-label="아이디 또는 전화번호">
+          <input name="userId" class="form-control" type="text" id="userId" placeholder="아이디" aria-label="아이디">
           <input type="password" class="form-control mt-3" id="userPw" placeholder="비밀번호" onKeypress="hitEnterKey(event);">
-          <div class="mt-2" style="color:#666; font-size:12px; text-align:left;">
-            ※ 의료진은 <b>아이디</b>, 사용자는 <b>전화번호</b>로 로그인하세요. 시스템이 자동으로 구분합니다.
-          </div>
         </div>
 
         <!-- ID 저장 체크박스 -->

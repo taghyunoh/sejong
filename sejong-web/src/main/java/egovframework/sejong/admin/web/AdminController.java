@@ -211,7 +211,39 @@ public class AdminController {
 		return "jsonView";
 
 	}
-	// 관리자의사 
+	// 환자 이메일만 수정 (환자 목록 모달) — EMAIL 외 컬럼은 변경하지 않는다
+	@RequestMapping(value = "/admin/PatientEmailSaveAct.do", method = RequestMethod.POST)
+	public String savePatientEmail(@ModelAttribute("DTO") PatientDTO dto, HttpServletRequest request, Model model) throws Exception {
+
+		try {
+			String userUuid = dto.getUserUuid();
+			String email    = (dto.getEmail() == null) ? "" : dto.getEmail().trim();
+
+			if(userUuid == null || "".equals(userUuid)) {
+				model.addAttribute("error_code", "10001");
+				model.addAttribute("error_msg", "선택된 환자 정보가 없습니다.");
+				return "jsonView";
+			}
+			if("".equals(email) || !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+				model.addAttribute("error_code", "10002");
+				model.addAttribute("error_msg", "이메일 형식이 올바르지 않습니다.");
+				return "jsonView";
+			}
+
+			dto.setEmail(email);
+			svc.updatePatientEmail(dto);
+
+			model.addAttribute("error_code", "0");
+		}catch(Exception ex) {
+			log.error(" PatientEmailSaveAct ERROR ! : "+ ex.getMessage());
+			model.addAttribute("error_code", "10000");
+			model.addAttribute("error_msg", "이메일 수정 중 오류가 발생했습니다.");
+		}
+		return "jsonView";
+
+	}
+
+	// 관리자의사
     @RequestMapping(value = "/admin/admin_auserList.do")
 	public String AuserList(Model model) throws Exception {
 		try { 
