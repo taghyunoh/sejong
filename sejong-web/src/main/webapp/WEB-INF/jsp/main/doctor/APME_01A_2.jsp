@@ -487,7 +487,93 @@
 	  	};
 
 		
-		function drawBloodBarChart(day_after_start_date, end_date,userId) {
+		// [2026-08-15] '목표 내 혈당' 컴포넌트 — 세로 막대(구간 비례) + 구간별 %·(시간/일) + 그룹 소계 + 목표·목표 대비.
+	//   종전 [혈당 범위 차트 + 목표 및 목표대비] 두 박스를 대체. 시간/일 = 비율×24시간(1% = 14.4분).
+	//   구간 경계(250/180/70/54)와 목표 기준(5/25/70/4/1%) 문구는 종전 그대로.
+	function _renderTirGoal(vl, lo, nor, hi, vh){
+	    var wrap = document.getElementById('tirGoalWrap');
+	    if(!wrap) return;
+	    function tm(p){
+	        var m = Math.round(p * 14.4);
+	        if(m >= 60){ return Math.floor(m/60) + '시간 ' + (m%60) + '분/일'; }
+	        return m + '분/일';
+	    }
+	    function chip(p, goal){
+	        var d = p - goal, up = d > 0;
+	        var col = up ? '#d64545' : '#1a73e8', bg = up ? 'rgba(214,69,69,.09)' : 'rgba(26,115,232,.09)';
+	        return '<span style="display:inline-block; padding:2px 9px; border-radius:12px; font-weight:700; font-size:13px; color:'+col+'; background:'+bg+';">'+(up?'▲':'▼')+Math.abs(d)+'%</span>';
+	    }
+	    var ROWS = [
+	        { nm:'매우 높음',    p:vh,  goal:'5% 미만 (1시간 12분 미만/일)',   g:5,  big:false },
+	        { nm:'높음',         p:hi,  goal:'25% 미만 (6시간 미만/일)',       g:25, big:false },
+	        { nm:'목표 내 범위', p:nor, goal:'70% 초과 (16시간 48분 초과/일)', g:70, big:true  },
+	        { nm:'낮음',         p:lo,  goal:'4% 미만 (57분 미만/일)',         g:4,  big:false },
+	        { nm:'매우 낮음',    p:vl,  goal:'1% 미만 (14분 미만/일)',         g:1,  big:false }
+	    ];
+	    // ── 세로 막대: 비율대로, 0% 구간도 최소 두께로 표시(참고 시안과 동일한 인상) ──
+	    var H = 372, MINH = 14;   // [2026-08-15] 0% 구간도 참고 시안처럼 도톰하게(경계 숫자 겹침 완화 겸)
+	    // [2026-08-15] 참고 시안 색: 매우높음·낮음 = 진회색(위아래 동일), 높음 = 주황, 목표 = 초록, 매우낮음 = 진홍
+    var COL = { vh:'#616161', hi:'#F5A623', nor:'#00A651', lo:'#616161', vl:'#8E1B1B' };
+	    var hs = {}, outerSum = 0;
+	    [['vh',vh],['hi',hi],['lo',lo],['vl',vl]].forEach(function(a){ hs[a[0]] = Math.max(MINH, Math.round(a[1]/100*H)); outerSum += hs[a[0]]; });
+	    hs.nor = Math.max(MINH, H - outerSum);
+	    var tot = hs.vh + hs.hi + hs.nor + hs.lo + hs.vl;
+	    if(tot > H){ ['vh','hi','nor','lo','vl'].forEach(function(k){ hs[k] = Math.round(hs[k]*H/tot); }); }
+	    var y = 0, seg = '', bounds = [];
+	    ['vh','hi','nor','lo','vl'].forEach(function(k, i){
+	        seg += '<div style="position:absolute; left:0; width:100%; top:'+y+'px; height:'+hs[k]+'px; background:'+COL[k]+';'
+	             + (i===0 ? ' border-radius:6px 6px 0 0;' : '') + (i===4 ? ' border-radius:0 0 6px 6px;' : '') + '"></div>';
+	        y += hs[k];
+	        if(i < 4) bounds.push(y);
+	    });
+	    // 경계 숫자(250/180/70/54) 겹침 방지 — 구간이 얇으면 숫자를 최소 16px 간격으로 밀어낸다
+	    var labY = bounds.map(function(b){ return b - 9; });
+	    var li;
+	    for(li = 1; li < labY.length; li++){ if(labY[li] - labY[li-1] < 16) labY[li] = labY[li-1] + 16; }
+	    for(li = labY.length - 1; li >= 0; li--){
+	        if(labY[li] > H - 6) labY[li] = H - 6;
+	        if(li < labY.length - 1 && labY[li+1] - labY[li] < 16) labY[li] = labY[li+1] - 16;
+	    }
+	    var axis = [250,180,70,54].map(function(v, j){
+	        return '<span style="position:absolute; right:6px; top:'+labY[j]+'px; font-weight:700; font-size:14px; color:#333;">'+v+'</span>';
+	    }).join('');
+	    var barHtml = '<div style="position:relative; flex:0 0 158px; height:'+(H+28)+'px;">'
+	        + '<span style="position:absolute; left:0; top:'+(28+Math.round(H/2)-9)+'px; font-size:12px; color:#888;">mg/dL</span>'
+	        + '<div style="position:absolute; left:46px; top:28px; width:44px; height:'+H+'px;">'+axis+'</div>'
+	        + '<div style="position:absolute; left:96px; top:28px; width:56px; height:'+H+'px;">'+seg+'</div>'
+	        + '</div>';
+	    // ── 우측 표: 5행 + 상/하 그룹 소계(세로 괄선) + 목표·목표 대비 ──
+	    function row(r, gr, ln){
+	        // ln = 행 밑 가로 안내선이 걸치는 열 범위(참고 시안의 줄선). 그룹 행은 소계 괄선 앞(1/4), 단독 행은 목표 열 앞(1/5)까지.
+	        return '<span style="grid-row:'+gr+'; grid-column:'+ln+'; align-self:end; height:0; border-bottom:1.5px solid #9a9a9a; margin-right:-11px;"></span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:1; font-size:15px; font-weight:700; color:#222; word-break:keep-all;">'+r.nm+'</span>'
+	             + '<b style="grid-row:'+gr+'; grid-column:2; font-size:'+(r.big?'20px':'16px')+'; color:#111; text-align:right; padding-right:4px;">'+r.p+'%</b>'
+	             + '<span style="grid-row:'+gr+'; grid-column:3; font-size:13px; color:#777;">('+tm(r.p)+')</span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:5; font-size:14px; font-weight:600; color:#333; word-break:keep-all;">'+r.goal+'</span>'
+	             + '<span style="grid-row:'+gr+'; grid-column:6;">'+chip(r.p, r.g)+'</span>';
+	    }
+	    function comb(p, gr){
+	        return '<span style="grid-row:'+gr+'; grid-column:4; align-self:stretch; display:flex; flex-direction:column; justify-content:center;'
+	             + ' border-left:2px solid #9a9a9a; padding-left:12px; margin:5px 0;">'
+	             + '<b style="font-size:16px; color:#111;">'+p+'%</b><small style="color:#777; font-size:12px;">('+tm(p)+')</small></span>';
+	    }
+	    var gridHtml = '<div style="flex:1; min-width:620px; height:'+(H+28)+'px; display:grid;'
+	        + ' grid-template-columns: 96px 60px 112px 100px minmax(210px,1fr) 100px;'
+	        + ' grid-template-rows: 28px 38px 38px minmax(20px,1fr) 50px minmax(20px,1fr) 38px 38px;'
+	        + ' align-items:center; column-gap:10px;">'
+	        + '<b style="grid-row:1; grid-column:5; font-size:14px; color:#333;">목표</b>'
+	        + '<b style="grid-row:1; grid-column:6; font-size:14px; color:#333;">목표 대비</b>'
+	        // 목표 · 목표 대비 열 앞 세로 점선(참고 시안)
+	        + '<span style="grid-row:1 / 9; grid-column:5; align-self:stretch; justify-self:start; width:0; margin-left:-12px; border-left:1px dashed #ccc;"></span>'
+	        + '<span style="grid-row:1 / 9; grid-column:6; align-self:stretch; justify-self:start; width:0; margin-left:-12px; border-left:1px dashed #ccc;"></span>'
+	        + row(ROWS[0], 2, '1 / 4') + row(ROWS[1], 3, '1 / 4') + comb(vh + hi, '2 / 4')
+	        + row(ROWS[2], 5, '1 / 5')
+	        + row(ROWS[3], 7, '1 / 4') + row(ROWS[4], 8, '1 / 4') + comb(lo + vl, '7 / 9')
+	        + '</div>';
+	    wrap.innerHTML = '<div style="display:flex; align-items:flex-start; gap:12px; padding:6px 2px; flex-wrap:wrap;">' + barHtml + gridHtml + '</div>';
+	}
+
+	function drawBloodBarChart(day_after_start_date, end_date,userId) {
 	  	    //console.log("막대 차트 그리기 // halfNow : ", halfNow, "now :", now);
 	  	    var formData = {
 	  	        start: day_after_start_date,
@@ -505,11 +591,8 @@
 	  	     		var highPercentage = (total === 0) ? 0 : Math.round((response.HIGHT / total) * 100);
 	  	     		var highestPercentage = (total === 0) ? 0 : Math.round((response.HIGHTEST / total) * 100);
 	  	     		
-	  	     		document.getElementById('highestPercentage').textContent = highestPercentage;
-	  	     		document.getElementById('highPercentage').textContent = highPercentage;
-	  	     		document.getElementById('normalPercentage').textContent = normalPercentage;
-	  	     		document.getElementById('lowPercentage').textContent = lowPercentage;
-	  	     		document.getElementById('lowestPercentage').textContent = lowestPercentage;
+	  	     		// [2026-08-15] '목표 내 혈당' 컴포넌트 렌더 — 종전 두 박스(echarts 막대·목표대비 텍스트)를 대체
+	  	     		_renderTirGoal(lowestPercentage, lowPercentage, normalPercentage, highPercentage, highestPercentage);
 
 	  	     		// ── AGP 표준 작성기준 판정 색상 (녹색=기준달성 / 빨강=미달) ──
 	  	     		(function(){
@@ -534,6 +617,7 @@
 	  	     		    card('tarCard', TAR, TAR <  25);
 	  	     		    card('tbrCard', TBR, TBR <   4);
 	  	     		})();
+	  	     		if (false) { // [2026-08-15] 이하 종전 '목표 및 목표대비' 텍스트 계산 + echarts 막대 — 목표 내 혈당 컴포넌트로 대체(코드 보존·미실행)
 	  	     		var cal_lowestPercentage  ;
 	  	     		var cal_Percentage5       ;
 	  	     		var cal_lowPercentage     ;
@@ -781,7 +865,8 @@
 	  	            };
 
 
-	  	            var chart = echarts.init(document.getElementById('mainChart'));
+	  	            } // [2026-08-15] if(false) 끝 — #mainChart 는 제거됨. 아래 setOption 호출은 빈 객체로 무해화
+	  	            var chart = { setOption: function(){} };
 	  	            chart.setOption(option);
 	  	        });
 	  	}
@@ -2195,81 +2280,14 @@
 	                <div class="section">
               				
                      <div class="content-row flex-left-right">
-					      <section class="content-box" style="width: 80%; max-width:640px; margin: 0 auto;">
+					      <%-- [2026-08-15] '목표 내 혈당' — 종전 [혈당 범위 차트(echarts)+목표 및 목표대비(텍스트)] 두 박스를
+					           세로 막대 + 구간별 %·시간/일 + 목표·목표 대비 표(참고 시안) 한 컴포넌트로 통합.
+					           내용은 _renderTirGoal() 이 drawBloodBarChart 응답 값으로 그린다. 구간 경계(250/180/70/54)·목표 기준 종전 동일. --%>
+					      <section class="content-box" style="width:100%; margin: 0 auto;">
 						 	<h5>
-								혈당 범위 차트 <span>기간 내 평균 혈당 비율 및 시간을 나타냅니다.</span>
+								목표 내 혈당 <span>기간 내 평균 혈당 비율 및 시간을 나타냅니다.</span>
 							</h5>
-							<div id="mainChart" style="height: 550px; width: 500px;"></div>
-				
-							<div class="unit flx-row j-end">
-								<span class="ft12">단위 : mg/dL</span>
-							</div>
-						  </section>
-						<!--  -->
-						<section class="content-box" style="width: 80%; max-width: 600px; margin: 0 auto;">
-						     <h5>
-								목표 및 목표대비  
-							</h5>
-							 <span>5% 이상 증가해야 임상적으로 유의미합니다 .</span>
-                            <div class="content-row flex-left-right" >
-                                <section class="small-box" style="height: 10px; width: 300px;">
-					            </section>
-							</div>								 
-							<div class="content-row flex-left-right" >
-								   <h12 style="font-size: 15px;">매우높음</h12>                                
-								   <p class="num-wrap" style="font-size: 15px;">
-								        <span class="num" id="highestPercentage" style="font-size: 15px;"></span>
-								        <span>%</span> &emsp; &emsp;
-								        <span class="num" id="cal_highestPercentage" style="font-size: 15px;"></span> &emsp; &emsp;
-								        <span class="num" id="cal_Percentage5" style="font-size: 15px; color: blue;"></span>
-							       </p> 
-							</div>
-                            <div class="content-row flex-left-right" >
-								   <h12 style="font-size: 15px;">높음     </h12>    &nbsp;                         
-								   <p class="num-wrap" style="font-size: 15px;">
-								        <span class="num" id="highPercentage" style="font-size: 15px;"></span>
-								        <span>%</span> &emsp; &emsp;   
-								        <span class="num" id="cal_highPercentage" style="font-size: 15px;"></span>  &emsp; &emsp;&emsp;&ensp;
-								        <span class="num" id="cal_Percentage25" style="font-size: 15px; color: blue;"></span>
-							       </p> 
-							</div>
-                            <div class="content-row flex-left-right">
-                                <section class="content-box box-row" style="visibility: hidden; height: 100px; width: 300px;">
-					            </section>
-							</div>
-                            <div class="content-row flex-left-right" >
-								   <h12 style="font-size: 15px;">목표내범위</h12>                                
-								   <p class="num-wrap" style="font-size: 15px;">
-								        <span class="num" id="normalPercentage" style="font-size: 15px;"></span>
-								        <span>%</span> &emsp;
-								        <span class="num" id="cal_normalPercentage" style="font-size: 15px;"></span> &emsp; 
-								        <span class="num" id="cal_Percentage70" style="font-size: 15px; color: red;"></span>
-							       </p> 
-							</div>
-                            <div class="content-row flex-left-right" >
-                                <section class="small-box" style="height: 40px; width: 300px;">
-					            </section>
-							</div>														
-                            <div class="content-row flex-left-right" >
-								   <h12 style="font-size: 15px;">낮음      </h12>                               
-								   <p class="num-wrap" style="font-size: 15px;">  &ensp;&ensp;&ensp; 
-	                                    <span class="num" id="lowPercentage" style="font-size: 15px;"></span>
-								        <span>%</span> &emsp; &emsp; 
-								        <span class="num" id="cal_lowPercentage" style="font-size: 15px;"></span> 
-								        &emsp; &emsp;&emsp;&emsp;&ensp;  
-								        <span class="num" id="cal_Percentage4" style="font-size: 15px;color: blue;"></span>
-							       </p> 
-							</div>
-                            <div class="content-row flex-left-right" >
-								   <h12 style="font-size: 15px;">매우낮음</h12>                                
-								   <p class="num-wrap" style="font-size: 15px;"> 
-								        <span class="num" id="lowestPercentage" style="font-size: 15px;"></span>
-                                        <span>%</span> &emsp; &emsp;
-								        <span class="num" id="cal_lowestPercentage" style="font-size: 15px;"></span> 
-								        &emsp; &emsp;&emsp;&emsp;&ensp; 
-								        <span class="num" id="cal_Percentage1" style="font-size: 15px;color: blue;"></span>
-							       </p> 
-							</div>
+							<div id="tirGoalWrap" style="min-height:410px;"></div>
 						</section>
 		
 
@@ -2406,7 +2424,7 @@
 								<div id="aiSummary" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
 							</section>
 							<section class="content-box">
-								<h5>💡 생활습관 코칭 <small style="font-weight:400;color:#888;">— 환자 앱과 동일한 기준</small></h5>
+								<h5>💡 생활습관 코칭</h5>
 								<div id="aiCoach" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
 							</section>
 						</div>
@@ -2465,18 +2483,15 @@
     var w=document.getElementById('aiIdxWrap');
     if(w) w.innerHTML = rows.length ? rows.join('') : '<div class="ai-box">표시할 지표가 없습니다. 개요 탭에서 기간을 조회해 주세요.</div>';
 
-    // 종합 분석 — TIR 기준 판정 + 벗어난 지표 나열
-    var bad=[];
-    if(!isNaN(tar) && tar>=25) bad.push('고혈당 시간(TAR)');
-    if(!isNaN(tbr) && tbr>=4)  bad.push('저혈당 시간(TBR)');
-    if(!isNaN(cv)  && cv>36)   bad.push('혈당 변동성(CV)');
+    // 종합 분석 — 환자 앱 AI 챗봇의 인사 분석과 동일한 형식(Blood_Consult.jsp _chatIntroAnalysis)
+    function aiLn(s){ return '<span style="display:block; word-break:keep-all;">'+s+'</span>'; }
     var sum='';
-    if(!isNaN(tir)){
-      sum += (tir>=70)
-        ? '<b style="color:'+AI_OK+'">목표 달성</b> — 목표범위 유지시간(TIR) '+tir+'%로 권장 기준을 충족합니다.'
-        : '<b style="color:'+AI_BAD+'">관리 필요</b> — 목표범위 유지시간(TIR) '+tir+'%로 권장(70% 이상)에 미달합니다.';
-      if(!isNaN(avg)) sum += ' 평균혈당은 '+avg+' mg/dL 입니다.';
-      sum += bad.length ? '<br>함께 살펴볼 지표: <b>'+bad.join(', ')+'</b>' : '<br>다섯 개 지표가 모두 권장 범위 안에 있습니다.';
+    if(!isNaN(tir) || !isNaN(tar) || !isNaN(tbr)){
+      var L2=[];
+      if(!isNaN(tir)) L2.push(aiLn('• TIR(목표유지) <b>'+tir+'%</b> — 권장 70%↑ '+(tir>=70?'충족&nbsp;👍':'<b style="color:#e67e22">미달</b>')));
+      if(!isNaN(tar)) L2.push(aiLn('• TAR(고혈당) <b>'+tar+'%</b> — 권장 25%↓ '+(tar<25?'충족':'<b style="color:#e67e22">초과</b>')));
+      if(!isNaN(tbr)) L2.push(aiLn('• TBR(저혈당) <b>'+tbr+'%</b> — 권장 4%↓ '+(tbr<4?'충족':'<b style="color:#e67e22">초과</b>')));
+      sum = '최근 일주일 지표 분석입니다.' + L2.join('');
     }else{
       sum = '지표 값을 불러오면 분석이 표시됩니다. (개요 탭에서 기간을 조회하세요)';
     }
