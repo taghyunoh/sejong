@@ -268,8 +268,9 @@
    연속혈당 상세 지표(.p2list)처럼 보이도록 선을 또렷한 색으로 바꾸고 위아래 간격을 조금 좁힌다. */
 .wk-metrics .wk-item { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 7px 2px; border-bottom: 1px solid #d3dfe9; }
-.wk-metrics .wk-item .lb { margin: 0; font-size: 13px; font-weight: 700; color: #2d303f; line-height: 1.3; }
-.wk-metrics .wk-item .lb .hint { display: block; font-size: 12px; color: #8a98a8; font-weight: 500; }
+/* [2026-08-16] 연속혈당 상세(.p2list 라벨 5.5vw≈20px·힌트 4vw≈15px)와 같은 크기로 확대 */
+.wk-metrics .wk-item .lb { margin: 0; font-size: 20px; font-weight: 700; color: #2d303f; line-height: 1.3; }
+.wk-metrics .wk-item .lb .hint { display: block; font-size: 15px; color: #8a98a8; font-weight: 500; }
 .wk-metrics .wk-item .v { flex: 0 0 auto; margin-top: 0; font-size: 24px; font-weight: 800; color: #2d303f; white-space: nowrap; }
 .wk-ai { margin-top: 10px; }
 /* 파란 섹션 머리띠(기획 모양) + 점선 분석 박스 + 코칭 본문 */
