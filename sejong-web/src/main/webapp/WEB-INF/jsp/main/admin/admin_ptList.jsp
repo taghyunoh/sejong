@@ -73,6 +73,14 @@
   .reg-table .birth-wrap input.form-control { width:80px; }
   .modal-header.reg-head { border-bottom:2px solid var(--reg-teal); }
   .reg-modal-title { color:var(--reg-teal); font-weight:700; font-size:18px; margin:0; }
+
+  /* ④ 모달 — 이메일만 수정 가능, 나머지는 읽기전용으로 보이게 */
+  /* jQuery .prop("readonly") 는 속성이 아닌 프로퍼티만 바꾸므로 [readonly] 대신 :read-only 로 잡는다 */
+  .reg-table input:read-only, .reg-table select:disabled { background:#f2f2f2; color:#555; }
+  .reg-table input#email { background:#fff; color:#000; border-color:var(--reg-teal); }
+  .reg-table .edit-hint { margin-top:5px; font-size:12px; color:#178074; }
+  .btn-email-save { background:var(--reg-teal); border:1px solid var(--reg-teal); color:#fff; font-weight:600; }
+  .btn-email-save:hover { background:var(--reg-teal-dark); border-color:var(--reg-teal-dark); color:#fff; }
 </style>
 <script>
 var totCnt ;
@@ -83,7 +91,10 @@ $(document).ready(function () {
 </script>
 <script type="text/javaScript">
 
-var adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+// 주의: 여기서 new bootstrap.Modal(...) 을 만들면 안 된다.
+// 이 스크립트는 <head>에서 실행되어 #adminModal 이 아직 DOM에 없고,
+// BS5 Modal 생성자가 null 요소로 예외를 던져 블록 전체(var 초기화 포함)가 죽는다.
+// 모달 열고 닫기는 아래 fnModal() 헬퍼가 지연 생성으로 처리한다.
 
 // ── 클라이언트 페이징 상태 ──
 var gPatientList = [];   // 필터 적용된 전체 결과
@@ -253,8 +264,6 @@ function changePageSize(n){
 function openModalWithData(userData) {
   var modalElement = document.getElementById('adminModal');
   if (modalElement) {
-    var adminModal = new bootstrap.Modal(modalElement);
-
     // 모달에 데이터 채우기
     $('#modalUserId').val(userData.userId);
     $('#modalUserNm').val(userData.userNm);
@@ -263,8 +272,8 @@ function openModalWithData(userData) {
     $('#modalEmail').val(userData.email);
     $('#modalJoinDate').val(userData.joinYmd.substring(0, 4) + '-' + userData.joinYmd.substring(4, 6) + '-' + userData.joinYmd.substring(6, 8));
 
-    // 모달 열기
-    adminModal.show();
+    // 모달 열기 — fnModal 헬퍼로 단일 인스턴스만 사용
+    fnModal('show');
   }
 }
 function ExcelDownLoad() {
@@ -321,13 +330,13 @@ function fnSave(iud){
    if(iud == "I"){
       //등록폼 초기화
       document.getElementById("regForm").reset();
-      $("#adminModal").modal("show");
+      fnModal("show");
 
    }else if(iud == "U"){
 
       if($("#userUuid").val() == ""){
          alert("선택된  정보가 없습니다.!");
-         $("#adminModal").modal("hide");
+         fnModal("hide");
          return;
       }
 
@@ -342,7 +351,7 @@ function fnSave(iud){
                return;
             }
             console.log(data.result);
-            $("#email").prop("readonly","true");
+            // 이메일(#email)만 수정 가능 — 나머지는 읽기전용
             $("#userNm").prop("readonly","true");
             $("#phone").prop("readonly","true");
             $("#userId").prop("readonly","true");
@@ -390,7 +399,7 @@ function fnSave(iud){
 
          }
       });
-      $("#adminModal").modal("show");
+      fnModal("show");
    }else
       return;
    }
@@ -424,8 +433,62 @@ function fnSaveProc(){
    }
 }
 
+// 이메일만 수정 저장 (EMAIL 외 컬럼은 서버에서도 건드리지 않음)
+function fnEmailSave(){
+   var userUuid = $("#userUuid").val();
+   var email    = $.trim($("#email").val());
+
+   if(!userUuid){
+      alert("선택된 환자 정보가 없습니다.");
+      return;
+   }
+   if(!email){
+      alert("이메일을 입력하세요.");
+      $("#email").focus();
+      return;
+   }
+   if(!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)){
+      alert("이메일 형식이 올바르지 않습니다.");
+      $("#email").focus();
+      return;
+   }
+   if(!confirm("이메일을 아래와 같이 수정하시겠습니까?\n\n" + email)) return;
+
+   $.ajax({
+      type : "post",
+      url  : CommonUtil.getContextPath() + "/admin/PatientEmailSaveAct.do",
+      data : { userUuid : userUuid, email : email },
+      dataType : "json",
+      success : function(data) {
+         if(data.error_code != "0") {
+            alert(data.error_msg || "이메일 수정에 실패했습니다.");
+            return;
+         }
+         alert("이메일이 수정되었습니다.");
+         modalClose();   // 먼저 닫고
+         fnSearch();     // 목록 갱신(폼 reset 포함)
+      },
+      error : function(){
+         alert("이메일 수정 요청 중 오류가 발생했습니다.");
+      }
+   });
+}
+
+// 부트스트랩5 는 jQuery 플러그인($.fn.modal)을 제공하지 않는다.
+// 기존 $("#adminModal").modal("hide") 는 '목록' 버튼의 data-bs-dismiss 덕분에 가려져 있었을 뿐
+// 실제로는 예외가 나서 모달이 닫히지 않는다. BS5 인스턴스 API 로 닫는다.
+function fnModal(action){
+   var el = document.getElementById('adminModal');
+   if(!el) return;
+   try {
+      var inst = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+      if(action === 'show') inst.show(); else inst.hide();
+   } catch(e) {
+      if ($.fn && $.fn.modal) $(el).modal(action);   // BS4 환경 대비
+   }
+}
 function modalClose(){
-   $("#adminModal").modal("hide");
+   fnModal('hide');
 }
 </script>
 </head>
@@ -447,9 +510,6 @@ function modalClose(){
             <input class="form-check-input" type="checkbox" name="user_gubun"  onchange="fnSearch()"
 						id="user_gubun" value="Y"> <span class="ml-1">모니터링(미등록 1일이상 경과)</span>
 			<input type="hidden" name="userCheck" id="userCheck" />
-          </div>
-          <div class="align-right">
-                  <button type="button" class="btn btn-outline-dark" onclick="ExcelDownLoad();">모니터링대상자출력</button>
           </div>
         </section>
 
@@ -620,13 +680,17 @@ function modalClose(){
               </tr>
               <tr>
                 <th>이메일</th>
-                <td colspan="3"><input type="text" id="email" name="email" class="form-control full" value="" placeholder="이메일를 입력하세요."></td>
+                <td colspan="3">
+                  <input type="text" id="email" name="email" class="form-control full" value="" placeholder="이메일을 입력하세요." onkeypress="if(event.keyCode == 13){ fnEmailSave(); return false; }">
+                  <div class="edit-hint">※ 이메일만 수정할 수 있습니다. 수정 후 <b>이메일 저장</b> 버튼을 누르세요.</div>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
         </form:form>
         <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-email-save" onclick="fnEmailSave();">이메일 저장</button>
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
       </div>

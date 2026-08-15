@@ -290,6 +290,14 @@
 		]]>
 	</update>
 
+	<!-- 이메일만 수정 (환자 목록 모달) — 다른 컬럼은 절대 건드리지 않는다 -->
+	<update id="updatePatientEmail" parameterType="PatientDTO"><![CDATA[
+		update T_USER_TRAN
+		   set EMAIL = #{email}
+		 where USER_UUID = #{userUuid}
+		]]>
+	</update>
+
 	<!-- 관리자(의사) -->
 	<select id="selectAuserList" parameterType="AuserDTO" resultType="AuserDTO"><![CDATA[
 	  	 select

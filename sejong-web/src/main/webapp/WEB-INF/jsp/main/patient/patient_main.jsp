@@ -528,45 +528,63 @@ function loadDayChart(dateKey, label){
 		// 클라이언트 재필터(r.eatDate === dc)는 DATE 컬럼이 "2026-05-29"/epoch 로 와서 형식 불일치로
 		// 식사·운동이 전부 사라지는 버그가 있어 제거함.
 
-		// 혈당 시간별 평균 버킷
+		// ★원본 측정값을 그대로 그린다(2026-08-15) — 종전 '시간별 평균 1점' 방식은 실제 측정과 값이 달라
+		//   (예: 12시대 실측 103→183 인데 그래프엔 평균 154 만 표시) "그래프가 실제 혈당과 안 맞다"는 문의가 있었다.
+		//   5분 간격 원본을 전부 찍고 축 라벨만 시(時) 단위로 표시. (하단 평가 패널은 종전대로 시간별 평균 사용)
+		var pts = [];
 		var buckets = {};
 		rows.forEach(function(r){
 			var hm = r.HM || toHM(r.DTM);
 			var hh = hm.substring(0,2);
 			var v  = parseInt(r.UPT,10);
 			if (!hh || isNaN(v)) return;
+			pts.push({ hm:hm, v:v });
 			if (!buckets[hh]) buckets[hh] = { sum:0, cnt:0 };
 			buckets[hh].sum += v; buckets[hh].cnt++;
 		});
 
-		// 식사·운동 시간(HH) 수집
-		var foodMap = {}, exerMap = {};
+		// 식사·운동 시간(HH) 수집 (+ 마커 배치용 대표 시각)
+		var foodMap = {}, exerMap = {}, foodTm = {}, exerTm = {};
 		foodRows.forEach(function(r){
-			var hh = (r.eatStime||'').substring(0,2);
-			if (hh) { if (!foodMap[hh]) foodMap[hh]=[]; foodMap[hh].push(r.foodName||'식사'); }
+			var t = String(r.eatStime||''); var hh = t.substring(0,2);
+			if (hh) { if (!foodMap[hh]) foodMap[hh]=[]; foodMap[hh].push(r.foodName||'식사'); if(!(hh in foodTm)) foodTm[hh]=t; }
 		});
 		exerRows.forEach(function(r){
-			var hh = (r.exerStime||'').substring(0,2);
-			if (hh) { if (!exerMap[hh]) exerMap[hh]=[]; exerMap[hh].push(r.exerName||'운동'); }
+			var t = String(r.exerStime||''); var hh = t.substring(0,2);
+			if (hh) { if (!exerMap[hh]) exerMap[hh]=[]; exerMap[hh].push(r.exerName||'운동'); if(!(hh in exerTm)) exerTm[hh]=t; }
 		});
 
-		// x축 = 혈당 + 식사 + 운동 시간의 합집합 (식사·운동만 있는 시간도 표시)
-		var hourSet = {};
-		Object.keys(buckets).forEach(function(h){ hourSet[h]=1; });
-		Object.keys(foodMap).forEach(function(h){ hourSet[h]=1; });
-		Object.keys(exerMap).forEach(function(h){ hourSet[h]=1; });
-		var hours = Object.keys(hourSet).sort();
-		var xs = hours.map(function(h){ return h+'시'; });
-		var ys = hours.map(function(h){ return buckets[h] ? Math.round(buckets[h].sum/buckets[h].cnt) : null; });
+		// 측정이 없는 시간에 식사·운동만 있으면 표식 자리(HH:00, 값 없음)를 만들어 준다
+		var haveHour = {};
+		pts.forEach(function(p){ haveHour[p.hm.substring(0,2)] = 1; });
+		Object.keys(foodMap).concat(Object.keys(exerMap)).forEach(function(hh){
+			if (!haveHour[hh]) { pts.push({ hm: hh+':00', v:null }); haveHour[hh]=1; }
+		});
+		pts.sort(function(a,b){ return a.hm.localeCompare(b.hm); });
 
-		// 식사/운동 마커 — 상단 고정 레인(y)에 배치, 해당 시간에만 표시
+		var xs = pts.map(function(p){ return p.hm; });    // 'HH:MM'
+		var ys = pts.map(function(p){ return p.v; });
+
+		// 평가 패널용 시간별 평균(종전 그대로)
+		var hours = Object.keys(haveHour).sort();
+		var evalYs = hours.map(function(h){ return buckets[h] ? Math.round(buckets[h].sum/buckets[h].cnt) : null; });
+
+		// 식사/운동 마커 — 기록 시각과 가장 가까운 측정 시점에 배치
 		// 같은 시간에 식사·운동이 겹쳐도 세로로 분리되도록 충분히 간격(FOOD 위 / EXER 아래)
+		var evMin = function(t){ return parseInt(t.substring(0,2),10)*60 + (parseInt(t.substring(2,4),10)||0); };   // 'HHMM…'
+		var hmMin = function(hm){ return parseInt(hm.substring(0,2),10)*60 + (parseInt(hm.substring(3,5),10)||0); }; // 'HH:MM'
+		var nearestIdx = function(t){
+			var m = evMin(t), best = -1, bd = 1e9;
+			for (var i=0;i<xs.length;i++){ var d = Math.abs(hmMin(xs[i])-m); if (d < bd){ bd = d; best = i; } }
+			return best;
+		};
 		var FOOD_Y = 290, EXER_Y = 258;
-		var foodPts = hours.map(function(h){ return foodMap[h] ? FOOD_Y : null; });
-		var exerPts = hours.map(function(h){ return exerMap[h] ? EXER_Y : null; });
-		// 식사·운동이 있는 시간에 세로 점선 표시 (마커를 타임라인에 연결)
-		var eventLines = hours.filter(function(h){ return foodMap[h] || exerMap[h]; })
-		                      .map(function(h){ return { xAxis: h+'시' }; });
+		var foodPts = xs.map(function(){ return null; });
+		var exerPts = xs.map(function(){ return null; });
+		// 식사·운동이 있는 시점에 세로 점선 표시 (마커를 타임라인에 연결)
+		var eventLines = [];
+		Object.keys(foodTm).forEach(function(hh){ var i=nearestIdx(foodTm[hh]); if(i>=0){ foodPts[i]=FOOD_Y; eventLines.push({ xAxis: xs[i] }); } });
+		Object.keys(exerTm).forEach(function(hh){ var i=nearestIdx(exerTm[hh]); if(i>=0){ exerPts[i]=EXER_Y; eventLines.push({ xAxis: xs[i] }); } });
 
 		if (!rows.length && !foodRows.length && !exerRows.length) {
 			$("#lineChart").html('<div class="text-center text-muted p-3">'+label+' 데이터 없음</div>');
@@ -580,7 +598,7 @@ function loadDayChart(dateKey, label){
 				trigger:'axis',
 				formatter: function(params){
 					if(!params||!params.length) return '';
-					var hh=hours[params[0].dataIndex]||'';
+					var hh=String(params[0].axisValue||'').substring(0,2);
 					var bv=null;
 					params.forEach(function(p){ if(p.seriesName==='혈당'&&p.value!=null) bv=p.value; });
 					var txt=params[0].axisValue+'<br/>혈당: <b>'+(bv!=null?bv+' mg/dL':'기록 없음')+'</b>';
@@ -591,13 +609,18 @@ function loadDayChart(dateKey, label){
 			},
 			legend: { show:false },
 			grid: { left:40, right:16, top:20, bottom:30 },
-			xAxis: { type:'category', data:xs, axisTick:{ alignWithLabel:true } },
+			xAxis: { type:'category', data:xs, axisTick:{ alignWithLabel:true },
+				// 5분 간격 원본이라 라벨은 각 시(時)의 첫 측정에만 'HH시'로 표시
+				axisLabel:{ interval:function(i){ return i===0 || (xs[i]||'').substring(0,2)!==(xs[i-1]||'').substring(0,2); },
+				            formatter:function(v){ return String(v).substring(0,2)+'시'; } } },
 			yAxis: { type:'value', min:0, max:300 },
 			series: [
 				{
 					name:'혈당',
 					type:'line', data:ys, smooth:true, areaStyle:{}, connectNulls:true,
-					label:{ show:true, position:'top', formatter:function(p){ return p.value!=null ? p.value : ''; } },
+					symbol:'circle', symbolSize:3,
+					// 원본 전체를 찍으므로 점마다 숫자 라벨은 생략 — 값은 툴팁·최고/최저 마커로 확인
+					label:{ show:false },
 					markPoint: { data:[
 						{ type:'max', name:'최고', itemStyle:{ color:'#dc3545' } },
 						{ type:'min', name:'최저', itemStyle:{ color:'#f5c518' } }
@@ -615,8 +638,8 @@ function loadDayChart(dateKey, label){
 				  label:{ show:true, formatter:'🚴', fontSize:20, position:'inside' } }
 			]
 		});
-		// 혈당 평가 패널 업데이트
-		updateEvalPanel(hours, ys, foodMap, exerMap, label);
+		// 혈당 평가 패널 업데이트 — 종전대로 시간별 평균(evalYs) 기준
+		updateEvalPanel(hours, evalYs, foodMap, exerMap, label);
 	}).fail(function(xhr){
 		$("#lineChart").html('<div class="text-center text-danger p-3">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+')</div>');
 	});

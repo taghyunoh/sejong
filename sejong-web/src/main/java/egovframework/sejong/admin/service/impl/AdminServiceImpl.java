@@ -69,6 +69,11 @@ public class AdminServiceImpl implements AdminService {
 		return mapper.updatePatient(dto);
 	}
 	@Override
+	public boolean updatePatientEmail(PatientDTO dto) throws Exception {
+		// 이메일만 수정 — 다른 컬럼(비밀번호·생년월일 등)은 건드리지 않는다
+		return mapper.updatePatientEmail(dto);
+	}
+	@Override
 	public boolean deletePatient(PatientDTO dto) throws Exception {
 		// TODO Auto-generated method stub
 		return mapper.deletePatient(dto);

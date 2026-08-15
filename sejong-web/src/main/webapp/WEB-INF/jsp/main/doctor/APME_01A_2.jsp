@@ -398,20 +398,25 @@
 	      	CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/calcBlood.do","POST",formData,
 	  			function(response){
 	      			//console.log("GMI, 표준편차, 변동계수 가져옴. :", response);
-	      			var fastingAvg = Math.round(response.avgFood.avgFASTING);
-					var avgBlood = Math.round(response.AvgBlood);
-					var avgMeal = Math.round(response.avgMeal.avgBlood);
+	      			// ★식사 기록이 없는 환자는 avgFood/avgMeal 이 null 로 온다(2026-08-15 한용기).
+	      			//   종전엔 response.avgFood.avgFASTING 에서 TypeError 로 콜백 전체가 죽어
+	      			//   평균혈당·GMI·CV·표준편차까지 전부 빈 칸이 됐다. 항목별로 독립 계산하고, 없는 값은 '-' 로 표시한다.
+	      			var _num = function(v){ var n = Math.round(parseFloat(v)); return isNaN(n) ? '-' : n; };
+	      			var _raw = function(v){ return (v == null || v === '') ? '-' : v; };
+	      			var fastingAvg = _num(response.avgFood && response.avgFood.avgFASTING);
+					var avgBlood = _num(response.AvgBlood);
+					var avgMeal = _num(response.avgMeal && response.avgMeal.avgBlood);
 					//개요
-	      			document.getElementById('gmi').textContent = response.GMI;
-	      			document.getElementById('std').textContent = response.stdBlood;
-	      			document.getElementById('cv').textContent = response.CV;
+	      			document.getElementById('gmi').textContent = _raw(response.GMI);
+	      			document.getElementById('std').textContent = _raw(response.stdBlood);
+	      			document.getElementById('cv').textContent = _raw(response.CV);
 	      			document.getElementById('fastingAvg').textContent = fastingAvg;
 	      			document.getElementById('avg').textContent = avgBlood;
 	      			document.getElementById('avgMeal').textContent = avgMeal;
                     //agp추가
-	      			document.getElementById('gmi_agp').textContent = response.GMI;
-	      			document.getElementById('std_agp').textContent = response.stdBlood;
-	      			document.getElementById('cv_agp').textContent = response.CV;
+	      			document.getElementById('gmi_agp').textContent = _raw(response.GMI);
+	      			document.getElementById('std_agp').textContent = _raw(response.stdBlood);
+	      			document.getElementById('cv_agp').textContent = _raw(response.CV);
 	      			document.getElementById('fastingAvg_agp').textContent = fastingAvg;
 	      			document.getElementById('avg_agp').textContent = avgBlood;
 	      			document.getElementById('avgMeal_agp').textContent = avgMeal;
@@ -2427,7 +2432,7 @@
    개요 탭이 채운 DOM 값(#tirCard·#tarCard·#tbrCard·#cv·#gmi·#avg)을 읽어 해석만 만든다 — 서버 재조회 없음.
    권장기준: TIR ≥70% · TAR <25% · TBR <4% · CV ≤36% · GMI 참고치(권장 없음) */
 (function(){
-  var AI_OK='#2f9e63', AI_BAD='#d9534f';
+  var AI_OK='#2f9e63', AI_BAD='#d9534f', AI_WARN='#e0a800';
   function _n(id){ var el=document.getElementById(id); if(!el) return NaN;
     return parseFloat(String(el.textContent||'').replace(/[^0-9.\-]/g,'')); }
   window.aiRender = function(){
@@ -2435,8 +2440,10 @@
     var rows=[];
     function row(nm, val, unit, ok, txt){
       if(isNaN(val)) return;
+      // ok: true=녹색, false=적색, 'warn'=황색(개요 타일의 GMI 7~8% 판정과 동일), null=회색(판정 없음)
+      var col = (ok===null) ? '#333' : (ok==='warn' ? AI_WARN : (ok ? AI_OK : AI_BAD));
       rows.push('<div class="ai-row"><span class="ai-nm">'+nm+'</span>'
-        +'<span class="ai-val" style="color:'+(ok===null?'#333':(ok?AI_OK:AI_BAD))+'">'+val+unit+'</span>'
+        +'<span class="ai-val" style="color:'+col+'">'+val+unit+'</span>'
         +'<span class="ai-txt">'+txt+'</span></div>');
     }
     row('TIR (목표범위 유지)', tir, '%', tir>=70,
@@ -2451,8 +2458,10 @@
     row('CV (혈당 변동성)', cv, '%', cv<=36,
         cv<=36 ? '권장(36% 이하)을 충족합니다. 혈당 변동이 안정적입니다.'
                : '권장(36% 이하)을 초과해 변동이 큽니다. 식사 규칙성과 저혈당 반복 여부를 확인하세요.');
-    row('GMI (혈당관리지표)', gmi, '%', null,
-        '평균혈당을 당화혈색소 형태로 환산한 <b>참고 지표</b>입니다(권장 위험분류 제시 없음).');
+    row('GMI (혈당관리지표)', gmi, '%', gmi<7 ? true : (gmi<8 ? 'warn' : false),
+        gmi<7 ? '목표(7% 미만) 범위입니다. 평균혈당을 당화혈색소(HbA1c) 형태로 환산한 추정치입니다.'
+              : (gmi<8 ? '7~8% 주의 구간입니다. 평균혈당을 당화혈색소(HbA1c) 형태로 환산한 추정치로, 생활습관·약물 조정 검토가 필요할 수 있습니다.'
+                       : '8% 이상입니다. 평균혈당을 당화혈색소(HbA1c) 형태로 환산한 추정치로, 적극적인 혈당 관리가 필요합니다.'));
     var w=document.getElementById('aiIdxWrap');
     if(w) w.innerHTML = rows.length ? rows.join('') : '<div class="ai-box">표시할 지표가 없습니다. 개요 탭에서 기간을 조회해 주세요.</div>';
 
@@ -2543,30 +2552,44 @@
       var exerRows = (e && e.Data) ? e.Data : [];
       console.log('[AI분석]', dateKey, '혈당', rows.length, '식사', foodRows.length, '운동', exerRows.length);
 
-      // 시간(HH)별 혈당 평균
-      var buckets = {};
+      // ★원본 측정값을 그대로 그린다(2026-08-15) — 종전 '시간별 평균 1점' 방식은 실제 측정과 값이 달라
+      //   (예: 12시대 실측 103→183 인데 그래프엔 평균 154 만 표시, 실제 피크 183 은 안 보임)
+      //   "그래프가 실제 혈당과 안 맞다"는 문의가 있었다. 5분 간격 원본을 전부 찍고 축 라벨만 시(時) 단위로 표시.
+      var pts = [];
       rows.forEach(function(r){
         var hm = r.HM || (function(v){ var s=String(v==null?'':v); var m=s.match(/(\d{2}):(\d{2})/); return m?(m[1]+':'+m[2]):''; })(r.DTM);
-        var hh = hm.substring(0,2), v = parseInt(r.UPT,10);
-        if(!hh || isNaN(v)) return;
-        if(!buckets[hh]) buckets[hh]={sum:0,cnt:0};
-        buckets[hh].sum += v; buckets[hh].cnt++;
+        var v = parseInt(r.UPT,10);
+        if(hm && !isNaN(v)) pts.push({ hm:hm, v:v });
       });
-      var foodMap = {}, exerMap = {};
-      foodRows.forEach(function(r){ var hh=(r.eatStime||'').substring(0,2); if(hh){ (foodMap[hh]=foodMap[hh]||[]).push(r.foodName||'식사'); } });
-      exerRows.forEach(function(r){ var hh=(r.exerStime||'').substring(0,2); if(hh){ (exerMap[hh]=exerMap[hh]||[]).push(r.exerName||'운동'); } });
+      var foodMap = {}, exerMap = {}, foodTm = {}, exerTm = {};
+      foodRows.forEach(function(r){ var t=String(r.eatStime||''); var hh=t.substring(0,2); if(hh){ (foodMap[hh]=foodMap[hh]||[]).push(r.foodName||'식사'); if(!(hh in foodTm)) foodTm[hh]=t; } });
+      exerRows.forEach(function(r){ var t=String(r.exerStime||''); var hh=t.substring(0,2); if(hh){ (exerMap[hh]=exerMap[hh]||[]).push(r.exerName||'운동'); if(!(hh in exerTm)) exerTm[hh]=t; } });
 
-      var hourSet={};
-      Object.keys(buckets).forEach(function(h){ hourSet[h]=1; });
-      Object.keys(foodMap).forEach(function(h){ hourSet[h]=1; });
-      Object.keys(exerMap).forEach(function(h){ hourSet[h]=1; });
-      var hours = Object.keys(hourSet).sort();
-      var xs = hours.map(function(h){ return h+'시'; });
-      var ys = hours.map(function(h){ return buckets[h] ? Math.round(buckets[h].sum/buckets[h].cnt) : null; });
+      // 측정이 없는 시간에 식사·운동만 있으면 표식 자리(HH:00, 값 없음)를 만들어 준다
+      var haveHour = {};
+      pts.forEach(function(p){ haveHour[p.hm.substring(0,2)] = 1; });
+      Object.keys(foodMap).concat(Object.keys(exerMap)).forEach(function(hh){
+        if(!haveHour[hh]){ pts.push({ hm: hh+':00', v:null }); haveHour[hh]=1; }
+      });
+      pts.sort(function(a,b){ return a.hm.localeCompare(b.hm); });
+
+      var xs = pts.map(function(p){ return p.hm; });     // 'HH:MM'
+      var ys = pts.map(function(p){ return p.v; });
+
+      // 식사·운동 마커는 기록 시각과 가장 가까운 측정 시점에 붙인다
+      var evMin = function(t){ return parseInt(t.substring(0,2),10)*60 + (parseInt(t.substring(2,4),10)||0); };   // 'HHMM…'
+      var hmMin = function(hm){ return parseInt(hm.substring(0,2),10)*60 + (parseInt(hm.substring(3,5),10)||0); }; // 'HH:MM'
+      var nearestIdx = function(t){
+        var m = evMin(t), best = -1, bd = 1e9;
+        for(var i=0;i<xs.length;i++){ var d = Math.abs(hmMin(xs[i])-m); if(d < bd){ bd = d; best = i; } }
+        return best;
+      };
       var FOOD_Y=290, EXER_Y=258;
-      var foodPts = hours.map(function(h){ return foodMap[h] ? FOOD_Y : null; });
-      var exerPts = hours.map(function(h){ return exerMap[h] ? EXER_Y : null; });
-      var eventLines = hours.filter(function(h){ return foodMap[h]||exerMap[h]; }).map(function(h){ return { xAxis:h+'시' }; });
+      var foodPts = xs.map(function(){ return null; });
+      var exerPts = xs.map(function(){ return null; });
+      var eventLines = [];
+      Object.keys(foodTm).forEach(function(hh){ var i=nearestIdx(foodTm[hh]); if(i>=0){ foodPts[i]=FOOD_Y; eventLines.push({ xAxis: xs[i] }); } });
+      Object.keys(exerTm).forEach(function(hh){ var i=nearestIdx(exerTm[hh]); if(i>=0){ exerPts[i]=EXER_Y; eventLines.push({ xAxis: xs[i] }); } });
 
       // 하단 두 박스 — 시간순 목록
       var fmtT = function(s){ s=String(s||''); return s.length>=4 ? (s.substring(0,2)+':'+s.substring(2,4)) : s; };
@@ -2601,7 +2624,7 @@
       chart.setOption({
         tooltip:{ trigger:'axis', formatter:function(params){
           if(!params||!params.length) return '';
-          var hh=hours[params[0].dataIndex]||'', bv=null;
+          var hh=String(params[0].axisValue||'').substring(0,2), bv=null;
           params.forEach(function(p){ if(p.seriesName==='혈당'&&p.value!=null) bv=p.value; });
           var txt=params[0].axisValue+'<br/>혈당: <b>'+(bv!=null?bv+' mg/dL':'기록 없음')+'</b>';
           if(foodMap[hh]) txt+='<br/>🍚 식사: '+foodMap[hh].join(', ');
@@ -2610,11 +2633,16 @@
         }},
         legend:{ show:false },
         grid:{ left:40, right:16, top:20, bottom:30 },
-        xAxis:{ type:'category', data:xs, axisTick:{ alignWithLabel:true } },
+        xAxis:{ type:'category', data:xs, axisTick:{ alignWithLabel:true },
+          // 5분 간격 원본이라 라벨은 각 시(時)의 첫 측정에만 'HH시'로 표시
+          axisLabel:{ interval:function(i){ return i===0 || (xs[i]||'').substring(0,2)!==(xs[i-1]||'').substring(0,2); },
+                      formatter:function(v){ return String(v).substring(0,2)+'시'; } } },
         yAxis:{ type:'value', min:0, max:300 },
         series:[
           { name:'혈당', type:'line', data:ys, smooth:true, areaStyle:{}, connectNulls:true,
-            label:{ show:true, position:'top', formatter:function(p){ return p.value!=null?p.value:''; } },
+            symbol:'circle', symbolSize:3,
+            // 원본 전체를 찍으므로 점마다 숫자 라벨은 생략 — 값은 툴팁·최고/최저 마커로 확인
+            label:{ show:false },
             markPoint:{ data:[ {type:'max',name:'최고',itemStyle:{color:'#dc3545'}}, {type:'min',name:'최저',itemStyle:{color:'#f5c518'}} ] },
             markLine:{ silent:true, symbol:'none', lineStyle:{type:'dashed',color:'#c0c4cc',width:1}, label:{show:false}, data:eventLines } },
           { name:'식사', type:'scatter', data:foodPts, symbolSize:1, label:{ show:true, formatter:'🍚', fontSize:20, position:'inside' } },
