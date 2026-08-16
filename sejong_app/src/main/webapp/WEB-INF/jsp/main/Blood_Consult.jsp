@@ -277,10 +277,12 @@
 .wk-sechead { margin: 12px 0 8px; padding: 6px 10px; background: #8ca6db; color: #fff;
   border-radius: 6px; font-size: 14px; font-weight: 800; }
 .wk-dashbox { border: 1.5px dashed #4a6fb5; border-radius: 8px; padding: 10px 12px; background: #fff; }
-.wk-ailist { margin: 0; padding-left: 18px; }
-.wk-ailist li { font-size: 13.5px; line-height: 1.8; color: #37475a; }
-.wk-coach { font-size: 13.5px; line-height: 1.8; color: #37475a; padding: 2px 4px; }
+/* [2026-08-16] 가이드 본문 확대 요청 13.5 → 15px */
+.wk-intro { font-size: 15px; line-height: 1.8; color: #37475a; padding: 2px 4px; }
+.wk-coach-label { margin-top: 8px; padding: 2px 4px; font-size: 15px; font-weight: 800; color: #2d303f; }
+.wk-coach { font-size: 15px; line-height: 1.8; color: #37475a; padding: 2px 4px; }
 .wk-coach ul { margin: 6px 0 0; padding-left: 18px; }
+.wk-basis { display: block; margin-top: 6px; padding: 0 4px; color: #8a98a8; font-size: 11.5px; }
 
 /* 참조링크 카드 — 컴팩트 + 헤더 클릭 접기/펼치기 */
 .refcard { padding: 10px 16px; }
@@ -458,6 +460,17 @@
    → 360px 실측 결과 필요 299.4px / 가용 324px, 여유 +24.6px, 잘림 없음. */
 .date-range {
   gap: 4px;                /* 8px → 4px. 칸이 5개라 gap 이 4군데(32px)나 든다 */
+}
+
+/* [안드로이드 큰글씨 대응] 시스템/크롬의 '글자 크게' 설정은 px 글자까지 부풀린다(텍스트 자동 확대).
+   이 행은 360px 실측 여유가 +24.6px 뿐이라 조금만 부풀려도 날짜가 잘린다(두 칸 합계로 배율 20%면 +44px).
+   iOS 확대 버그 때문에 16px 밑으로 내릴 수 없으므로 이 행만 자동 확대에서 제외한다. */
+.date-range,
+.date-range input[type="date"],
+.date-range button,
+.date-range .tilde {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 .date-range input[type="date"]::-webkit-calendar-picker-indicator {
   /* 달력 아이콘 숨김 — 한 칸당 약 16px 을 먹는데, 이 두 칸은 readonly 라 눌러도 피커가 열리지 않고
@@ -701,15 +714,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		      <div class="v"><span id="cv" data-value="-">-</span></div></div>
 		  </div>
 		</section>
-		<%-- [2026-07-31 기획 확정] TIR 베이스 5개 항목(TIR·TAR·TBR·CV·GMI) 세부 분석 + 생활습관 코칭.
-		     값이 채워질 때마다 wkAi 스크립트가 자동 갱신. --%>
+		<%-- [2026-08-16] '* 혈당지표 분석'과 '* 생활습관 코칭' 두 머리띠가 별개 점검항목처럼 보인다는
+		     지적으로 헤더 하나('혈당지표 분석 기반 생활습관 가이드')로 통합.
+		     내용 = 챗봇 첫 인사의 지표 분석(TIR·TAR·TBR — _chatIntroAnalysis 와 같은 문장) + AI 코칭.
+		     #wkCoach 는 챗봇(_chatIntroAnalysis·_chatStatusSummary)이 innerHTML 을 그대로 가져다 쓰므로
+		     id 와 내용 구조를 바꾸면 안 된다. --%>
 		<div class="wk-ai">
-		  <h5 class="wk-sechead">* 혈당지표 분석</h5>
+		  <h5 class="wk-sechead">* 혈당지표 분석 기반 생활습관 가이드</h5>
 		  <div class="wk-dashbox">
-		    <ul id="wkAiList" class="wk-ailist"><li>지표 수치를 불러오면 분석이 표시됩니다.</li></ul>
+		    <div id="wkIntro" class="wk-intro">지표 수치를 불러오면 분석이 표시됩니다.</div>
+		    <div class="wk-coach-label">AI 코칭</div>
+		    <div id="wkCoach" class="wk-coach">지표 수치를 불러오면 코칭 내용이 표시됩니다.</div>
+		    <small class="wk-basis">※ 대한당뇨병학회 관리지표 기준</small>
 		  </div>
-		  <h5 class="wk-sechead">* 생활습관 코칭</h5>
-		  <div id="wkCoach" class="wk-coach">지표 수치를 불러오면 코칭 내용이 표시됩니다.</div>
 		</div>
 		<br>
     <h5 class="chart-title">* 저혈당/고혈당 발생구간(시간)</h5>
@@ -879,22 +896,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    var avg=num('avgUpt'), fast=num('avgFastingBlood'), after=num('after2hBlood');
 	    paint('avgUpt', avg>=70 && avg<=180); paint('avgFastingBlood', fast>=70 && fast<100); paint('after2hBlood', after>=70 && after<140);
 
-	    // ── * 혈당지표 분석 (TIR 베이스 종합판정 + 문제 항목별 조언) ──
-	    var L=[];
-	    if(!isNaN(tir)){
-	      L.push(tir>=70 ? "지표는 <b style='color:"+OK+"'>‘정상’</b>입니다"
-	                     : "지표는 <b style='color:"+WARN+"'>‘관리필요’</b>입니다");
+	    // ── 통합 가이드 ①: 지표 분석 — 챗봇 첫 인사(_chatIntroAnalysis)와 같은 문장을 화면에도 뿌린다 ──
+	    var intro=document.getElementById('wkIntro');
+	    if(intro && !(isNaN(tir) && isNaN(tar) && isNaN(tbr))){
+	      var ln=function(s){ return "<span style='display:block; word-break:keep-all;'>"+s+"</span>"; };
+	      var L=[ln('최근 일주일 지표 분석입니다.')];
+	      if(!isNaN(tir)) L.push(ln("• TIR(목표유지) <b>"+tir+"%</b> — 권장 70%↑ "+(tir>=70?'충족&nbsp;👍':"<b style='color:"+WARN+"'>미달</b>")));
+	      if(!isNaN(tar)) L.push(ln("• TAR(고혈당) <b>"+tar+"%</b> — 권장 25%↓ "+(tar<25?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      if(!isNaN(tbr)) L.push(ln("• TBR(저혈당) <b>"+tbr+"%</b> — 권장 4%↓ "+(tbr<4?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      intro.innerHTML = L.join('');
 	    }
-	    if(!isNaN(tar) && tar>=25) L.push('TAR이 높아 식후 걷기가 필요합니다');
-	    if(!isNaN(tbr) && tbr>=4)  L.push('TBR이 높아 공복운동 금지가 필요합니다');
-	    if(!isNaN(cv)  && cv>36)   L.push('CV가 높아 혈당 변동 관리가 필요합니다');
-	    if(!isNaN(fast) && fast>=100) L.push('공복혈당이 높아 저녁 식사·간식 조절이 필요합니다');
-	    if(L.length===1 && !isNaN(tir) && tir>=70) L.push('다섯 개 지표가 모두 권장 범위 안에 있습니다');
-	    if(!isNaN(gmi)) L.push('GMI(혈당 관리지표)는 '+gmi+'% 입니다 (참고사항)');
-	    var ul=document.getElementById('wkAiList');
-	    if(ul && L.length) ul.innerHTML = L.map(function(s){ return '<li>'+s+'</li>'; }).join('');
 
-	    // ── * 생활습관 코칭 (가장 두드러진 문제 기준 문구 + 실천 항목) ──
+	    // ── 통합 가이드 ②: AI 코칭 (가장 두드러진 문제 기준 문구 + 실천 항목) ──
 	    var box=document.getElementById('wkCoach');
 	    if(box && !isNaN(tir)){
 	      var head='', tips=[];

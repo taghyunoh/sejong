@@ -282,6 +282,16 @@
   color: #444;
 }
 
+/* [안드로이드 큰글씨 대응] '글자 크게' 설정의 텍스트 자동 확대에서 날짜 행만 제외.
+   이 화면은 날짜칸 1개라 여유(+118px)가 있지만 배율이 크면 똑같이 잘린다 — 전 화면 공통 적용. */
+.date-range,
+.date-range input[type="date"],
+.date-range button,
+.date-range .tilde {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 /* 브라우저 기본 캘린더 아이콘 정렬 조정 */
 input[type="date"]::-webkit-calendar-picker-indicator {
   margin-left: -4px;

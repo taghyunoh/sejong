@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="${pageContext.request.contextPath}/asset/css/blood_fahr.css?v=123" rel="stylesheet"> <!-- ASQ 스타일   -->
+<link href="${pageContext.request.contextPath}/asset/css/blood_fahr.css?v=124" rel="stylesheet"> <!-- ASQ 스타일 · v124=분석 문장 18px -->
 <title>Insert title here</title>
 </head>
 

@@ -268,6 +268,24 @@ button {
   padding: 4px 10px;
 }
 
+/* [안드로이드 큰글씨 대응] 시스템/크롬의 '글자 크게' 설정은 px 로 지정한 글자까지
+   부풀린다(텍스트 자동 확대). 날짜 행은 360px 에서 여유가 몇 px 뿐이라 부풀리는 순간
+   끝이 잘린다. iOS 확대 버그 때문에 16px 밑으로 내릴 수도 없으므로,
+   이 행만 자동 확대 대상에서 제외한다(다른 본문 글자는 그대로 커진다). */
+.date-range,
+.date-range input[type="date"],
+.date-range button,
+.date-range span {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+/* [안드로이드 큰글씨 대응] 모바일에서는 달력 아이콘을 숨겨 칸당 ~16px 을 회수한다.
+   모바일 크롬/사파리는 칸 아무 데나 탭해도 피커가 열려 아이콘이 장식일 뿐이다.
+   (데스크톱은 아이콘 클릭이 피커 진입로라 화면폭 481px 이상에서는 남겨둔다) */
+@media (max-width: 480px){
+  .date-range input[type="date"]::-webkit-calendar-picker-indicator { display: none }
+}
+
 .exercise-table th,
 .exercise-table td {
   padding: 10px 8px;

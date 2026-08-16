@@ -50,7 +50,7 @@ body {
 }
 
 .change-text {
-    font-size: 16px;
+    font-size: 18px;   /* [2026-08-16] 분석 문장 확대 요청 16 → 18 (아래 3개 클래스와 함께) */
     color: #666666;
     font-weight: 400;
 }
@@ -64,7 +64,7 @@ body {
 }
 
 .change-status {
-    font-size: 16px;
+    font-size: 18px;   /* [2026-08-16] 16 → 18 */
     color: #000000;
     font-weight: 400;
 }
@@ -96,11 +96,11 @@ body {
 
 .detail-box_small {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 18px;   /* [2026-08-16] 16 → 18 */
 }
 
 .detail-text {
-    font-size: 16px;
+    font-size: 18px;   /* [2026-08-16] 16 → 18 */
     color: #000000;
     font-weight: 400;
     line-height: 1.4;
