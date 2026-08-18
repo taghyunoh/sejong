@@ -76,10 +76,14 @@
 	<!-- showBloodData -->	
 	<select id="showBloodAvgData" parameterType="String" resultType="map">
 	<![CDATA[
-		SELECT FLOOR(AVG(UPT_VALUE)) AS AVG_UPT ,
-               ROUND(SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS TAR_UPT,
-               ROUND(SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS TBR_UPT,
-               ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 2) AS CV_UPT		
+		/* ★[2026-08-18] 평균혈당은 **버림(FLOOR)이 아니라 그대로** 낸다 — 화면이 반올림한다.
+		   ⚠종전엔 SQL 이 먼저 버려서(121.6 → 121) 웹(반올림 122)과 1 씩 어긋났다. */
+		SELECT AVG(UPT_VALUE) AS AVG_UPT ,
+               /* ★[2026-08-18] 소수 **1자리로 한 번만** 반올림 — 종전 2자리(4.25) 후 화면 toFixed(1)이 또 올려
+                  웹(calcBlood는 1자리)와 4.2/4.3 으로 어긋났다. CV도 같은 잠복 버그라 함께 1자리로. */
+               ROUND(SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS TAR_UPT,
+               ROUND(SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS TBR_UPT,
+               ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1) AS CV_UPT		
 		FROM T_BLDINF_TRAN
 		WHERE USER_UUID = #{userId}
 		  AND UPT_VALUE > 0
@@ -185,7 +189,10 @@
 			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= #{date} - INTERVAL 24 HOUR
 			    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  #{date}
 			    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) >= '03:00:00'
-			    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '06:00:00'   -- 06:00 미포함
+			    /* ★[2026-08-18 확정] 공복 창을 **03~05시**로 좁혔다(종전 03~06시).
+			       ⚠sejong-web 의 `calcBlood` FASTING 과 **같은 창**이어야 한다 — 한쪽만 고치면
+			         같은 환자의 공복평균이 앱과 의사 화면에서 다르게 나온다. */
+			    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '05:00:00'   -- 05:00 미포함
 			),
 			
 			/* ---- 식후 2시간 이후 '가장 빠른 것' 선택 ---- */
@@ -203,6 +210,9 @@
 			    ON a.USER_UUID = #{userId}
 			   AND a.UPT_VALUE > 0
 			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= m.meal_ts + INTERVAL 2 HOUR
+			   /* ★[2026-08-18] 위 칸을 **한 시간으로 닫는다**(식후 2~3시간) — web 의 mealAvg 와 같은 창.
+			      열어 두면 그 끼니 뒤 측정이 한참 없을 때 ***몇 시간 뒤 값***이 식후값으로 잡힌다. */
+			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  m.meal_ts + INTERVAL 3 HOUR
 			   -- 기간(최근 24시간) 안에서만 계산
 			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= #{date} - INTERVAL 24 HOUR
 			   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  #{date}
@@ -329,7 +339,9 @@
 		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= CONCAT(#{start}, ' 00:00:00')
 		    AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  DATE_ADD(#{end}, INTERVAL 1 DAY)
 		    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) >= '03:00:00'
-		    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '06:00:00'  -- 06:00 미포함
+		    /* ★[2026-08-18 확정] 공복 창 **03~05시** — sejong-web `calcBlood` 의 FASTING 과 같은 창.
+		       ⚠종전 03~06시라 같은 환자·같은 기간인데 앱 105 / 웹 101 로 갈렸다. */
+		    AND TIME(STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) <  '05:00:00'  -- 05:00 미포함
 		),
 		
 		/* ---- 식후 2시간 이후(가장 이른 시각 = 1위) ---- */
@@ -347,6 +359,9 @@
 		    ON a.USER_UUID = #{userId}
 		   AND a.UPT_VALUE > 0
 		   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') >= m.meal_ts + INTERVAL 2 HOUR
+		   /* ★[2026-08-18] 식후 창을 **한 시간으로 닫는다**(식후 2~3시간) — 24시간 화면·웹과 같은 기준.
+		      열어 두면 그 끼니 뒤 측정이 한참 없을 때 ***몇 시간 뒤 값***이 식후값으로 잡힌다. */
+		   AND STR_TO_DATE(a.CGM_DTM, '%Y-%m-%d %H:%i:%s') <  m.meal_ts + INTERVAL 3 HOUR
 		),
 		after2h_vals AS (
 		  SELECT meal_ts, UPT_VALUE
@@ -498,15 +513,10 @@
 		  		FROM T_BLDINF_TRAN a
 		 		WHERE a.USER_UUID = #{userId}
     	   		AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-    	   		AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00'
-    	   		AND COALESCE(
-    				 	( SELECT MIN(TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')))
-         					FROM T_FOOD_TRAN b
-         			       WHERE b.USER_UUID = a.USER_UUID
-           				 	 AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-           				 	 AND TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) BETWEEN '03:00:00' AND '06:00:00')
-        				, '06:00:00'
-    				)
+    	   		/* ★[2026-08-18 확정 · web 과 같은 기준] 공복평균 = ***새벽 03~05시 평균***.
+    	   		   ⚠sejong_web 의 Blood_SQL.xml 과 **같은 값을 내야 한다** — 한쪽만 고치면
+    	   		     의사 화면과 환자 앱이 서로 다른 공복평균을 보여준다. 고칠 때는 둘 다 고친다. */
+    	   		AND TIME(a.CGM_DTM) BETWEEN '03:00:00' AND '05:00:00'
     			) AS FASTING
 		  FROM T_BLDINF_TRAN
 		 WHERE USER_UUID = #{userId}
@@ -1272,22 +1282,61 @@
         pm.foodDate
      ]]>
     </select>	
-	<select id="mealAvg" parameterType="String" resultType="map">
-		SELECT 
-			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
-		FROM 
-			T_BLDINF_TRAN a
-		JOIN 
-    		T_FOOD_TRAN b
-		WHERE a.USER_UUID = #{userId} AND 
-		DATE(a.CGM_DTM) BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s')) 
-		AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s'))  
-		AND DATE(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) 
-		    BETWEEN DATE(DATE_FORMAT(#{start}, '%Y-%m-%d %H:%i:%s'))AND DATE(DATE_FORMAT(#{end}, '%Y-%m-%d %H:%i:%s')) 
-		   AND TIME(a.CGM_DTM) BETWEEN TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) 
-		   AND TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 2 HOUR));
-	
-	</select> 
+	<!-- ★★[2026-08-18] sejong-web 의 mealAvg 를 **그대로** 가져왔다 — 두 화면이 같은 수를 내야 한다.
+	     ⚠종전 앱 쿼리의 문제 둘 :
+	       ① `JOIN T_FOOD_TRAN b` 에 **USER_UUID 짝이 없어** 다른 환자의 식사 시각까지 섞였다(카티전 조인).
+	       ② 식후 **0~2시간 구간 전체**를 평균했다(정의는 <식후 2시간> 값).
+	     ⇒ 아래 쿼리는 [식사+2h, 식사+3h) 의 첫 측정을 끼니마다 잡아 평균한다. -->
+	<!-- 식후 혈당2시간 -->
+	<select id="mealAvg" parameterType="String" resultType="map"> <![CDATA[
+		select  ROUND(AVG(IFNULL(ROUND ( (IFNULL(breakfast,0) + IFNULL(lunch,0) + IFNULL(dinner,0)) /
+		       (3 -  (IF(IFNULL(breakfast,0) = 0,1,0) + IF(IFNULL(lunch,0)  = 0,1,0)
+		                                              + IF(IFNULL(dinner,0) = 0,1,0) ))  ,.1),0)),.1)  AS avgBlood
+		 from
+		(
+			select USER_UUID , date
+			        , case when IFNULL(CAST(breakfast AS UNSIGNED),0) > 0
+								then (select UPT_VALUE from T_BLDINF_TRAN
+									   where USER_UUID = k.USER_UUID
+									   and   cgm_dtm =  k.breakfast)   end  breakfast
+					, case when IFNULL(CAST(lunch AS UNSIGNED),0) > 0
+								then (select UPT_VALUE from T_BLDINF_TRAN
+									   where USER_UUID = k.USER_UUID
+									   and   cgm_dtm =  k.lunch)       end  lunch
+					, case when IFNULL(CAST(dinner AS UNSIGNED),0) > 0
+								then (select UPT_VALUE from T_BLDINF_TRAN
+									   where USER_UUID = k.USER_UUID
+									   and   cgm_dtm =  k.dinner)      end  dinner
+			from (
+			/* ★★[2026-08-18 확정] 식후평균 = ***식사 시각 + 2시간 이후*** 의 첫 측정값.
+			   ⚠종전 조건은 `b.EAT_DATETIME <= a.cgm_dtm + 2시간` 이었다 —
+			     풀어 보면 `측정 >= 식사 - 2시간`, 즉 ***식사 2시간 전부터***의 값을 집어 왔다(부등호가 반대).
+			     그래서 식후평균이 전체 평균보다 <낮게> 나오는 일이 생겼다(식후는 보통 더 높다).
+			   ⇒ [식사+2h, 식사+3h) 한 시간 창에서 **가장 이른 측정**을 그 끼의 식후값으로 삼는다.
+			   ⚠`date(식사)=date(측정)` 조건도 뺐다 — 늦은 저녁 식사는 +2시간이 **자정을 넘어** 통째로 빠졌다. */
+			SELECT  DATE_FORMAT(b.EAT_DATE, '%c/%e') AS date , a.USER_UUID ,
+				MIN(CASE when a.cgm_dtm >= date_add(b.EAT_DATETIME, interval 2 hour)
+				          AND  a.cgm_dtm <  date_add(b.EAT_DATETIME, interval 3 hour)
+		                                                              AND  HOUR(b.EAT_DATETIME) < 11  THEN a.cgm_dtm   END) breakfast ,
+				MIN(CASE when a.cgm_dtm >= date_add(b.EAT_DATETIME, interval 2 hour)
+				          AND  a.cgm_dtm <  date_add(b.EAT_DATETIME, interval 3 hour)
+		                                                              AND  HOUR(b.EAT_DATETIME) >= 11 AND HOUR(b.EAT_DATETIME) < 16  THEN a.cgm_dtm   END) lunch ,
+				MIN(CASE when a.cgm_dtm >= date_add(b.EAT_DATETIME, interval 2 hour)
+				          AND  a.cgm_dtm <  date_add(b.EAT_DATETIME, interval 3 hour)
+		                                                              AND  HOUR(b.EAT_DATETIME) >= 16  THEN a.cgm_dtm   END) dinner
+			FROM T_BLDINF_TRAN a , (SELECT USER_UUID , STR_TO_DATE(EAT_DATE, '%Y%m%d') as EAT_DATE ,
+			                               STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') AS EAT_DATETIME
+		                                FROM T_FOOD_TRAN
+		                                GROUP BY USER_UUID , EAT_DATE , EAT_STIME) b
+			WHERE a.USER_UUID  = #{userId}
+			  AND b.USER_UUID  =  a.USER_UUID
+			  AND b.EAT_DATE >= DATE(#{start})
+		      AND b.EAT_DATE <= DATE(#{end})   /* ★종전 `<` 라 **조회 마지막 날 식사가 통째로 빠졌다**(2026-08-18) */
+			Group by DATE_FORMAT(b.EAT_DATE, '%c/%e')
+			) k
+		) l
+    ]]>
+	</select>
 	
 	<select id="tokenYn" parameterType="String" resultType="int">
 		SELECT 
@@ -1328,28 +1377,35 @@
 		  FROM T_BLDINF_TRAN a
 		 WHERE a.USER_UUID = #{userUuid}
     	   AND DATE(a.CGM_DTM) = DATE(DATE_FORMAT(sysdate(), '%Y-%m-%d %H:%i:%s'))
-    	   AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' 
-    	   AND COALESCE(
-    				 	( SELECT MIN(TIME(b.EAT_DATE))
-         					FROM T_FOODHIS_TRAN b
-         			       WHERE b.USER_UUID = a.USER_UUID
-           				 	 AND DATE(b.EAT_DATE) = DATE(DATE_FORMAT(sysdate(), '%Y-%m-%d %H:%i:%s'))
-           				 	 AND TIME(DATE_FORMAT(b.EAT_DATE, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00' AND '06:00:00')
-        				, '06:00:00'
-    			)
+    	   /* ★[2026-08-18 확정] 공복 창 03~05시 — 앱 24시간·기간 화면, 웹 의사 화면과 같은 기준.
+    	      ⚠종전에는 03시부터 「그날 첫 식사시각(없으면 06시)」까지라, 같은 환자가 홈·연속혈당·의사 화면에서
+    	        서로 다른 공복평균을 봤다. 세 곳을 같은 창으로 맞춘다.
+    	      ⚠이 select 는 CDATA 가 없다 — 주석에 부등호를 쓰면 XML 이 깨진다(실제로 한 번 깨뜨렸다). */
+    	   AND TIME(a.CGM_DTM) BETWEEN '03:00:00' AND '05:00:00'
 	</select>
 	
 	<select id="getTodayMealBlood" parameterType="String" resultType="map">
-		SELECT 
-			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
-		FROM 
-			T_BLDINF_TRAN a
-		JOIN 
-    		T_FOODHIS_TRAN b
-		WHERE a.USER_UUID = #{userUuid} AND 
-		DATE(a.CGM_DTM) = CURDATE() AND 
-		DATE(b.EAT_DATE) = CURDATE() AND
-		TIME(a.CGM_DTM) BETWEEN TIME(b.EAT_DATE) AND TIME(DATE_ADD(b.EAT_DATE, INTERVAL 2 HOUR));
+		<!-- ★★[2026-08-18] 두 가지를 고쳤다 — 다른 화면(연속혈당·기간·웹)과 같은 기준으로 맞춘다.
+		     ① ⚠***`JOIN T_FOODHIS_TRAN b` 에 환자 짝(USER_UUID)이 없었다*** — 다른 환자의 식사 시각까지
+		        섞여 계산됐다(카티전 조인). 같은 오류가 `mealAvg` 에도 있었다.
+		     ② 식후 구간이 **0~2시간 전체 평균**이었다 — 정의는 <식후 2시간> 값이다.
+		        ⇒ 끼니마다 [식사+2h, +3h) 의 **첫 측정** 하나를 잡아 평균한다. -->
+		<![CDATA[
+		SELECT COALESCE(ROUND(AVG(v.UPT_VALUE), 1),0) AS avgBlood
+		  FROM (
+		        SELECT b.EAT_DATE AS meal_ts, a.UPT_VALUE,
+		               ROW_NUMBER() OVER (PARTITION BY b.EAT_DATE ORDER BY a.CGM_DTM ASC) AS rn
+		          FROM T_FOODHIS_TRAN b
+		          JOIN T_BLDINF_TRAN a
+		            ON a.USER_UUID = b.USER_UUID
+		           AND a.UPT_VALUE > 0
+		           AND a.CGM_DTM >= b.EAT_DATE + INTERVAL 2 HOUR
+		           AND a.CGM_DTM <  b.EAT_DATE + INTERVAL 3 HOUR
+		         WHERE b.USER_UUID = #{userUuid}
+		           AND DATE(b.EAT_DATE) = CURDATE()
+		       ) v
+		 WHERE v.rn = 1
+		]]>
 	</select>
 	
 	<select id="getBMI" parameterType="String" resultType="map">

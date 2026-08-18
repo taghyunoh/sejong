@@ -193,68 +193,75 @@
 		SELECT COALESCE(AVG(UPT_VALUE),0) AS AvgBlood
     		  ,COALESCE(ROUND(STDDEV_SAMP(UPT_VALUE), 1),0) AS stdBlood
     		  ,COALESCE(ROUND((STDDEV_SAMP(UPT_VALUE) / AVG(UPT_VALUE)) * 100, 1),0) AS CV
+    		  /* ★★[2026-08-18] TIR·TAR·TBR 을 **여기서 함께 낸다** — 앱(BloodLowHigh·showBloodAvgData)과 같은 식.
+    		     ⚠종전 웹은 구간 카운트(LOWEST/LOW/NORMAL/HIGHT/HIGHTEST)를 따로 조회해 화면에서 비율을 냈다.
+    		       ***쿼리가 둘이면 기간·0값 필터가 갈라진다*** — 실제로 앱 95% / 웹 96% 로 어긋났다.
+    		     ★같은 WHERE(기간·UPT_VALUE>0)를 그대로 쓰므로 정의가 저절로 일치한다.
+    		     ★TIR 은 앱과 같이 **버림(FLOOR)**, TAR·TBR 은 소수 1자리. */
+    		  ,COALESCE(FLOOR(100 * SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END)
+    		                       / NULLIF(COUNT(*),0)), 0) AS TIR
+    		  ,COALESCE(ROUND(100 * SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END)
+    		                       / NULLIF(COUNT(*),0), 1), 0) AS TAR
+    		  ,COALESCE(ROUND(100 * SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END)
+    		                       / NULLIF(COUNT(*),0), 1), 0) AS TBR
     		  ,COALESCE(ROUND((0.02392 * AVG(UPT_VALUE)) + 3.31, 1),0) AS GMI
     		  ,(SELECT COALESCE(AVG(a.UPT_VALUE),0)
 		  		FROM T_BLDINF_TRAN a
 		 		WHERE a.USER_UUID = #{userId}
-    	   		AND CGM_DTM BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-    	   		AND TIME(DATE_FORMAT(a.CGM_DTM, '%Y-%m-%d %H:%i:%s')) BETWEEN '03:00:00'
-    	   		AND COALESCE(
-    				 	( SELECT MIN(TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')))
-         					FROM T_FOOD_TRAN b
-         			       WHERE b.USER_UUID = a.USER_UUID
-           				 	 AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') BETWEEN STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s') AND STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
-           				 	 AND TIME(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')) BETWEEN '03:00:00' AND '06:00:00')
-        				, '06:00:00'
-    				)
+    	   		/* ⚠★[2026-08-18] ***바깥 WHERE 만 고치고 이 서브쿼리를 빠뜨려*** 공복평균만 어긋났었다
+    	   		     (웹 101 / 앱 104). 기간 조건은 **바깥과 글자까지 같아야 한다.** */
+    	   		AND a.CGM_DTM >= DATE(REPLACE(#{start},'T',' '))
+    	   		AND a.CGM_DTM <  DATE(REPLACE(#{end},'T',' ')) + INTERVAL 1 DAY
+    	   		AND a.UPT_VALUE > 0
+    	   		/* ★[2026-08-18 확정] 공복평균 = ***새벽 03~05시 평균***.
+    	   		   종전에는 03시부터 <그날 첫 식사시각(없으면 06시)>까지였다 —
+    	   		   ***식사 기록에 좌우돼*** 기록이 없는 환자는 03~06시가 되고, 이른 식사가 있으면 창이 확 줄었다.
+    	   		   ⇒ 식사 기록과 무관한 고정 시간대로 바꾼다(같은 기간이면 늘 같은 규칙). */
+    	   		/* ★경계도 앱과 같게 — 03:00 포함 ~ **05:00 미포함**(BETWEEN 은 05:00 정각을 포함해 버린다) */
+    	   		AND TIME(a.CGM_DTM) >= '03:00:00'
+    	   		AND TIME(a.CGM_DTM) <  '05:00:00'
     			) AS FASTING
 		  FROM T_BLDINF_TRAN
 		 WHERE USER_UUID = #{userId}
-			AND CGM_DTM >= STR_TO_DATE(#{start}, '%Y-%m-%dT%H:%i:%s')
-		    AND CGM_DTM <= STR_TO_DATE(#{end}, '%Y-%m-%dT%H:%i:%s')
+		   AND UPT_VALUE > 0        /* ★앱(showBloodAvgData)과 같게 — 0 값이 평균을 끌어내렸다 */
+		   /* ★★[2026-08-18] ***종료일 하루가 통째로 빠지고 있었다.***
+		      화면은 `2026-08-18` 처럼 **날짜만** 보내는데 조건이 `<= STR_TO_DATE(end,'…T%H:%i:%s')`,
+		      즉 `2026-08-18 00:00:00` 이라 그날 자료가 사실상 제외됐다(7일을 골라도 6일치).
+		      ⇒ 앱과 같은 방식(`시작일 00:00` ~ `종료일+1일` 미만)으로 맞춘다.
+		      ★`REPLACE(...,'T',' ')` 는 ISO 문자열(2026-08-18T00:00:00)로 부르는 곳까지 함께 받아 준다. */
+		   AND CGM_DTM >= DATE(REPLACE(#{start},'T',' '))
+		   AND CGM_DTM <  DATE(REPLACE(#{end},'T',' ')) + INTERVAL 1 DAY
 	]]>
 	</select>
 
 
 	<!-- 식후 혈당2시간 -->
 	<select id="mealAvg" parameterType="String" resultType="map"> <![CDATA[
-		select  ROUND(AVG(IFNULL(ROUND ( (IFNULL(breakfast,0) + IFNULL(lunch,0) + IFNULL(dinner,0)) /
-		       (3 -  (IF(IFNULL(breakfast,0) = 0,1,0) + IF(IFNULL(lunch,0)  = 0,1,0)
-		                                              + IF(IFNULL(dinner,0) = 0,1,0) ))  ,.1),0)),.1)  AS avgBlood
-		 from
-		(
-			select USER_UUID , date
-			        , case when IFNULL(CAST(breakfast AS UNSIGNED),0) > 0
-								then (select UPT_VALUE from T_BLDINF_TRAN
-									   where USER_UUID = k.USER_UUID
-									   and   cgm_dtm =  k.breakfast)   end  breakfast
-					, case when IFNULL(CAST(lunch AS UNSIGNED),0) > 0
-								then (select UPT_VALUE from T_BLDINF_TRAN
-									   where USER_UUID = k.USER_UUID
-									   and   cgm_dtm =  k.lunch)       end  lunch
-					, case when IFNULL(CAST(dinner AS UNSIGNED),0) > 0
-								then (select UPT_VALUE from T_BLDINF_TRAN
-									   where USER_UUID = k.USER_UUID
-									   and   cgm_dtm =  k.dinner)      end  dinner
-			from (
-			SELECT  DATE_FORMAT(b.EAT_DATE, '%c/%e') AS date , a.USER_UUID ,
-				MIN(CASE when date(b.EAT_DATETIME) = DATE(a.cgm_dtm)  AND  b.EAT_DATETIME <= date_add(a.cgm_dtm,interval 2 hour)
-		                                                              AND  HOUR(b.EAT_DATETIME) < 11  THEN a.cgm_dtm   END) breakfast ,
-				MIN(CASE when date(b.EAT_DATETIME) = DATE(a.cgm_dtm)  AND  b.EAT_DATETIME <= date_add(a.cgm_dtm,interval 2 hour)
-		                                                              AND  HOUR(b.EAT_DATETIME) >= 11 AND HOUR(b.EAT_DATETIME) < 16  THEN a.cgm_dtm   END) lunch ,
-				MIN(CASE when date(b.EAT_DATETIME) = DATE(a.cgm_dtm)  AND  b.EAT_DATETIME <= date_add(a.cgm_dtm,interval 2 hour)
-		                                                              AND  HOUR(b.EAT_DATETIME) >= 16  THEN a.cgm_dtm   END) dinner
-			FROM T_BLDINF_TRAN a , (SELECT USER_UUID , STR_TO_DATE(EAT_DATE, '%Y%m%d') as EAT_DATE ,
-			                               STR_TO_DATE(CONCAT(EAT_DATE, EAT_STIME), '%Y%m%d%H%i%s') AS EAT_DATETIME
-		                                FROM T_FOOD_TRAN
-		                                GROUP BY USER_UUID , EAT_DATE , EAT_STIME) b
-			WHERE a.USER_UUID  = #{userId}
-			  AND b.USER_UUID  =  a.USER_UUID
-			  AND b.EAT_DATE >= DATE(#{start})
-		      AND b.EAT_DATE <  DATE(#{end})
-			Group by DATE_FORMAT(b.EAT_DATE, '%c/%e')
-			) k
-		) l
+		/* ★★[2026-08-18 확정] ***앱(getAvgFasting)과 같은 방식으로 통일***.
+		   ⚠종전 웹 방식 : 아침(<11시)·점심(11~16)·저녁(>=16) **세 버킷**으로 나눠 하루 평균을 내고,
+		     그 하루 평균들을 다시 기간 평균했다. 하루 3끼면 앱과 같지만
+		     ***간식·4끼 이상이면 한 끼가 버킷에 묻혀 값이 갈렸다***(웹 126 / 앱 125).
+		   ⇒ 앱과 같이 **끼니마다 [식사+2h, +3h) 의 첫 측정**을 잡아 그 값들을 평균한다.
+		      버킷도, 하루 평균도 두지 않는다 — 끼니 수에 흔들리지 않는다.
+		   ★기간·0값 필터는 calcBlood 와 같은 규칙(종료일 포함). */
+		SELECT COALESCE(ROUND(AVG(v.UPT_VALUE), 1), 0) AS avgBlood
+		  FROM (
+		        SELECT a.UPT_VALUE,
+		               ROW_NUMBER() OVER (PARTITION BY m.meal_ts ORDER BY a.CGM_DTM ASC) AS rn
+		          FROM ( SELECT DISTINCT STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') AS meal_ts
+		                   FROM T_FOOD_TRAN b
+		                  WHERE b.USER_UUID = #{userId}
+		                    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')
+		                          >= DATE(REPLACE(#{start},'T',' '))
+		                    AND STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s')
+		                          <  DATE(REPLACE(#{end},'T',' ')) + INTERVAL 1 DAY ) m
+		          JOIN T_BLDINF_TRAN a
+		            ON a.USER_UUID = #{userId}
+		           AND a.UPT_VALUE > 0
+		           AND a.CGM_DTM >= m.meal_ts + INTERVAL 2 HOUR
+		           AND a.CGM_DTM <  m.meal_ts + INTERVAL 3 HOUR
+		       ) v
+		 WHERE v.rn = 1
     ]]>
 	</select>
 
@@ -352,27 +359,39 @@
 	</select>
 
 	<select id="getTodayMealBlood" parameterType="String" resultType="map"><![CDATA[
-		SELECT
-			COALESCE(ROUND(AVG(a.UPT_VALUE), 1),0) AS avgBlood
-		FROM T_BLDINF_TRAN a
-		JOIN T_FOOD_TRAN b ON a.USER_UUID = b.USER_UUID
-		WHERE a.USER_UUID = #{userId}
-		  AND DATE(a.CGM_DTM) = CURDATE()
-		  AND b.EAT_DATE = DATE_FORMAT(CURDATE(), '%Y%m%d')
-		  AND TIME(a.CGM_DTM) BETWEEN
-		      TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 90  MINUTE))
-		  AND TIME(DATE_ADD(STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s'), INTERVAL 150 MINUTE));
+		/* ★★[2026-08-18 확정] ***여기만 90~150분이었다*** — 나머지(웹 기간·앱 기간·앱 24시간·앱 오늘)는
+		     모두 [식사+2h, +3h) 다. 사용자 지시로 **120~180분**으로 맞춘다.
+		   ★계산 방식도 같이 통일 : 창 안의 값을 모두 평균하던 것을
+		     ***끼니마다 첫 측정 하나***를 잡아 평균하는 방식으로(다른 네 곳과 동일).
+		   ⚠종전 `TIME(...) BETWEEN` 비교는 **자정을 넘는 끼니**(밤 10시 식사 → 다음날 0~1시)를 놓쳤다.
+		     시각(TIME)이 아니라 **시점(DATETIME)** 으로 비교한다. */
+		SELECT COALESCE(ROUND(AVG(v.UPT_VALUE), 1), 0) AS avgBlood
+		  FROM (
+		        SELECT a.UPT_VALUE,
+		               ROW_NUMBER() OVER (PARTITION BY m.meal_ts ORDER BY a.CGM_DTM ASC) AS rn
+		          FROM ( SELECT DISTINCT STR_TO_DATE(CONCAT(b.EAT_DATE, b.EAT_STIME), '%Y%m%d%H%i%s') AS meal_ts
+		                   FROM T_FOOD_TRAN b
+		                  WHERE b.USER_UUID = #{userId}
+		                    AND b.EAT_DATE = DATE_FORMAT(CURDATE(), '%Y%m%d') ) m
+		          JOIN T_BLDINF_TRAN a
+		            ON a.USER_UUID = #{userId}
+		           AND a.UPT_VALUE > 0
+		           AND a.CGM_DTM >= m.meal_ts + INTERVAL 2 HOUR
+		           AND a.CGM_DTM <  m.meal_ts + INTERVAL 3 HOUR
+		       ) v
+		 WHERE v.rn = 1
 	]]>
 	</select>
 
-	<!-- 오늘 공복 평균: 새벽 03:00~06:00 CGM 평균 (해당 시간 데이터 없으면 0 → 컨트롤러에서 전체평균 대체) -->
+	<!-- 오늘 공복 평균: 새벽 **03:00~05:00** CGM 평균 (2026-08-18 통일 · 없으면 0 → 컨트롤러가 전체평균 대체) -->
 	<select id="getTodayFastBlood" parameterType="String" resultType="map"><![CDATA[
 		SELECT COALESCE(ROUND(AVG(a.UPT_VALUE), 1), 0) AS avgBlood
 		  FROM T_BLDINF_TRAN a
 		 WHERE a.USER_UUID = #{userId}
 		   AND DATE(a.CGM_DTM) = CURDATE()
 		   AND TIME(a.CGM_DTM) >= '03:00:00'
-		   AND TIME(a.CGM_DTM) <  '06:00:00'
+		   /* ★[2026-08-18 확정] 03~05시 — 기간 화면(calcBlood)·앱과 같은 창으로 맞춘다 */
+		   AND TIME(a.CGM_DTM) <  '05:00:00'
 		   AND IFNULL(a.UPT_VALUE,0) > 0
 	]]>
 	</select>

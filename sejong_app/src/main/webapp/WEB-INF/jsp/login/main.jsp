@@ -40,12 +40,16 @@
 .mainState .tirTxt{ display:block; margin-top:calc(1.6 * var(--vwu,1vw)); font-size:calc(3.8 * var(--vwu,1vw));
   line-height:1.45; color:#6b7889; word-break:keep-all; }
 .mainState .stateLink{ display:block; text-align:right; margin-top:calc(2.2 * var(--vwu,1vw));
-  font-size:calc(3.7 * var(--vwu,1vw)); font-weight:800; color:#218ecb; text-decoration:underline; text-underline-offset:3px; }
+  /* ★[2026-08-18] 두 단계 키웠다 — 3.7 → 4.1 → **4.6vw**(사용자 요청).
+     아래 [AI 종합분석] 단추(4.07vw)보다 커져 ***카드 안에서 가장 먼저 눈에 드는 글***이 된다.
+     ⚠더 키우면 카드 오른쪽 끝과 붙는다 — 지금이 상한선으로 본다. */
+  font-size:calc(4.6 * var(--vwu,1vw)); font-weight:800; color:#218ecb; text-decoration:underline; text-underline-offset:3px; }
 .mainAiMenu{ margin-top:calc(3.5 * var(--vwu,1vw)); display:flex; flex-direction:column; gap:calc(2.8 * var(--vwu,1vw)); }
 .mainAiMenu .aiBtn{ display:flex; align-items:center; justify-content:space-between;
   background:#fff; border:1px solid #218ecb; border-radius:calc(2.4 * var(--vwu,1vw));
   padding:calc(3.3 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw));
-  font-size:calc(4.07 * var(--vwu,1vw)); font-weight:700; color:#2d303f; text-decoration:none; }
+  /* [2026-08-18] 4.07 -> 4.6vw: [혈당 지표 확인] 글자 크기와 통일(사용자 요청) */
+  font-size:calc(4.6 * var(--vwu,1vw)); font-weight:700; color:#2d303f; text-decoration:none; }
 .mainAiMenu .aiBtn i{ font-style:normal; color:#218ecb; font-weight:800; }
 /* [2026-08-01] CGM 상태 안내(#errormsg) 복원 — AI 메뉴 아래.
    예전엔 옛 4카드용 흰 글자가 배경에 그대로 얹혀 '겹쳐 보인다'는 지적으로 숨겼던 것 →

@@ -403,9 +403,34 @@
 	      			//   평균혈당·GMI·CV·표준편차까지 전부 빈 칸이 됐다. 항목별로 독립 계산하고, 없는 값은 '-' 로 표시한다.
 	      			var _num = function(v){ var n = Math.round(parseFloat(v)); return isNaN(n) ? '-' : n; };
 	      			var _raw = function(v){ return (v == null || v === '') ? '-' : v; };
-	      			var fastingAvg = _num(response.avgFood && response.avgFood.avgFASTING);
+	      			/* ★★[2026-08-18 확정] 세 평균의 뜻을 못 박는다.
+	      			     · 평균혈당 = **기간 전체 평균**(AvgBlood)
+	      			     · 공복평균 = **새벽 03~05시 평균**(FASTING) — 종전에는 `avgFood`(식전 직전 값)를 썼는데
+	      			       ***식사 기록이 있어야만*** 나오는 값이라, 기록이 없으면 빈 칸이었다.
+	      			     · 식후평균 = **아침·점심·저녁 식후 2시간** 값의 평균(avgMeal)
+	      			       ⇒ ★***식사 등록이 없으면 평균혈당으로 대신 보여준다***(빈 칸 대신). */
 					var avgBlood = _num(response.AvgBlood);
+	      			var fastingAvg = _num(response.FASTING);
 					var avgMeal = _num(response.avgMeal && response.avgMeal.avgBlood);
+					if (avgMeal === '-') avgMeal = avgBlood;      // 식사 기록 없음 → 평균혈당
+
+					/* ★★[2026-08-18] TIR·TAR·TBR 도 **여기 값으로 통일**한다(앱과 같은 식·기간·필터).
+					   ⚠종전에는 구간 카운트 조회에서 따로 계산해 ***앱 95% / 웹 96%*** 로 어긋났다.
+					   ★자리수도 앱에 맞춘다 — TIR 은 정수(서버가 FLOOR), TAR·TBR 은 소수 1자리. */
+					var _f1 = function(v){ var n = parseFloat(v); return isNaN(n) ? '-' : n.toFixed(1); };
+					window.__IDX = { TIR: _num(response.TIR), TAR: _f1(response.TAR), TBR: _f1(response.TBR) };
+					window.applyIdxCards = function(){
+						var ok = '#2f9e63', bad = '#d9534f', put = function(id, val, good){
+							var el = document.getElementById(id); if(!el) return;
+							el.textContent = val;
+							el.style.color = good ? ok : bad; el.style.fontWeight = 'bold';
+						};
+						var I = window.__IDX; if(!I) return;
+						put('tirCard', I.TIR, parseFloat(I.TIR) >= 70);
+						put('tarCard', I.TAR, parseFloat(I.TAR) <  25);
+						put('tbrCard', I.TBR, parseFloat(I.TBR) <   4);
+					};
+					window.applyIdxCards();
 					//개요
 	      			document.getElementById('gmi').textContent = _raw(response.GMI);
 	      			document.getElementById('std').textContent = _raw(response.stdBlood);
@@ -661,9 +686,12 @@
 	  	     		        el.textContent = val;
 	  	     		        el.style.color = good ? ok : bad; el.style.fontWeight = bold;
 	  	     		    };
-	  	     		    card('tirCard', TIR, TIR >= 70);
-	  	     		    card('tarCard', TAR, TAR <  25);
-	  	     		    card('tbrCard', TBR, TBR <   4);
+	  	     		    /* ★[2026-08-18] 카드 세 개는 ***calcBlood 값이 있으면 그것을 쓴다*** —
+	  	     		       앱과 같은 식·같은 기간·같은 0값 필터로 낸 값이다(§동일 기준).
+	  	     		       구간 막대(위 낮음/정상/높음)는 종전 카운트를 그대로 쓴다 — 그건 5구간이라 축이 다르다.
+	  	     		       ⚠calcBlood 가 먼저 끝나든 나중이든 같은 값이 남도록, 양쪽에서 applyIdxCards() 를 부른다. */
+	  	     		    if (window.applyIdxCards && window.__IDX) { window.applyIdxCards(); }
+	  	     		    else { card('tirCard', TIR, TIR >= 70); card('tarCard', TAR, TAR < 25); card('tbrCard', TBR, TBR < 4); }
 	  	     		})();
 	  	     		if (false) { // [2026-08-15] 이하 종전 '목표 및 목표대비' 텍스트 계산 + echarts 막대 — 목표 내 혈당 컴포넌트로 대체(코드 보존·미실행)
 	  	     		var cal_lowestPercentage  ;
@@ -1469,7 +1497,10 @@
 	  	                  data: ['오전12','','','오전3','','','오전6','','','오전9','','','오후12','','','오후3','','','오후6','','','오후9','','','오전12'],
 	  	                  axisLine: { lineStyle: { color: '#cfd8e3' } },
 	  	                  axisTick: { show: false },
-	  	                  axisLabel: { color: '#6b7280', fontSize: 12 }
+	  	                  /* ★[2026-08-18] `interval:0` 이 없으면 ECharts 가 자리가 좁다고 **제멋대로 건너뛴다** —
+	  	                     3시간 간격으로 적어 두었는데 화면에는 오전12·오전6·오후12·오후6 **6시간 간격**으로만 나왔다.
+	  	                     빈 칸('')은 어차피 안 보이므로 전부 그리게 두면 3시간 간격이 그대로 나온다. */
+	  	                  axisLabel: { color: '#6b7280', fontSize: 12, interval: 0, hideOverlap: false }
 	  	              },
 	  	              yAxis: {
 	  	                  type: 'value',
@@ -2392,6 +2423,11 @@
 					</div>	 <!--  <div class="section"> -->
                     <div class="section">
 						<section class="content-box">
+							<%-- ★[2026-08-18] 제목·설명 추가 — 원본 AGP 보고서에 있는 문구다.
+							     그래프만 있으면 「중앙값과 백분위수가 <하루 만에> 겹쳐 그려진 그림」이라는 것을
+							     모르고 그날그날 혈당으로 읽는다. 표준 AGP 설명을 그대로 둔다. --%>
+							<h5>활동 혈당 개요(AGP)
+								<span>AGP는 조회 기간 동안의 혈당값을 요약한 것으로, 중앙값(50%)과 기타 백분위수가 하루 만에 발생한 것처럼 표시됩니다.</span></h5>
 							<div id="agpChart" style="height: 550px; width: 1100px; margin: 0 auto; "></div>
 						</section>
   
@@ -2453,41 +2489,38 @@
 				<div class="stab-content" id="sub-tab5">
 					<div class="steb-container">
 						<%-- [2026-07-31 기획] 환자 앱(patient_main.jsp)의 '시간대별 혈당 + 식사·운동 마커' 그래프를 그대로 가져옴.
-						     날짜는 조회기간의 종료일 기준. 원천 = getBloodChartData / getFoodInfo / getExerInfo (앱과 동일) --%>
+						     ★[2026-08-18] ***기간 전체***로 바꿨다 — 원천 = getBloodChartDataMulti(start~end).
+						       식사·운동은 하루 단위 조회라 함께 뺐다(위 그래프·아래 두 박스). --%>
 						<section class="content-box">
-							<h5><span id="aiDayTitle">시간대별 혈당 추이</span></h5>
+							<h5><span id="aiDayTitle">혈당 추이</span></h5>
+							<%-- ★식사·운동 표식을 뺐으므로 범례도 혈당·목표범위만 남긴다(2026-08-18) --%>
 							<div class="ai-legend">
-								<span style="color:#5b8ff9">— 혈당</span> &nbsp;·&nbsp; <span>🍚 식사</span> &nbsp;·&nbsp; <span>🚴 운동</span>
-								&nbsp;·&nbsp; <span style="color:#c0c4cc;">┊</span> 식사·운동 시각
+								<span style="color:#2f6fd1">— 혈당</span> &nbsp;·&nbsp;
+								<span style="color:#2f9e63">--- 목표범위 70~180</span>
 							</div>
 							<div id="aiDayChart" style="height:340px; width:100%;"></div>
 						</section>
 						<section class="content-box">
-							<h5>📌 지표 해석 <small style="font-weight:400;color:#888;">— 대한당뇨병학회 관리지표 기준</small></h5>
+							<%-- ★기간 표기(2026-08-18) — 위 그래프와 <같은 기간>을 본다는 것을 못 박는다.
+							     종전에는 그래프만 하루라서 「이 해석도 그날 것인가」로 읽혔다. --%>
+							<h5>📌 지표 해석 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span> · 대한당뇨병학회 관리지표 기준</small></h5>
 							<div id="aiIdxWrap" class="ai-idx"></div>
 						</section>
 						<%-- 종합 분석 · 생활습관 코칭 — 한 줄에 두 박스로(2026-07-31 요청, 세로 여백 절약) --%>
 						<div class="content-row flex-left-right ai-2box">
 							<section class="content-box">
-								<h5>🩺 종합 분석</h5>
+								<h5>🩺 종합 분석 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
 								<div id="aiSummary" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
 							</section>
 							<section class="content-box">
-								<h5>💡 생활습관 코칭</h5>
+								<h5>💡 생활습관 코칭 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
 								<div id="aiCoach" class="ai-box">개요 탭에서 기간을 조회하면 표시됩니다.</div>
 							</section>
 						</div>
-						<%-- [2026-07-31 기획] 식사·운동 정보 = 하단 두 박스(앱의 내용). 위 그래프와 같은 조회분을 재사용 --%>
-						<div class="content-row flex-left-right ai-2box">
-							<section class="content-box">
-								<h5>🍚 식사 정보 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
-								<div id="aiFoodBox" class="ai-list">조회 후 표시됩니다.</div>
-							</section>
-							<section class="content-box">
-								<h5>🚴 운동 정보 <small style="font-weight:400;color:#888;">— <span class="aiDayTxt"></span></small></h5>
-								<div id="aiExerBox" class="ai-list">조회 후 표시됩니다.</div>
-							</section>
-						</div>
+						<%-- ★[2026-08-18 요청] 식사·운동 정보 두 박스를 **뺐다**.
+						     조회가 <하루 단위>(eatDate/exerDate)라 이 탭이 기간 그래프로 바뀌면서
+						     ***혼자만 종료일 하루 것***이 되어 화면이 서로 다른 이야기를 하게 된다.
+						     (앱·환자 화면에는 그대로 있다 — 여기서만 뺀 것이다.) --%>
 					</div>
 				</div>
 			</div>
@@ -2584,143 +2617,94 @@
     if(!dom){ console.warn('[AI분석] 차트 영역 없음'); return; }
     if(typeof echarts === 'undefined'){ dom.innerHTML = '<div class="ai-box" style="color:#d9534f">차트 라이브러리(echarts)를 불러오지 못했습니다.</div>'; return; }
     if(_aiBusy) return;
-    var _key = ($("#end_date").val() || "").substring(0,10);
-    if(!force && _key && _key === _aiDrawnKey && dom.querySelector('canvas')) return;   // 이미 같은 날짜로 그려져 있음
+    /* ★[2026-08-18 요청] ***하루가 아니라 조회 기간 전체***를 그린다.
+       종전에는 종료일 하루만 그려 놓고, 아래 지표 해석·종합 분석·코칭은 기간 값을 쓰고 있었다 —
+       ***같은 화면에서 위는 하루, 아래는 일주일***이라 서로 다른 이야기를 했다.
+       ⇒ 원천을 「일일 혈당 프로필」과 같은 getBloodChartDataMulti(start~end) 로 바꿨다.
+       ★식사·운동 표식은 뺐다 — 조회가 <하루 단위>(eatDate/exerDate)라 기간 그래프에는 못 붙인다.
+         하단 식사·운동 박스도 같은 이유로 삭제(2026-08-18 요청). */
+    var sKey = ($("#start_date").val() || "").substring(0,10);
+    var eKey = ($("#end_date").val()   || "").substring(0,10);
+    var _key = sKey + '~' + eKey;
+    if(!force && _key && _key === _aiDrawnKey && dom.querySelector('canvas')) return;   // 같은 기간이면 다시 안 그린다
     _aiBusy = true;
-    dom.innerHTML = '<div class="ai-box">불러오는 중…</div>';   // 실행 여부를 화면에서 바로 확인(2026-07-31 진단)
-    var dateKey = _key;                                          // 'YYYY-MM-DD' (조회기간 종료일)
-    var uid = "${sessionScope['t_user_uuid']}";                        // 선택 환자 UUID(다른 조회와 동일 원천)
-    if(!dateKey || !uid){ _aiBusy = false; dom.innerHTML = '<div class="ai-box">조회 기간/환자 정보가 없습니다. (기간 '+(dateKey||'-')+' / 환자 '+(uid?'있음':'없음')+')</div>'; return; }
-    $("#aiDayTitle").text(dateKey + " 시간대별 혈당 추이");
-    $(".aiDayTxt").text(dateKey);
-    var dc = dateKey.replace(/-/g,'');                                 // 'YYYYMMDD'
+    dom.innerHTML = '<div class="ai-box">불러오는 중…</div>';
+    var uid = "${sessionScope['t_user_uuid']}";
+    /* ★기간 표기는 **조회가 되든 안 되든** 먼저 박는다 — 환자를 안 고른 상태에서
+       제목이 빈 채로 남으면 「어느 기간을 보는 화면인지」가 사라진다. */
+    var prdTxt = (sKey && eKey) ? (sKey + ' ~ ' + eKey) : '';
+    $("#aiDayTitle").text(prdTxt ? (prdTxt + ' 시간대별 혈당 추이') : '시간대별 혈당 추이');
+    $(".aiDayTxt").text(prdTxt);          // 지표 해석·종합 분석·코칭 제목의 기간 표기
+    if(!sKey || !eKey || !uid){ _aiBusy = false; dom.innerHTML = '<div class="ai-box">조회 기간/환자 정보가 없습니다. (기간 '+(_key||'-')+' / 환자 '+(uid?'있음':'없음')+')</div>'; return; }
     var prev = echarts.getInstanceByDom(dom); if(prev) prev.dispose();
 
-    /* ★조회 3건은 서로 독립 처리한다(2026-07-31) — 종전엔 $.when 으로 묶어, 식사/운동 조회가 하나라도
-       실패하면 done 이 실행되지 않아 <혈당 그래프까지 통째로 비어> 보였다(의사 화면에서 발생).
-       실패한 건은 빈 결과로 바꿔 이어가므로, 혈당만 있어도 그래프는 그려진다. */
-    var _soft = function(req){ return req.then(null, function(){ return $.Deferred().resolve(null).promise(); }); };
-    $.when(
-      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getBloodChartData.do", type:"post",
-        data:JSON.stringify({ end:dateKey, userId:uid }), contentType:"application/json", dataType:"json" })),
-      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getFoodInfo.do", type:"post",
-        data:JSON.stringify({ userUuid:uid, eatDate:dc }), contentType:"application/json", dataType:"json" })),
-      _soft($.ajax({ url:CommonUtil.getContextPath()+"/getExerInfo.do", type:"post",
-        data:JSON.stringify({ userUuid:uid, exerDate:dc }), contentType:"application/json", dataType:"json" }))
-    ).done(function(bRes, fRes, eRes){
-      // 성공 시 [data, status, xhr] 배열 / 실패로 대체된 건 null
-      var _d = function(r){ return (r && r.length !== undefined && r[1] !== undefined) ? r[0] : r; };
-      var b = _d(bRes), f = _d(fRes), e = _d(eRes);
-      var rows     = Array.isArray(b) ? b : (b && b.Data ? b.Data : []);
-      var foodRows = (f && f.Data) ? f.Data : [];
-      var exerRows = (e && e.Data) ? e.Data : [];
-      console.log('[AI분석]', dateKey, '혈당', rows.length, '식사', foodRows.length, '운동', exerRows.length);
-
-      // ★원본 측정값을 그대로 그린다(2026-08-15) — 종전 '시간별 평균 1점' 방식은 실제 측정과 값이 달라
-      //   (예: 12시대 실측 103→183 인데 그래프엔 평균 154 만 표시, 실제 피크 183 은 안 보임)
-      //   "그래프가 실제 혈당과 안 맞다"는 문의가 있었다. 5분 간격 원본을 전부 찍고 축 라벨만 시(時) 단위로 표시.
-      var pts = [];
-      rows.forEach(function(r){
-        var hm = r.HM || (function(v){ var s=String(v==null?'':v); var m=s.match(/(\d{2}):(\d{2})/); return m?(m[1]+':'+m[2]):''; })(r.DTM);
-        var v = parseInt(r.UPT,10);
-        if(hm && !isNaN(v)) pts.push({ hm:hm, v:v });
+    /* ⚠★폼 형식으로 보내면 **HTTP 415**(Unsupported Media Type)다 —
+         이 화면의 조회는 전부 `CommonUtil.callAjax`(= JSON 본문 + contentType application/json)를 쓴다.
+         한 번 폼으로 보냈다가 415 를 맞았다. ***같은 통로를 쓴다.***
+       ★[2026-08-18 요청] ***일자별이 아니라 시간대별***로 본다 —
+         기간을 하루(24시간)에 겹쳐 「몇 시에 오르내리는가」를 본다(AGP 와 같은 읽는 법).
+         ⇒ 원천도 AGP 와 같은 `drawActionBloodChart.do`(기간→시간대 요약)를 쓴다. 서버는 손대지 않는다. */
+    $.ajax({ url:CommonUtil.getContextPath()+"/drawActionBloodChart.do", type:"post",
+             data:JSON.stringify({ start:sKey, end:eKey, userId:uid }),
+             contentType:"application/json;charset=UTF-8", dataType:"json" })
+    .done(function(res){
+      var rows = Array.isArray(res) ? res : (res && res.Data ? res.Data : []);
+      /* 라벨은 3시간 간격(오전12·오전3…) — AGP 축과 같은 눈금이라 두 그래프를 나란히 읽을 수 있다.
+         ★칸 수(24 또는 25)를 세지 않고 **자리 번호로 만든다** — 자료가 한 칸 더 와도 어긋나지 않는다. */
+      var hLbl = function(i){ var ap = (i >= 12 && i < 24) ? '오후' : '오전', h = i % 12; return ap + (h === 0 ? 12 : h); };
+      var xs = [], ys = [];
+      rows.forEach(function(r, i){
+        xs.push((i % 3 === 0) ? hLbl(i) : '');
+        var v = parseFloat(r.AVG_VALUE);
+        ys.push(isNaN(v) || v <= 0 ? null : v);
       });
-      var foodMap = {}, exerMap = {}, foodTm = {}, exerTm = {};
-      foodRows.forEach(function(r){ var t=String(r.eatStime||''); var hh=t.substring(0,2); if(hh){ (foodMap[hh]=foodMap[hh]||[]).push(r.foodName||'식사'); if(!(hh in foodTm)) foodTm[hh]=t; } });
-      exerRows.forEach(function(r){ var t=String(r.exerStime||''); var hh=t.substring(0,2); if(hh){ (exerMap[hh]=exerMap[hh]||[]).push(r.exerName||'운동'); if(!(hh in exerTm)) exerTm[hh]=t; } });
-
-      // 측정이 없는 시간에 식사·운동만 있으면 표식 자리(HH:00, 값 없음)를 만들어 준다
-      var haveHour = {};
-      pts.forEach(function(p){ haveHour[p.hm.substring(0,2)] = 1; });
-      Object.keys(foodMap).concat(Object.keys(exerMap)).forEach(function(hh){
-        if(!haveHour[hh]){ pts.push({ hm: hh+':00', v:null }); haveHour[hh]=1; }
-      });
-      pts.sort(function(a,b){ return a.hm.localeCompare(b.hm); });
-
-      var xs = pts.map(function(p){ return p.hm; });     // 'HH:MM'
-      var ys = pts.map(function(p){ return p.v; });
-
-      // 식사·운동 마커는 기록 시각과 가장 가까운 측정 시점에 붙인다
-      var evMin = function(t){ return parseInt(t.substring(0,2),10)*60 + (parseInt(t.substring(2,4),10)||0); };   // 'HHMM…'
-      var hmMin = function(hm){ return parseInt(hm.substring(0,2),10)*60 + (parseInt(hm.substring(3,5),10)||0); }; // 'HH:MM'
-      var nearestIdx = function(t){
-        var m = evMin(t), best = -1, bd = 1e9;
-        for(var i=0;i<xs.length;i++){ var d = Math.abs(hmMin(xs[i])-m); if(d < bd){ bd = d; best = i; } }
-        return best;
-      };
-      var FOOD_Y=290, EXER_Y=258;
-      var foodPts = xs.map(function(){ return null; });
-      var exerPts = xs.map(function(){ return null; });
-      var eventLines = [];
-      Object.keys(foodTm).forEach(function(hh){ var i=nearestIdx(foodTm[hh]); if(i>=0){ foodPts[i]=FOOD_Y; eventLines.push({ xAxis: xs[i] }); } });
-      Object.keys(exerTm).forEach(function(hh){ var i=nearestIdx(exerTm[hh]); if(i>=0){ exerPts[i]=EXER_Y; eventLines.push({ xAxis: xs[i] }); } });
-
-      // 하단 두 박스 — 시간순 목록
-      var fmtT = function(s){ s=String(s||''); return s.length>=4 ? (s.substring(0,2)+':'+s.substring(2,4)) : s; };
-      var listHtml = function(arr, tmKey, nmKey, extra){
-        if(!arr.length) return '<div class="ai-box">이 날짜의 기록이 없습니다.</div>';
-        return '<ul class="ai-ul">' + arr.slice().sort(function(a,b){ return String(a[tmKey]||'').localeCompare(String(b[tmKey]||'')); })
-          .map(function(r){
-            var ex = extra ? extra(r) : '';
-            return '<li><span class="ai-tm">'+fmtT(r[tmKey])+'</span><span class="ai-nm2">'+(r[nmKey]||'-')+'</span>'+ex+'</li>';
-          }).join('') + '</ul>';
-      };
-      $("#aiFoodBox").html(listHtml(foodRows, 'eatStime', 'foodName', function(r){
-        var kcal = (r.kcal!=null && r.kcal!=='') ? (' <span class="ai-sub">'+r.kcal+' kcal</span>') : '';
-        return kcal;
-      }));
-      $("#aiExerBox").html(listHtml(exerRows, 'exerStime', 'exerName', function(r){
-        var min = (r.exerTime!=null && r.exerTime!=='') ? (' <span class="ai-sub">'+r.exerTime+'분</span>') : '';
-        return min;
-      }));
-
-      if(!rows.length && !foodRows.length && !exerRows.length){
+      if(!ys.length){
         _aiBusy = false; _aiDrawnKey = '';
-        dom.innerHTML = '<div class="ai-box">'+dateKey+' 데이터 없음</div>';
+        dom.innerHTML = '<div class="ai-box">'+prdTxt+' 데이터 없음</div>';
         return;
       }
       dom.innerHTML = '';
       var chart = echarts.init(dom);
-      _aiBusy = false; _aiDrawnKey = dateKey;   // 그리기 완료 — 같은 날짜면 재조회하지 않는다
-      // 영역이 보인 뒤에 그리지만, 레이아웃이 늦게 확정되는 경우까지 대비해 몇 차례 더 크기를 맞춘다
+      _aiBusy = false; _aiDrawnKey = _key;
       [0, 120, 350, 800].forEach(function(ms){ setTimeout(function(){ try{ chart.resize(); }catch(e){} }, ms); });
       $(window).off('resize.aiDay').on('resize.aiDay', function(){ try{ chart.resize(); }catch(e){} });
+      var greenLabel = { show:true, position:'end', distance:4, color:'#2f9e63', fontSize:11, formatter:'{c}' };
       chart.setOption({
-        tooltip:{ trigger:'axis', formatter:function(params){
-          if(!params||!params.length) return '';
-          var hh=String(params[0].axisValue||'').substring(0,2), bv=null;
-          params.forEach(function(p){ if(p.seriesName==='혈당'&&p.value!=null) bv=p.value; });
-          var txt=params[0].axisValue+'<br/>혈당: <b>'+(bv!=null?bv+' mg/dL':'기록 없음')+'</b>';
-          if(foodMap[hh]) txt+='<br/>🍚 식사: '+foodMap[hh].join(', ');
-          if(exerMap[hh]) txt+='<br/>🚴 운동: '+exerMap[hh].join(', ');
-          return txt;
-        }},
-        legend:{ show:false },
-        grid:{ left:40, right:16, top:20, bottom:30 },
-        xAxis:{ type:'category', data:xs, axisTick:{ alignWithLabel:true },
-          // 5분 간격 원본이라 라벨은 각 시(時)의 첫 측정에만 'HH시'로 표시
-          axisLabel:{ interval:function(i){ return i===0 || (xs[i]||'').substring(0,2)!==(xs[i-1]||'').substring(0,2); },
-                      formatter:function(v){ return String(v).substring(0,2)+'시'; } } },
-        yAxis:{ type:'value', min:0, max:300 },
-        series:[
-          { name:'혈당', type:'line', data:ys, smooth:true, areaStyle:{}, connectNulls:true,
-            symbol:'circle', symbolSize:3,
-            // 원본 전체를 찍으므로 점마다 숫자 라벨은 생략 — 값은 툴팁·최고/최저 마커로 확인
-            label:{ show:false },
-            markPoint:{ data:[ {type:'max',name:'최고',itemStyle:{color:'#dc3545'}}, {type:'min',name:'최저',itemStyle:{color:'#f5c518'}} ] },
-            markLine:{ silent:true, symbol:'none', lineStyle:{type:'dashed',color:'#c0c4cc',width:1}, label:{show:false}, data:eventLines } },
-          { name:'식사', type:'scatter', data:foodPts, symbolSize:1, label:{ show:true, formatter:'🍚', fontSize:20, position:'inside' } },
-          { name:'운동', type:'scatter', data:exerPts, symbolSize:1, label:{ show:true, formatter:'🚴', fontSize:20, position:'inside' } }
-        ]
+        grid:{ left:48, right:56, top:24, bottom:46 },
+        tooltip:{ trigger:'axis', formatter:function(p){
+          if(!p || !p.length) return '';
+          // 빈 라벨 자리(3시간 간격이 아닌 시각)도 몇 시인지 알려 준다
+          var i = p[0].dataIndex, v = p[0].value;
+          return hLbl(i) + '시 · ' + (v == null ? '측정 없음' : Math.round(v) + ' mg/dL (평균)');
+        } },
+        xAxis:{ type:'category', data:xs, boundaryGap:false,
+          axisTick:{ show:false }, axisLine:{ lineStyle:{ color:'#cfd8e3' } },
+          axisLabel:{ interval:0, color:'#6b7280', fontSize:11 } },
+        yAxis:{ type:'value', min:0, max:300, interval:70,
+          axisLine:{ show:false }, axisTick:{ show:false },
+          splitLine:{ lineStyle:{ color:'#eef1f5' } },
+          axisLabel:{ color:'#6b7280', fontSize:11 } },
+        series:[{ name:'혈당', type:'line', data:ys, smooth:true, symbol:'none', connectNulls:true,
+          lineStyle:{ color:'#2f6fd1', width:2 },
+          areaStyle:{ color:'rgba(47,111,209,0.06)' },
+          markArea:{ silent:true, data:[
+            [{ yAxis:0,   itemStyle:{ color:'rgba(231,76,60,0.08)' } }, { yAxis:70 }],
+            [{ yAxis:70,  itemStyle:{ color:'rgba(46,204,113,0.10)' } }, { yAxis:180 }],
+            [{ yAxis:180, itemStyle:{ color:'rgba(243,156,18,0.10)' } }, { yAxis:300 }]
+          ] },
+          markLine:{ symbol:'none', silent:true, data:[
+            { yAxis:180, lineStyle:{ color:'#f0a500', type:'dashed' }, label:greenLabel },
+            { yAxis:70,  lineStyle:{ color:'#2f9e63', type:'dashed' }, label:greenLabel }
+          ] }
+        }]
       });
-    }).fail(function(xhr){
+    })
+    .fail(function(xhr){
       _aiBusy = false; _aiDrawnKey = '';
-      // 3건 중 하나라도 실패하면 done 이 안 돌아 그래프가 빈 채로 남는다 → 원인을 화면·콘솔 양쪽에 남김
-      console.error('[AI분석] 조회 실패', xhr && xhr.status, xhr && xhr.responseText);
-      dom.innerHTML = '<div class="ai-box" style="color:#d9534f">시간대별 조회 실패 (HTTP '+(xhr&&xhr.status)+') — 콘솔 로그를 확인하세요.</div>';
+      console.error('[AI분석] 기간 조회 실패', xhr && xhr.status, xhr && xhr.responseText);
+      dom.innerHTML = '<div class="ai-box" style="color:#d9534f">기간 혈당 조회 실패 (HTTP '+(xhr&&xhr.status)+') — 콘솔 로그를 확인하세요.</div>';
     });
   };
-  // AI 분석 탭 클릭 시 최신 값으로 해석·그래프 갱신
   //   ★탭 전환(다른 스크립트가 stab-content 를 보이게 함)이 끝난 뒤 그려야 차트 크기가 0이 되지 않는다(2026-07-31)
   // AI 분석 탭 진입 감지 — id(#tab5) / 링크(a[href="#sub-tab5"]) 어느 쪽으로 걸려도 잡히게(2026-07-31)
   $(document).on('click', '#tab5, a[href="#sub-tab5"]', function(){

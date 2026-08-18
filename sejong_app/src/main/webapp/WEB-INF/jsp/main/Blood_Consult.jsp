@@ -263,16 +263,42 @@
 /* [2026-07-31 기획] 주간 혈당관리지표 — 앞장(연속혈당 상세)과 동일한 표현식 목록 + AI 분석 텍스트 */
 /* [2026-08-05] 연속혈당 상세 지표(FAHR_00 .p2list)와 같은 배치로 통일 —
    라벨(권장 기준) 왼쪽 / 값 오른쪽 한 줄. 종전엔 값을 라벨 아래에 쌓아 오른쪽이 통째로 비었다. */
-.wk-metrics { margin-top: 6px; }
-/* [2026-08-05] 구분선이 안 보이던 이유 = 이 패널 배경(.blood_list #eef4f8)과 선 색(#eef2f7)이 사실상 같은 색.
-   연속혈당 상세 지표(.p2list)처럼 보이도록 선을 또렷한 색으로 바꾸고 위아래 간격을 조금 좁힌다. */
-.wk-metrics .wk-item { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 7px 2px; border-bottom: 1px solid #d3dfe9; }
-/* [2026-08-16] 연속혈당 상세(.p2list 라벨 5.5vw≈20px·힌트 4vw≈15px)와 같은 크기로 확대 */
-.wk-metrics .wk-item .lb { margin: 0; font-size: 20px; font-weight: 700; color: #2d303f; line-height: 1.3; }
-.wk-metrics .wk-item .lb .hint { display: block; font-size: 15px; color: #8a98a8; font-weight: 500; }
-.wk-metrics .wk-item .v { flex: 0 0 auto; margin-top: 0; font-size: 24px; font-weight: 800; color: #2d303f; white-space: nowrap; }
-.wk-ai { margin-top: 10px; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   ★★[2026-08-18] 지표 목록을 ***연속혈당 상세와 같은 클래스(.p2list/.p2item)*** 로 바꿨다.
+     그동안 `.wk-metrics` 를 저쪽 값에 맞춰 여러 번 손봤지만(크기·굵기·폭·바탕),
+     ***화면에서는 계속 어긋나 보였다.*** 값을 베끼는 방식으로는 규칙이 하나만 달라도 갈린다.
+   ⇒ 아래 규칙은 FAHR_00.jsp 의 `.p2list` 를 **글자 하나 안 고치고 그대로** 가져온 것이다.
+     고칠 일이 생기면 ***두 파일을 함께*** 고친다.
+   ⚠이 목록의 부모(.blood_list)가 좌우 20px 을 먹어 저쪽보다 좁아진다 —
+     그만큼만 음수 마진으로 되받는다(폭까지 같아진다).
+   ═══════════════════════════════════════════════════════════════════════ */
+.p2list{
+  /* ★「글자체가 다르다」의 진범: FAHR_00 은 blood_fahr.css 가 body 에 Noto Sans KR 을 걸지만
+     이 화면(comm_blood.css)에는 font-family 지정이 없어 브라우저 기본 글꼴로 그려졌다.
+     px 값을 아무리 맞춰도 글꼴이 달라 계속 어긋나 보였던 것. 저쪽 body 선언과 동일하게: */
+  font-family: 'Noto Sans KR', sans-serif; line-height: 1.4; -webkit-font-smoothing: antialiased;
+  margin: calc(0.6 * var(--vwu,1vw)) calc(4 * var(--vwu,1vw)) calc(1.5 * var(--vwu,1vw)); }
+.p2list .p2item{ display:flex; align-items:center; justify-content:space-between; gap: calc(3 * var(--vwu,1vw));
+  padding: calc(2 * var(--vwu,1vw)) 0; border-bottom:1px solid #eef2f7; }
+.p2list .p2item .lb{ font-size: calc(5.5 * var(--vwu,1vw)); color:#2d303f; font-weight:700; margin:0; line-height:1.35; }
+.p2list .p2item .lb .hint{ display:block; font-size: calc(4.0 * var(--vwu,1vw)); color:#8a98a8; font-weight:500; }
+.p2list .p2item .v{ flex:0 0 auto; font-size: calc(6.4 * var(--vwu,1vw)); font-weight:800; color:#2d303f; white-space:nowrap; }
+/* ★[2026-08-18] 「첫번째(연속혈당)처럼 좌우 쫙차게」 —
+   이 목록 위로 부모 셋이 좌우 여백을 겹겹이 먹는다:
+     .main-content 12px + .top3-card 6px(인라인 축소본) + .blood_list 20px = 38px/쪽.
+   38px 을 전부 음수 마진으로 되받아 흰 바탕이 화면 끝까지 닿게 하고(전면폭이라 둥근모서리 제거),
+   글자 안쪽 여백은 연속혈당 화면과 같은 값(blood_list 20px + p2list 마진 4vwu)을 패딩으로 재현한다. */
+.blood_list .p2list{ margin-left:-38px; margin-right:-38px;
+  padding-left: calc(20px + 4 * var(--vwu,1vw)); padding-right: calc(20px + 4 * var(--vwu,1vw));
+  background:#fff; border-radius:0; }
+.wk-ai { margin-top: 0; }  /* 10px -> 0: flex gap(8px)만 남겨 간격 축소 */
+/* ★[2026-08-18] 「두가지도 동일하게」 — 생활습관 가이드(.wk-ai)와 저혈당/고혈당 발생구간 묶음(.wk-fullbleed)도
+   위 지표 목록과 같은 전면폭으로 — 부모 3겹(12+6+20=38px/쪽)을 되받고 안쪽 20px 만 남긴다. */
+.wk-ai, .wk-fullbleed { margin-left:-38px; margin-right:-38px; padding-left:20px; padding-right:20px; background:#fff; }
+/* ★[2026-08-18] 전면폭 구간 사이로 .blood_list 의 하늘색 바탕(#eef4f8)이 띠처럼 비쳤다 —
+   바탕을 흰색으로 바꿔 띠를 없애고, flex gap 20px 도 8px 로 좁힌다(「색깔 없에고 간격좁혀주세요」). */
+.top3-card .blood_list{ background:#fff; gap:8px; }
+.wk-fullbleed{ padding-top:14px; }  /* [2026-08-18] gap 8px + 14px: 가이드 점선박스와 차트 제목 사이 숨통 */
 /* 파란 섹션 머리띠(기획 모양) + 점선 분석 박스 + 코칭 본문 */
 .wk-sechead { margin: 12px 0 8px; padding: 6px 10px; background: #8ca6db; color: #fff;
   border-radius: 6px; font-size: 14px; font-weight: 800; }
@@ -477,6 +503,16 @@
      기간 이동은 좌우 ◀/▶ 버튼이 전담한다. 즉 여기서는 장식일 뿐이다.
      아이콘을 남기면 여유가 2.6px 밖에 안 남아 기기 폰트 차이만으로 다시 잘린다(실측). */
   display: none;
+}
+/* ★[2026-08-18] 실기기(삼성 계열)에서 여전히 「2026. 08. 1」로 끝자리가 잘렸다.
+   위의 indicator 숨김은 크롬용이고, 삼성 브라우저·구형 WebView 는 **드롭다운 ∨ 를 따로 그려**
+   한 칸당 ~20px 을 계속 먹는다. appearance 자체를 꺼야 그 장식이 사라진다(값 표시는 그대로).
+   내부 좌우 패딩도 5→2px 로 줄여 큰글씨 배율에서도 날짜 열 자리가 다 나오게 한다. */
+.date-range input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .date-range .tilde {
@@ -701,19 +737,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		       GMI(참고치·색 조건 없음) + TIR/TAR/TBR/CV(권장 기준 문구 + 목표 안=초록/벗어남=황토).
 		       값 채우기는 기존 스크립트 그대로(#gmi/#tir/#tar/#tbr/#cv) — 색·AI 분석은 하단 감시 스크립트(wkAi)가 처리.
 		       종전의 GMI/TIR 큰 패널과 별도 TAR/TBR/CV 카드는 이 목록으로 통합(중복 제거). --%>
-		  <div class="wk-metrics">
-		    <div class="wk-item"><p class="lb">GMI지수(%) <span class="hint">혈당 관리지표(참고사항)</span></p>
+		  <section class="p2list">
+		    <div class="p2item"><p class="lb">GMI지수(%) <span class="hint">혈당 관리지표(참고사항)</span></p>
 		      <div class="v"><span id="gmi" data-value="-">-</span></div></div>
-		    <div class="wk-item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p>
+		    <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p>
 		      <div class="v"><span id="tir" data-value="-">-</span></div></div>
-		    <div class="wk-item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p>
+		    <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p>
 		      <div class="v"><span id="tar" data-value="-">-</span></div></div>
-		    <div class="wk-item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p>
+		    <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p>
 		      <div class="v"><span id="tbr" data-value="-">-</span></div></div>
-		    <div class="wk-item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p>
+		    <div class="p2item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p>
 		      <div class="v"><span id="cv" data-value="-">-</span></div></div>
-		  </div>
-		</section>
+		  </section>
 		<%-- [2026-08-16] '* 혈당지표 분석'과 '* 생활습관 코칭' 두 머리띠가 별개 점검항목처럼 보인다는
 		     지적으로 헤더 하나('혈당지표 분석 기반 생활습관 가이드')로 통합.
 		     내용 = 챗봇 첫 인사의 지표 분석(TIR·TAR·TBR — _chatIntroAnalysis 와 같은 문장) + AI 코칭.
@@ -728,7 +763,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		    <small class="wk-basis">※ 대한당뇨병학회 관리지표 기준</small>
 		  </div>
 		</div>
-		<br>
+    <%-- [2026-08-18] 전면폭 묶음 — 제목·기간버튼·차트·범례를 한 덩이로 감싸 좌우 쫙 펴지게 --%>
+    <div class="wk-fullbleed">
     <h5 class="chart-title">* 저혈당/고혈당 발생구간(시간)</h5>
 
     <!-- 날짜 범위 선택 버튼 (기본 active = 당일) -->
@@ -748,6 +784,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <span class="item"><i class="box" style="background:#F0B24B"></i> 고 (180이상)</span>
       <span class="item"><i class="box" style="background:#FF0000"></i> 저 (70미만)</span>
     </div>
+    </div><%-- /.wk-fullbleed --%>
   </div>
    <%-- [2026-07-31 기획] 별도 TAR/TBR/CV 카드 제거 — #tar/#tbr/#cv 는 위 '주간 혈당관리지표' 목록으로 이동
         (같은 id 를 두 곳에 둘 수 없어 이 카드는 통째로 제거. 설명문구는 목록의 '권장 :' 힌트로 대체) --%>
@@ -1909,9 +1946,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    
 	    CommonUtil.callAjax(CommonUtil.getContextPath() + "/showBloodAvgData.do", "POST", formData,
 	        function(response) {
-	            document.getElementById('tar').textContent = (response.TAR_UPT || 0).toFixed(1);
-	            document.getElementById('tbr').textContent = (response.TBR_UPT || 0).toFixed(1);
-	            document.getElementById('cv').textContent  = (response.CV_UPT || 0).toFixed(1);
+	            /* ★[2026-08-18 요청] 단위 **%** 를 붙인다 — 연속혈당 상세 화면과 같은 표기.
+	               ★소수 1자리는 그대로(4.3 %) · 숫자를 다시 읽는 곳은 숫자 외 글자를 걷어내므로 안전하다. */
+	            document.getElementById('tar').textContent = (response.TAR_UPT || 0).toFixed(1) + " %";
+	            document.getElementById('tbr').textContent = (response.TBR_UPT || 0).toFixed(1) + " %";
+	            document.getElementById('cv').textContent  = (response.CV_UPT || 0).toFixed(1) + " %";
 	            
 	            let avgUptValue = Math.round(response.AVG_UPT)  || 0;
 	            
@@ -1975,7 +2014,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	        function(response) {
 	            console.log("표준편차, 변동계수 가져옴. :", response);
 	            let gmi = parseFloat(response.GMI);
-	            document.getElementById('gmi').textContent = gmi;
+	            /* ★[2026-08-18 요청] 단위 **%** 를 붙인다 — 옆 지표(TIR 85 %)와 나란히 서야 한다.
+	               ★숫자를 다시 읽는 곳(num()·_metricNum())은 숫자 외 글자를 걷어내므로 안전하다. */
+	            document.getElementById('gmi').textContent = gmi + " %";
 
 	            let message = "";
 	            if (gmi < 7.0) {
@@ -2002,7 +2043,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	            }
 
 	            let tir = response.TIR;
-	            tirElem.textContent = tir;
+	            /* ★[2026-08-18] 띄어쓰기까지 맞춘다 — 서버가 '95%'(붙여서) 로 주는데
+	               옆 지표들은 '4.3 %'(띄어서)라 한 줄만 달라 보였다. */
+	            tirElem.textContent = String(tir).replace(/\s*%/, '') + " %";
 
 	            let tirnum = parseFloat(response.TIR);
 	            let message = "";
@@ -2040,9 +2083,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 	    		    // 숫자 검증 + 정수화
 	    		    const fastingVal = (data && Number.isFinite(Number(data.fastingValue)))
-	    		      ? Math.trunc(Number(data.fastingValue)) : null;
+	    		      ? Math.round(Number(data.fastingValue)) : null;   /* ★[2026-08-18] 버림→반올림 : 웹과 같은 자리수 규칙 */
 	    		    const after2hVal = (data && Number.isFinite(Number(data.after2hValue)))
-	    		      ? Math.trunc(Number(data.after2hValue)) : null;
+	    		      ? Math.round(Number(data.after2hValue)) : null;   /* ★[2026-08-18] 버림→반올림 */
 
 	    		    // 값 표시
 	    		    if (data) {

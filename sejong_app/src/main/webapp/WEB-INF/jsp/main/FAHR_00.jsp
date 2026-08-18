@@ -174,9 +174,12 @@
 	        <section class="blood-detail-section">
 	            <div class="section-content">
                   <div class="detail-box_none">
+                    <%-- ★[2026-08-18 요청] 문장에서 **「높음/정상」 판정 글자를 뺐다** —
+                         「6.6 % 높음입니다」처럼 두 말이 붙어 어색했다. 수치만 남긴다.
+                         ⚠`gmiconsult` 요소는 지우지 않고 숨긴다 — 스크립트가 아직 값을 채운다(에러 방지). --%>
                     <span class="change-text">• GMI수치(혈당관리지표)는 </span>
-                    <span class="detail-box_small" id="gmi1">로</span>
-                    <span class="detail-box_small" id="gmiconsult">-</span>
+                    <span class="detail-box_small" id="gmi1">-</span>
+                    <span class="detail-box_small" id="gmiconsult" style="display:none;">-</span>
                     <span class="change-text">입니다</span>
                    </div>
                 </div>  
@@ -244,7 +247,9 @@
     put('p2tar', tar+' %', (tar<25)?P2_OK:P2_WARN);
     put('p2tbr', tbr+' %', (tbr<4)?P2_OK:P2_WARN);
     put('p2cv',  cv +' %', (cv<=36)?P2_OK:P2_WARN);
-    put('p2gmi', (3.31+0.02392*mean).toFixed(1));   // 참고치 — 검정 유지
+    /* ★[2026-08-18 요청] GMI 에도 단위 **%** — 바로 위 TIR·TAR·TBR·CV 가 전부 `%` 라 이것만 맨숫자였다.
+       ★색은 종전대로 검정(참고치라 좋고 나쁨을 칠하지 않는다). */
+    put('p2gmi', (3.31+0.02392*mean).toFixed(1) + ' %');   // 참고치 — 검정 유지
   }
 
   $(document).ready(function() {
@@ -791,7 +796,9 @@
       			} 
       			document.getElementById('gmiconsult').textContent     = gmi_value;
       			
-      			document.getElementById('gmi').textContent     = response.GMI;
+      			/* ★[2026-08-18 요청] GMI 타일에도 **단위 %** 를 붙인다 — 제목이 「GMI지수(%)」라도
+      			   숫자만 6.6 으로 서 있으면 옆 지표(TIR 89 %)와 달라 보인다. */
+      			document.getElementById('gmi').textContent     = response.GMI + " %";
       			document.getElementById('gmi1').textContent    = response.GMI + " %";
       			document.getElementById('avgMeal').textContent = response.avgMeal.avgBlood;
      			
@@ -820,8 +827,8 @@
 	      const after2hEl = document.getElementById('after2hBlood');
 	
 	      if (response && response.IsSucceed && response.Data) {
-	        if (fastingEl) fastingEl.textContent = Math.trunc(response.Data.fastingValue);
-	        if (after2hEl) after2hEl.textContent = Math.trunc(response.Data.after2hValue);
+	        if (fastingEl) fastingEl.textContent = Math.round(response.Data.fastingValue);
+	        if (after2hEl) after2hEl.textContent = Math.round(response.Data.after2hValue);
 	      } else {
 	        if (fastingEl) fastingEl.textContent = "-";
 	        if (after2hEl) after2hEl.textContent = "-";

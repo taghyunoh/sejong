@@ -237,7 +237,7 @@ public class BloodController {
 		Object fastVal = fast != null ? fast.get("avgBlood") : null;
 		if (toDouble(fastVal) <= 0) fastVal = avgVal;
 
-		// 식후 평균: 식후 90~150분. 식사 없거나 해당 CGM 없으면(0) → 전체 평균
+		// 식후 평균: 식후 2~3시간 첫 측정(2026-08-18 통일). 식사 없거나 해당 CGM 없으면(0) → 전체 평균
 		Map<String,Object> meal = bloodService.getTodayMealBlood(uuid);
 		Object mealVal = meal != null ? meal.get("avgBlood") : null;
 		if (toDouble(mealVal) <= 0) mealVal = avgVal;

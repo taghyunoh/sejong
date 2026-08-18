@@ -102,7 +102,7 @@ public class BloodController {
 	
 	@RequestMapping("/goBloodPage2.do")
 	public String goBloodPage2(HttpSession session,Model model) {
-		model.addAttribute("menuName","혈당 연관분석");
+		model.addAttribute("menuName","AI 종합분석(주간)");  // [2026-08-18] 홈 버튼 명칭과 통일
 		return ".main/Blood_Consult";
 	}
 	
