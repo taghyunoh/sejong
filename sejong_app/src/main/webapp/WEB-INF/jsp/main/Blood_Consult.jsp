@@ -888,10 +888,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	     메인 [AI 챗봇] 버튼 → goBloodPage2.do?chat=1 로 진입하면 바로 열린다(주간 지표는 이 화면 스크립트가 그대로 계산).
 	     처음 열릴 때 인사말 하단에 TIR·TAR·TBR 분석 내용 표시(지표가 늦게 오면 도착 시 1회 추가 — wkAi 연동). --%>
 	<div id="chatOverlay" class="chat-overlay">
-	  <div class="chat-ovhead">
-	    <button type="button" class="chat-back" onclick="closeChat();">&#10094;</button>
-	    <h5>🤖 AI 챗봇</h5>
-	  </div>
+	  <%-- ★제목줄(< 🤖 AI 챗봇) 제거 (2026-08-20 요청) — 상단 공통 헤더가 'AI 챗봇'(컨트롤러 menuName,
+	       ?chat=1 분기)을 보여 주므로 여기 또 있으면 제목이 두 줄이었다.
+	       나가기 = 상단 공통 뒤로가기(btnPrev → history.back → 메인). closeChat() 은 남겨 둔다(호출부만 없음). --%>
 	  <div id="chatMessages" class="qa-messages"></div>
 	  <%-- [2026-07-31] 입력줄+질문칩을 한 덩어리로 묶어 화면 하단에 고정(sticky).
 	       높이를 계산하지 않아도 어떤 기기에서나 항상 보인다 — 대화가 길어지면 위쪽만 스크롤된다. --%>
@@ -1549,8 +1548,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     // ── 공복 (데이터 의도일 때만; "공복혈당이란?" 은 blood_qa.js 로) ──
+    // ★[2026-08-20 수정] 판정 기준을 **관리 목표(권장 80~130)**로 통일 — 종전엔 진단 기준
+    //   (정상<100/공복혈당장애 100~125/≥126)으로 판정해 108 이 「공복혈당장애」인데 권장(80~130)
+    //   안이라는 모순이 났고, 끝의 "진단이 아닙니다" 안내와도 어긋났다(진단명을 쓰면서).
+    //   구간은 이 화면 공복 평균 카드(avgFastingBlood1_name, 80~130/131~160/160↑)와 동일.
     if (fasting != null && _dataIntent && /공복/.test(q)) {
-      var ft = fasting < 100 ? '정상' : fasting < 126 ? '공복혈당장애' : '<span style="color:#dc3545;">높음</span>';
+      var ft = fasting < 80  ? '<span style="color:#e67e22;">낮음 — 저혈당 주의</span>'
+             : fasting <= 130 ? '목표 범위 내 👍'
+             : fasting <= 160 ? '<span style="color:#e67e22;">다소 높음</span>'
+             : '<span style="color:#dc3545;">높음</span>';
       return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')<br>권장 : <b>80~130 mg/dL</b>' + note;
     }
 

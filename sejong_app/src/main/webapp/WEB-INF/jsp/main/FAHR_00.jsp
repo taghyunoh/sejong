@@ -623,6 +623,15 @@
 	  var end   = getDateNDaysAgoFormatted(0);
 	  var start = getDateNDaysAgoFormatted(3);
 
+	  /* ★[2026-08-20 수정] 수집이 끝나면 화면을 다시 그린다.
+	     증상 : 한참 만에 로그인하면 큰 숫자 밑 시각이 지금보다 한참 이르게 나온다(예 14:00 인데 13:40).
+	     원인 : $(document).ready 가 getBloodData()(외부 CGM 수집, 비동기)를 쏘고 **기다리지 않고**
+	            바로 orderby() 로 DB 를 읽는다. 그 순간 DB 에는 옛 자료뿐이라 마지막 측정시각이 수집 전
+	            값으로 그려지고, 수집이 끝나도 **다시 그리는 곳이 없어** 그대로 남았다
+	            (아래 async 주석의 "완료 시 orderby로 차트 갱신" 이 실제로는 빠져 있었다).
+	     ⚠응답이 오는 사이 사용자가 ◀▶ 로 다른 날을 볼 수 있다 — 그때는 건드리지 않는다. */
+	  var _viewAtCall = now.toDateString();
+
 	  $.ajax({
 		    url: CommonUtil.getContextPath() + '/getBloodData.do',
 			type: 'GET',
@@ -639,7 +648,18 @@
 						if(!result.IsSucceed){
 							// [2026-07-11] 재연동 필요(REAUTH) → 배너/버튼 없이 i-Sens 로그인 자동 이동 (최초 미연동과 동일)
 							if (result.Data === 'REAUTH') { getAuth(); }
+							return;
 						}
+						// 수집 완료 → 방금 들어온 자료로 다시 그린다
+						if (now.toDateString() !== _viewAtCall) return;   // 그 사이 다른 날로 이동 = 손대지 않는다
+						if (now.toDateString() === new Date().toDateString()) {
+							// 오늘을 보는 중이면 조회 상한(now)도 '지금'으로 당긴다 —
+							// 수집 중에 들어온 '페이지 연 시각 이후' 측정이 BETWEEN 밖으로 빠지지 않게.
+							now = new Date();
+							halfNow = new Date();
+							halfNow.setHours(halfNow.getHours() - 24);     // 초기화(209~211줄)와 같은 규칙
+						}
+						orderby();
 				    },
 			error: function(xhr, status, error) {
 				   	console.log('Error: ' + error);

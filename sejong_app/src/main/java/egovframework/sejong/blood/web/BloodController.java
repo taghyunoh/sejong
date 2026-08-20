@@ -101,8 +101,11 @@ public class BloodController {
 	}
 	
 	@RequestMapping("/goBloodPage2.do")
-	public String goBloodPage2(HttpSession session,Model model) {
-		model.addAttribute("menuName","AI 종합분석(주간)");  // [2026-08-18] 홈 버튼 명칭과 통일
+	public String goBloodPage2(HttpSession session,Model model,
+			@RequestParam(value="chat", required=false) String chat) {
+		// [2026-08-20] ?chat=1(메인 [AI 챗봇] 진입)이면 상단 제목도 'AI 챗봇' —
+		//   화면 안의 중복 제목줄(< 🤖 AI 챗봇)은 뺐으므로 상단이 유일한 제목이다.
+		model.addAttribute("menuName", "1".equals(chat) ? "AI 챗봇" : "AI 종합분석(주간)");  // [2026-08-18] 홈 버튼 명칭과 통일
 		return ".main/Blood_Consult";
 	}
 	
