@@ -79,6 +79,25 @@
   padding: 6px 10px;
   font-size: 14px;
 }
+/* ★★[2026-08-20 요청 「운동도 식사처럼」] 목록을 **세로**로 편다.
+   종전에는 가로로 늘어서(flex·nowrap) 폭이 모자라면 ***글자가 한 자씩 세로로 쪼개져*** 읽을 수 없었다
+   (걷기 → 걷/기). 식사등록의 음식 목록과 같은 **세로 목록 + 세로 스크롤**로 맞춘다.
+   ⚠칸 **아래로** 편다 — 이 화면은 `.dropup`(위로 펴기)이라 위 칸들을 가렸다. 그 규칙도 함께 되돌린다. */
+.custom-select { position: relative; }
+.custom-select .custom-select-options,
+.custom-select.dropup .custom-select-options {
+  position: absolute; left: 0; right: 0; top: 100%; bottom: auto; margin-top: 4px;
+  flex-direction: column; flex-wrap: nowrap;
+  max-height: 240px; overflow-y: auto; overflow-x: hidden; white-space: normal;
+}
+.custom-select .custom-select-options > div { text-align: left; white-space: nowrap; }
+/* 맨 위 「✓ 입력내용 적용」 — 고르는 줄과 구분되게 작고 흐리게, 굴려도 위에 붙어 있다 */
+.custom-select .custom-select-options > div.cs-apply {
+  position: sticky; top: 0; z-index: 1; flex: 0 0 auto;
+  font-size: 12.5px; color: #8a8f96; background: #fafafa;
+  border-bottom: 1px solid #eee; border-radius: 0; cursor: pointer; user-select: none;
+}
+.custom-select .custom-select-options > div.cs-apply:active { background: #f0f0f0; }
 
 /* 버튼 축소 */
 #exerciseForm button[type="button"] {
@@ -473,83 +492,80 @@ function getExerciseList(gubun) {
 	    list.appendChild(tr);
 	  });
 	}
-	// 페이지 진입 시 input을 기본적으로 readonly 처리
-	document.querySelectorAll('.custom-select input').forEach(input => {
-	  input.setAttribute('readonly', true);
-	  
-	  input.addEventListener('click', function (e) {
-	    const options   = this.nextElementSibling;
-	    const isVisible = options && options.style.display === 'block';
-	    e.stopPropagation();
+	/* ══ 운동 종류 고르기 — 검색해서 고르고, 없으면 적은 대로 쓴다 (2026-08-20 요청) ══
+	   왜 바꿨나 :
+	     · 종전에는 **목록에서 고르는 것만** 됐다(칸은 readonly). 목록에 없는 운동을 적으려면
+	       「직접입력」 을 먼저 골라야 했고, ***목록을 닫을 방법이 없어*** 다른 화면으로 나가야 했다.
+	     · 식사등록(음식 검색)과 조작을 맞춘다 — 두 화면을 오가며 쓰는 사람이 같은 손놀림을 쓰게.
+	   무엇이 달라지나 :
+	     ① 칸에 **바로 칠 수 있다**(readonly 해제). 치는 대로 목록이 걸러진다.
+	     ② 목록 맨 위 **「✓ 입력내용 적용」** — 걸러도 없으면 적은 그대로 쓰고 목록을 닫는다.
+	     ③ 바깥을 누르거나(터치 포함) 화면을 굴리거나 Esc 로도 닫힌다.
+	   ★운동 목록은 **화면에 박힌 16종**이다(서버 조회 없음 — 확인함). 그래서 거르기도 화면에서 한다.
+	   ⚠「직접입력」 줄은 ②가 그 일을 대신하므로 **감춘다**(둘이 같이 보이면 무엇을 눌러야 할지 헷갈린다).
+	     markup 은 그대로 두었으니 되살리려면 이 감추기만 빼면 된다. */
+	document.querySelectorAll('.custom-select').forEach(select => {
+	  const input = select.querySelector('input');
+	  const box   = select.querySelector('.custom-select-options');
+	  if (!input || !box) return;
 
-	    // 1) 옵션 패널이 닫혀 있고, 이전에 일반 옵션을 선택했다면 = "수정 모드"로 전환
-	    //    -> readonly 해제 + 포커스(커서를 맨 뒤로)
-	    if (!isVisible && this.dataset.editReady === '1') {
-	      this.removeAttribute('readonly');
-	      // editReady 플래그는 한번 쓰면 제거(원하면 유지해도 OK)
-	      delete this.dataset.editReady;
+	  input.removeAttribute('readonly');            // ① 바로 칠 수 있게
+	  input.setAttribute('autocomplete','off');
 
-	      // 포커스 & 커서 끝으로 이동 (모바일 키보드 확실히 띄움)
-	      setTimeout(() => {
-	        this.focus({ preventScroll: true });
-	        const len = this.value.length;
-	        try { this.setSelectionRange(len, len); } catch (err) {}
-	      }, 0);
-	      return;
-	    }
+	  /* 원래 있던 선택지들(직접입력 제외) */
+	  const opts = Array.prototype.slice.call(box.querySelectorAll('[role="option"]'))
+	    .filter(o => {
+	      if (o.textContent.trim() === '직접입력') { o.style.display = 'none'; return false; }
+	      return true;
+	    });
 
-	    // 2) 기본 동작: 모든 옵션 닫고, 현재 것만 열기 (첫 탭은 메뉴 열기)
-	    document.querySelectorAll('.custom-select-options').forEach(opt => opt.style.display = 'none');
-	    if (options) options.style.display = 'block';
+	  /* ② 맨 위 「입력내용 적용」 줄 — 누르면 적은 그대로 두고 닫는다 */
+	  const apply = document.createElement('div');
+	  apply.className = 'cs-apply';
+	  apply.textContent = '✓ 입력내용 적용';
+	  const applyTyped = (e) => { e.preventDefault(); e.stopPropagation(); close(); input.blur(); };
+	  apply.addEventListener('mousedown', applyTyped);
+	  apply.addEventListener('touchstart', applyTyped, { passive:false });
+	  box.insertBefore(apply, box.firstChild);
+
+	  function open(){ box.style.display = 'flex'; }
+	  function close(){ box.style.display = 'none'; }
+
+	  /* 치는 대로 거른다 — 걸린 게 없으면 「입력내용 적용」만 남는다 */
+	  function filter(){
+	    const q = (input.value || '').trim().toLowerCase();
+	    opts.forEach(o => {
+	      const hit = !q || o.textContent.trim().toLowerCase().indexOf(q) >= 0;
+	      o.style.display = hit ? '' : 'none';
+	    });
+	    open();
+	  }
+
+	  input.addEventListener('focus', filter);
+	  input.addEventListener('click', function(e){ e.stopPropagation(); filter(); });
+	  input.addEventListener('input', filter);
+	  input.addEventListener('compositionend', filter);   // 한글은 다 쳐야 값이 온다
+	  input.addEventListener('keydown', function(e){
+	    if (e.key === 'Enter'){ e.preventDefault(); close(); input.blur(); }   // 엔터 = 적은 대로 쓰기
 	  });
 
-	  // 수정 종료 시 다시 readonly로 돌려서 다음 진입에 키보드가 자동으로 안 뜨게 함
-	  input.addEventListener('blur', function () {
-	    // 직접입력 모드에서 완전히 막고 싶지 않다면 조건을 조절하세요.
-	    this.setAttribute('readonly', true);
+	  /* 목록에서 고르기 */
+	  opts.forEach(o => {
+	    o.addEventListener('click', function(){
+	      input.value = this.textContent.trim();
+	      close();
+	    });
 	  });
+
+	  /* ③ 바깥을 누르면 닫는다 — **터치까지 받으려면 pointerdown·touchstart 가 필요하다**
+	     (식사등록에서 `mousedown` 만 듣다가 휴대폰에서 안 닫혔다. 2026-08-20 같은 함정) */
+	  function outside(e){ if (!select.contains(e.target)) close(); }
+	  document.addEventListener('pointerdown', outside, true);
+	  document.addEventListener('touchstart',  outside, true);
+	  document.addEventListener('click',       outside, true);
+	  window.addEventListener('scroll', close, true);
+	  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
 	});
-
-	// 옵션 클릭 시
-	document.querySelectorAll('.custom-select-options div').forEach(option => {
-	  option.addEventListener('click', function () {
-	    const select = this.closest('.custom-select');
-	    const input  = select.querySelector('input');
-	    const value  = this.textContent.trim();
-
-	    if (value === '직접입력') {
-	      // 드롭다운 닫고 인풋에 입력 가능하게
-	      this.parentElement.style.display = 'none';
-	      input.value = '';
-	      input.removeAttribute('readonly');   // 즉시 입력 가능
-	      // 직입 모드에선 editReady 굳이 안 씀
-	      delete input.dataset.editReady;
-
-	      setTimeout(() => {
-	        input.focus({ preventScroll: true });
-	        try { input.select(); } catch (err) {}
-	      }, 0);
-	    } else {
-	      // 일반 옵션 선택: 값만 넣고, 다음에 인풋을 탭하면 "수정 모드"로 진입하도록 플래그만 설정
-	      input.value = value;
-	      input.setAttribute('readonly', true);   // 선택 직후엔 그대로 잠가둠
-	      input.dataset.editReady = '1';          // 다음 탭에서 키보드 뜨게 하는 신호
-	      this.parentElement.style.display = 'none';
-	    }
-	  });
-	});
-
-	// 외부 클릭 시 옵션 닫기
-	document.addEventListener("click", function (e) {
-	  document.querySelectorAll('.custom-select').forEach(select => {
-	    if (!select.contains(e.target)) {
-	      const options = select.querySelector('.custom-select-options');
-	      if (options) options.style.display = "none";
-	    }
-	  });
-	});
-
-
 </script>
 </body>
 </html>
