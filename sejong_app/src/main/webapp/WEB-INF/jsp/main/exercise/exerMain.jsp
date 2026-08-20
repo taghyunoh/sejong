@@ -528,7 +528,12 @@ function getExerciseList(gubun) {
 	  apply.addEventListener('touchstart', applyTyped, { passive:false });
 	  box.insertBefore(apply, box.firstChild);
 
-	  function open(){ box.style.display = 'flex'; }
+	  /* ★[2026-08-20 「모바일에서 선택하면 검색 떴다가 없어짐」] 연 시각을 적어 둔다.
+	     휴대폰에서 칸을 누르면 **키보드가 올라오며 화면이 스크롤**되는데, 그 scroll 이
+	     아래 '굴리면 닫기' 를 깨워 ***방금 연 목록을 즉시 닫았다.***
+	     (연속혈당 달력에서 겪은 것과 **똑같은 함정** — ui-datenav.js 2026-08-20 참고.) */
+	  let openedAt = 0;
+	  function open(){ box.style.display = 'flex'; openedAt = Date.now(); }
 	  function close(){ box.style.display = 'none'; }
 
 	  /* 치는 대로 거른다 — 걸린 게 없으면 「입력내용 적용」만 남는다 */
@@ -563,7 +568,12 @@ function getExerciseList(gubun) {
 	  document.addEventListener('pointerdown', outside, true);
 	  document.addEventListener('touchstart',  outside, true);
 	  document.addEventListener('click',       outside, true);
-	  window.addEventListener('scroll', close, true);
+	  /* 굴리면 닫는다 — 단, **연 직후 0.8초 안의 스크롤은 무시**한다(키보드가 올라오며 생기는 스크롤).
+	     사람이 손으로 굴리는 것은 그 뒤라 그대로 닫힌다. */
+	  window.addEventListener('scroll', function(){
+	    if (Date.now() - openedAt < 800) return;
+	    close();
+	  }, true);
 	  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
 	});
 </script>

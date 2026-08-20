@@ -161,7 +161,7 @@ td.food-name {
 /* 자동완성 드롭다운 */
 .autosuggest { position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; border: 1px solid #ccc; border-radius: 8px; background: #fff; max-height: 240px; overflow-y: auto; z-index: 9999; display: none; }
 .autosuggest__item { padding: 8px 10px; font-size: 14px; cursor: pointer; }
-/* 목록 맨 위 「✕ 닫기」 — 고르는 줄과 구분되게 작고 흐리게, 스크롤해도 위에 붙어 있다(2026-08-20) */
+/* 목록 맨 위 「✓ 입력내용 적용」 — 고르는 줄과 구분되게 작고 흐리게, 스크롤해도 위에 붙어 있다(2026-08-20) */
 .autosuggest__close { position: sticky; top: 0; z-index: 1; background: #fafafa; border-bottom: 1px solid #eee;
   padding: 7px 10px; font-size: 12.5px; color: #8a8f96; text-align: left; cursor: pointer; user-select: none; }
 .autosuggest__close:active { background: #f0f0f0; }
@@ -601,9 +601,13 @@ function initFoodAutosuggest(){
       listbox.appendChild(li);
     });
     listbox.style.display = 'block';
+    openedAt = Date.now();          // 연 시각 — 키보드가 올라오며 생기는 스크롤로 닫히지 않게(아래 scroll 참고)
   }
 
   function hideList(){ listbox.style.display = 'none'; }
+  /* ★[2026-08-20] 목록을 연 시각 — 키보드가 올라오며 생기는 스크롤로 **스스로 닫히지 않게**
+     (운동등록에서 실제로 겪었다 : 눌러서 열리자마자 사라짐. 연속혈당 달력과 같은 함정). */
+  let openedAt = 0;
 
   function mapItem(row){
     const name = row.foodName || row.FOOD_NAME || row.name || row.NAME || '';
@@ -679,7 +683,8 @@ function initFoodAutosuggest(){
   document.addEventListener('touchstart',  outsideClose, true);
   document.addEventListener('mousedown',   outsideClose, true);   // 마우스 쓰는 PC 화면
   /* 화면을 굴리면 닫는다 — 목록이 칸에 붙어 있어 굴리면 자리가 어긋난다(휴대폰에서 흔한 동작) */
-  window.addEventListener('scroll', hideList, true);
+  /* 굴리면 닫는다 — **연 직후 0.8초 안의 스크롤은 무시**(키보드가 올라오며 생기는 스크롤) */
+  window.addEventListener('scroll', function(){ if (Date.now() - openedAt < 800) return; hideList(); }, true);
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') hideList(); });
 }
 
