@@ -37,4 +37,49 @@
 	<script type="text/javascript" src="<c:url value='/asset/js/plugins.min.js'/>"></script>
 	<script type="text/javascript" src="<c:url value='/asset/js/default.js'/>"></script>
 	<script type="text/javascript" src="<c:url value='/asset/js/tmpl.min.js' />"></script>
+
+<%-- ★[2026-08-20 요청] **1시간 동안 화면을 만지지 않으면 자동 로그아웃.**
+     · 서버는 이미 `web.xml <session-timeout>60</session-timeout>` 이라 1시간 뒤 세션이 죽는다.
+       하지만 그건 **다음 요청을 보낼 때** 로그인 화면으로 튕기는 것이라, 켜 둔 화면은 그대로 남아 있었다.
+       (남의 손이 닿을 수 있는 화면에 개인 혈당 자료가 계속 떠 있다.) ⇒ 화면 스스로 나가게 한다.
+     · 여기(공통 header)는 **로그인 뒤 화면(tiles 'main')에만** 들어간다 — 로그인 화면에는 안 걸린다.
+     · 서버 시간과 맞추려 60분으로 둔다. ⚠web.xml 을 고치면 아래 IDLE_MIN 도 같이 고칠 것. --%>
+<script type="text/javascript">
+(function(){
+  var IDLE_MIN = 60;                       // 무활동 허용 시간(분) — web.xml session-timeout 과 같게
+  var LIMIT = IDLE_MIN * 60 * 1000;
+  var timer = null, last = 0, done = false;
+
+  function ctx(){
+    try { return CommonUtil.getContextPath(); } catch(e){ return ''; }
+  }
+  function bye(){
+    if (done) return; done = true;
+    /* 자동로그인을 꺼야 로그아웃이 유효하다 — 안 끄면 로그인 화면에서 곧바로 다시 들어온다
+       (login/main.jsp 의 logout() 주석과 같은 이유). 앱이 아니면 조용히 넘어간다. */
+    try { callAndroid("f102", { phone: (window._userPhone || ''), autoYn:false, saveYn:true }); } catch(e){}
+    alert(IDLE_MIN + '분 동안 사용하지 않아 로그아웃되었습니다.\n다시 로그인해 주세요.');
+    var go = function(){ location.href = ctx() + '/loginPage.do'; };
+    try { CommonUtil.callAjax(ctx() + '/logout.do', 'POST', '', go); setTimeout(go, 1500); }  /* 응답이 없어도 나간다 */
+    catch(e){ go(); }
+  }
+  function reset(){
+    if (done) return;
+    var now = +new Date();
+    if (now - last < 30000) return;        // 30초 안에 또 들어온 움직임은 흘린다(마우스·스크롤이 초당 수십 번 온다)
+    last = now;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(bye, LIMIT);
+  }
+
+  /* 사람이 화면을 만졌다고 볼 수 있는 것들. capture 로 잡아 화면 어디서 눌러도 걸린다. */
+  ['click','keydown','touchstart','mousedown','mousemove','wheel','scroll','input'].forEach(function(ev){
+    document.addEventListener(ev, reset, true);
+  });
+  /* 다른 앱·탭에 갔다가 돌아온 것도 '만진 것'으로 본다 */
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) reset(); });
+
+  last = 0; reset();                       // 화면을 연 시점부터 시작
+})();
+</script>
 	

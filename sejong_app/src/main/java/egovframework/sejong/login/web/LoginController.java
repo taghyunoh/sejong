@@ -106,6 +106,11 @@ public class LoginController {
 		if (user == null) {
 			return "redirect:/loginPage.do";
 		}
+		/* ★[2026-08-20] 하단 탭이 **직전 화면 것으로 남아 있던 모순**을 없앤다.
+		   운동·식사 화면은 menuName 을 **세션**에 넣는다(ExerciseController·FoodController).
+		   홈은 그 값을 갱신하지 않아서, 운동등록 → 홈 으로 오면 하단에 '운동등록' 이 켜진 채였다.
+		   ⇒ 홈에 들어올 때 세션 값을 '홈' 으로 덮어쓴다(footer.jsp 가 이 값으로 탭을 고른다). */
+		session.setAttribute("menuName", "홈");
 		model.addAttribute("gender",user.getGender());
 		return ".login/main";
 	}

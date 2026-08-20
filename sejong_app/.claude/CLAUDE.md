@@ -291,6 +291,26 @@ API 직접 12건 동시 **전원 200 · FreeTier 0**(직전 같은 조건에서 
   - `egovframework/spring/context-datasource.xml` — **DB 접속정보 평문**(url·username·password)
 - [완료 2026-08-13] 새 Gemini 키 **paid tier 확인됨**. 무료/유료는 호출 성공 여부로는 구분되지 않고 **RPM 한도로 판별**한다 — 무료 tier 는 flash 계열 약 10 RPM 이라 동시 요청을 몰면 429 가 뜨고 에러 본문의 quota 이름에 `FreeTier` 문자열이 그대로 박혀 나온다. 50건 동시 요청 전원 200(429 0건) → 유료. `chatAsk.do` 로 25건 동시 요청해도 전원 성공하므로 **앱 JVM 이 쥔 키도 유료 키**임이 함께 확인된다(환경변수가 제대로 상속됐다는 뜻).
 
+## ✅[2026-08-20] 1시간 무활동 자동 로그아웃 + 하단 네비 모순 2건
+
+- **자동 로그아웃**(요청 «화면 변경이 없으면 1시간 이후 로그아웃») — [tiles/main/header.jsp] 에 무활동 타이머.
+  · 서버는 이미 `web.xml <session-timeout>60</session-timeout>` 이지만 그건 **다음 요청 때** 튕기는 것이라
+    ***켜 둔 화면은 개인 혈당 자료를 띄운 채 그대로 남아 있었다.*** 이제 화면이 스스로 나간다.
+  · 헤더는 **로그인 뒤 화면(tiles 'main')에만** 들어가므로 로그인 화면에는 안 걸린다.
+  · 활동 판정 = click·keydown·touchstart·mousedown·mousemove·wheel·scroll·input(capture) + 탭 복귀(visibilitychange).
+    **30초 스로틀** — 마우스·스크롤이 초당 수십 번 오므로 매번 타이머를 새로 걸지 않는다.
+  · 나갈 때 **자동로그인부터 끈다**(`callAndroid f102`) — 안 끄면 로그인 화면에서 곧바로 재로그인된다.
+    logout.do 응답이 없어도 1.5초 뒤 로그인 화면으로 간다.
+  · ⚠**`IDLE_MIN`(60) 은 web.xml session-timeout 과 같은 값으로 유지할 것.**
+- **네비 모순 ①「AI 화면에서 탭이 하나도 안 켜짐」** — AI 챗봇·AI 종합분석은 goBloodPage2.do(혈당 화면)인데
+  2026-08-20 에 제목을 「AI 챗봇」 으로 바꾸며 menuName 에서 '혈당' 이 사라져 어느 가지에도 안 걸렸다.
+  ⇒ footer.jsp 혈당 가지에 **`menu.contains("AI")`** 추가.
+- **네비 모순 ②「홈인데 직전 화면 탭이 켜져 있음」** — ***운동·식사 컨트롤러는 menuName 을 `session` 에 넣는다***
+  (다른 화면까지 따라다닌다). 홈(`mainPage.do`)은 그 값을 갱신하지 않아 **운동등록 → 홈** 이면 '운동등록' 이 켜진 채였다.
+  ⇒ `LoginController.mainPage` 에서 **`session.setAttribute("menuName","홈")`**, footer 에 `menu.equals("홈")` 가지.
+  ⚠**자바 변경** — Eclipse F5 + 재기동 필요(챗봇 제목 건과 함께 올라간다).
+  ⚠menuName 이 세션에 남는 구조라, 새 화면을 만들 때 **menuName 을 반드시 설정**해야 남의 탭이 켜지지 않는다.
+
 ## ✅[2026-08-20] 연속혈당 증감 화살표 — 7단계 → **하나를 기울이는 연속 각도**
 
 - **요청**: "증감 화살표를 좀더 세분화 — 지금은 단계적 단순함" + "화살표는 하나로".

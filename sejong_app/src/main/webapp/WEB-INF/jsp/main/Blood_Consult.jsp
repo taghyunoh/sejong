@@ -1557,7 +1557,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
              : fasting <= 130 ? '목표 범위 내 👍'
              : fasting <= 160 ? '<span style="color:#e67e22;">다소 높음</span>'
              : '<span style="color:#dc3545;">높음</span>';
-      return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')<br>권장 : <b>80~130 mg/dL</b>' + note;
+      /* ★[2026-08-20 요청] **「권장 : 80~130 mg/dL」 줄을 뺀다.** 값과 판정만 보여 준다.
+         (각주 note 는 다른 답변들과 같이 그대로 둔다.)
+         ⚠권장 범위는 화면에서 사라져도 **판정 기준으로는 그대로 쓰인다** — 위 ft 의 80/130/160 이 그것이다. */
+      return '공복 평균 혈당: <b>' + fasting + ' mg/dL</b> (' + ft + ')' + note;
     }
 
     // ── 식후 (데이터 의도일 때만) ──

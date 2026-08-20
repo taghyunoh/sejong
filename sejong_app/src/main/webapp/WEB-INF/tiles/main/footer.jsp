@@ -18,9 +18,16 @@
         onExer = "on";
     } else if (menu.contains("식사") || u.contains("food")) {
         onFood = "on";
-    } else if (menu.contains("혈당") || u.contains("blood") || u.contains("fahr")) {
+    } else if (menu.contains("혈당") || menu.contains("AI")
+            || u.contains("blood") || u.contains("fahr")) {
+        /* ★[2026-08-20] 「AI」 를 혈당 쪽에 붙인다 — 하단 탭이 **하나도 안 켜지던** 모순을 없앤다.
+           AI 챗봇·AI 종합분석은 goBloodPage2.do(혈당 화면)인데, 2026-08-20 에 제목을 「AI 챗봇」 으로
+           바꾸면서 menuName 에 '혈당' 이 사라져 어느 가지에도 안 걸렸다.
+           URI 는 믿을 수 없다 — Tiles include 안에서는 .do 가 아니라 템플릿 경로로 잡힌다(위 주석). */
         onBlood = "on";
-    } else if (u.contains("mainpage")) {
+    } else if (menu.equals("홈") || u.contains("mainpage")) {
+        /* ★[2026-08-20] 홈은 menuName '홈' 으로도 잡는다 — mainPage.do 가 세션에 그 값을 넣는다.
+           종전에는 홈이 menuName 을 안 바꿔서 **직전 화면(운동·식사) 탭이 켜진 채로** 남았다. */
         onHome = "on";
     }
 %>
