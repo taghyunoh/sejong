@@ -161,6 +161,10 @@ td.food-name {
 /* 자동완성 드롭다운 */
 .autosuggest { position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; border: 1px solid #ccc; border-radius: 8px; background: #fff; max-height: 240px; overflow-y: auto; z-index: 9999; display: none; }
 .autosuggest__item { padding: 8px 10px; font-size: 14px; cursor: pointer; }
+/* 목록 맨 위 「✕ 닫기」 — 고르는 줄과 구분되게 작고 흐리게, 스크롤해도 위에 붙어 있다(2026-08-20) */
+.autosuggest__close { position: sticky; top: 0; z-index: 1; background: #fafafa; border-bottom: 1px solid #eee;
+  padding: 7px 10px; font-size: 12.5px; color: #8a8f96; text-align: left; cursor: pointer; user-select: none; }
+.autosuggest__close:active { background: #f0f0f0; }
 .autosuggest__item:focus, .autosuggest__item:hover { background: #f2f2f2; outline: none; }
 .food-wrap {
   position: relative;
@@ -558,6 +562,28 @@ function initFoodAutosuggest(){
       listbox.style.display = 'none';
       return;
     }
+    /* ★[2026-08-20] 목록 맨 위에 **「입력내용 적용」** 줄을 둔다.
+       왜 : 목록에 없는 음식을 적었을 때 **내가 친 그대로 쓰고 목록을 닫는 길**이 없었다.
+            (바깥을 눌러 닫는 것을 모르는 분이 많고, 목록이 화면을 덮으면 누를 자리도 마땅치 않다.)
+       ★고른 음식이 아니라 **직접 입력**이므로 마스터 연결(foodMseq)을 **비운다** —
+         안 비우면 앞서 고른 음식의 코드가 남아 **엉뚱한 칼로리로 집계된다.**
+         저장 쪽은 코드가 없으면 기본값('1')을 쓰므로 그대로 저장된다(saveFood 주석 참고).
+       ⚠고르는 줄과 헷갈리지 않게 글자를 작고 흐리게, 위에 붙여 둔다. */
+    const cls = document.createElement('li');
+    cls.className = 'autosuggest__close';
+    cls.setAttribute('role','presentation');
+    cls.textContent = '✓  입력내용 적용';
+    const applyTyped = (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      if (seqEl) seqEl.value = '';        // 직접 입력 — 마스터 연결 해제
+      suppressSuggestOnce = true;         // 닫은 직후 목록이 다시 뜨지 않게
+      hideList();
+      setTimeout(()=>{ inputName.blur(); }, 30);
+    };
+    cls.addEventListener('mousedown', applyTyped);
+    cls.addEventListener('touchstart', applyTyped, {passive:false});
+    listbox.appendChild(cls);
+
     items.forEach((it, idx)=>{
       const li = document.createElement('li');
       li.className = 'autosuggest__item';
@@ -637,10 +663,23 @@ function initFoodAutosuggest(){
   inputName.addEventListener('compositionupdate', fire);
   inputName.addEventListener('compositionend', fire);
 
-  document.addEventListener('mousedown', (e)=>{
+  /* ★[2026-08-20 요청] **목록을 닫을 방법이 없었다** —
+       "골라야만 없어지고, 아니면 다른 화면으로 가야 한다"(사용자).
+     원인 : 바깥 누름을 **`mousedown` 으로만** 듣고 있었다. 휴대폰 터치에서는 이 이벤트가
+            늦게·때로는 오지 않아 **바깥을 눌러도 안 닫혔다.**
+     ⇒ 터치까지 함께 받는 `pointerdown` 을 쓰고, 옛 브라우저를 위해 `touchstart` 도 둔다.
+       ⚠capture 로 받는다 — 목록 위에 다른 요소가 있어도 먼저 잡는다.
+       ⚠목록 안·입력칸은 빼야 한다(고르는 중에 닫히면 안 된다). */
+  function outsideClose(e){
     if (e.target === inputName) return;
-    if (!listbox.contains(e.target)) hideList();
-  });
+    if (listbox.contains(e.target)) return;
+    hideList();
+  }
+  document.addEventListener('pointerdown', outsideClose, true);
+  document.addEventListener('touchstart',  outsideClose, true);
+  document.addEventListener('mousedown',   outsideClose, true);   // 마우스 쓰는 PC 화면
+  /* 화면을 굴리면 닫는다 — 목록이 칸에 붙어 있어 굴리면 자리가 어긋난다(휴대폰에서 흔한 동작) */
+  window.addEventListener('scroll', hideList, true);
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') hideList(); });
 }
 

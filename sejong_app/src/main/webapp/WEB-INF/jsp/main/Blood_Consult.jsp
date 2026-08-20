@@ -681,6 +681,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .chat-del  { position:absolute; top:-7px; right:-7px; width:20px; height:20px; line-height:18px; text-align:center; border:none; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; cursor:pointer; padding:0; opacity:0.45; transition:opacity .15s; box-shadow:0 1px 2px rgba(0,0,0,0.3); }
 .chat-user:hover .chat-del, .chat-bot:hover .chat-del { opacity:1; }
 .chat-intro { max-width:100% !important; align-self:stretch !important; font-size:13.5px !important; }
+/* ★[2026-08-20 요청 「우측 공간 위하고 맞추어 주세요」] 처음 뜨는 **지표 분석** 말풍선을
+   인사말과 **같은 폭**으로 — 보통 답변(.chat-bot 92%)이라 오른쪽이 남아 위 인사말과 어긋나 보였다.
+   ⚠글자 크기는 건드리지 않는다(.chat-intro 는 13.5px 로 줄이는데, 분석은 본문 크기를 유지해야 읽힌다).
+   ⚠주고받는 답변에는 붙이지 않는다 — 대화는 말풍선이 내용만큼만 차지하는 편이 자연스럽다. */
+.chat-wide { max-width:100% !important; align-self:stretch !important; }
 
 </style>
 
@@ -1825,7 +1830,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if(cbox && cbox.innerHTML && cbox.innerHTML.indexOf('불러오면') === -1){
       coach = '<br><b>AI 코칭</b><br>' + cbox.innerHTML;
     }
-    _addMsg('최근 일주일 지표 분석입니다.'+L.join('')+coach+'<small>※ 대한당뇨병학회 관리지표 기준</small>', false);
+    _addMsg('최근 일주일 지표 분석입니다.'+L.join('')+coach+'<small>※ 대한당뇨병학회 관리지표 기준</small>', false, 'chat-wide');
     _chatIntroDone = true;
   }
   window._chatIntroHook = _chatIntroAnalysis;   // wkAi upd() 가 지표를 채울 때마다 호출(1회 게시 가드 내장)
