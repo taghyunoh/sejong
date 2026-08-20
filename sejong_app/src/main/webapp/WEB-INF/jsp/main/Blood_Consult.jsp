@@ -55,6 +55,7 @@
   }
   .range-buttons .btn.active{background:#1f7aed;color:#fff;border-color:#1f7aed}
 
+
   /* 날짜 구간 입력 */
   .date-range{display:flex;gap:8px;align-items:center;margin:6px 0 10px}
   .date-range input[type="date"]{
