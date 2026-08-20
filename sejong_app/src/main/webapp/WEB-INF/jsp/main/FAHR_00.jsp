@@ -315,6 +315,46 @@
 		}
 	}
 
+	// [2026-08-20] 폴백(오늘 자료가 없어 '마지막 측정일'을 보는 중)에서 **수집으로 오늘 자료가 들어오면 오늘로 되돌린다.**
+	//   adjustToLastDataDate 는 '오늘 → 과거' 한 방향뿐이라 돌아오는 길이 없었다 —
+	//   한참 만에 로그인해 수집이 그제서야 오늘 자료를 채워도 화면은 과거일에 머물고
+	//   "당일 혈당 측정이 없어…" 안내까지 남아 있었다.
+	//   ★폴백 상태가 아니면 아무것도 하지 않고 그대로 done() 한다(오늘을 보는 평소 경로).
+	//   ★확인이 오는 사이 사용자가 ◀▶ 로 날짜를 옮기면 손대지 않는다(done 도 부르지 않음 = 다시 그리지 않음).
+	function restoreTodayIfArrived(done){
+		var isFallback = lastMeasureDate
+			&& now.toDateString() === lastMeasureDate.toDateString()
+			&& lastMeasureDate.toDateString() !== new Date().toDateString();
+		if (!isFallback) { done(); return; }
+
+		var _at = now.toDateString();
+		try {
+			CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do", "POST", { userId: userId },
+				function(response){
+					if (now.toDateString() !== _at) return;   // 그 사이 사용자가 날짜를 옮겼다 → 그대로 둔다
+					try {
+						if (response && response.IsSucceed && response.Data){
+							var last = new Date(String(response.Data));
+							if (!isNaN(last.getTime()) && last.toDateString() === new Date().toDateString()){
+								lastMeasureDate = null;                        // 폴백 해제 → '최종 측정일' 안내도 사라진다
+								now = new Date();
+								halfNow = new Date();
+								halfNow.setHours(halfNow.getHours() - 24);      // 초기화(209~211줄)와 같은 규칙
+								// 시간 버튼을 '오늘·24시간' 모양으로 되돌린다.
+								// ※updateButtonState() 의 오늘 분기는 3·6·12·24 를 전부 선택색(btnCol06)으로 칠한다 —
+								//   여기서는 전날버튼의 '오늘로 돌아왔을 때' 처리와 같은 모양(24시간만 선택)을 쓴다.
+								$('.time_wrap button').prop('disabled', false).removeClass('btnLine04').addClass('btnLine05');
+								$('#btnHours button[value="24"]').removeClass('btnLine05').addClass('btnCol06');
+								console.log("수집으로 오늘 자료 도착 → 오늘로 복귀:", now);
+							}
+						}
+					} catch (e) { console.error("restoreTodayIfArrived 오류:", e); }
+					done();
+				}
+			);
+		} catch (e) { console.error("restoreTodayIfArrived 오류:", e); done(); }
+	}
+
 	// [2026-07-11] 현재 보고 있는 날짜가 '마지막 측정일'(오늘 아님)일 때만 최종 측정일 안내를 표시.
 	//   날짜를 다른 날로 넘기면 자동으로 숨김.
 	function updateLastMeasureNotice(){
@@ -652,14 +692,17 @@
 						}
 						// 수집 완료 → 방금 들어온 자료로 다시 그린다
 						if (now.toDateString() !== _viewAtCall) return;   // 그 사이 다른 날로 이동 = 손대지 않는다
-						if (now.toDateString() === new Date().toDateString()) {
-							// 오늘을 보는 중이면 조회 상한(now)도 '지금'으로 당긴다 —
-							// 수집 중에 들어온 '페이지 연 시각 이후' 측정이 BETWEEN 밖으로 빠지지 않게.
-							now = new Date();
-							halfNow = new Date();
-							halfNow.setHours(halfNow.getHours() - 24);     // 초기화(209~211줄)와 같은 규칙
-						}
-						orderby();
+						// 폴백(마지막 측정일)을 보는 중이었고 오늘 자료가 들어왔으면 먼저 오늘로 되돌린다
+						restoreTodayIfArrived(function(){
+							if (now.toDateString() === new Date().toDateString()) {
+								// 오늘을 보는 중이면 조회 상한(now)도 '지금'으로 당긴다 —
+								// 수집 중에 들어온 '페이지 연 시각 이후' 측정이 BETWEEN 밖으로 빠지지 않게.
+								now = new Date();
+								halfNow = new Date();
+								halfNow.setHours(halfNow.getHours() - 24);     // 초기화(209~211줄)와 같은 규칙
+							}
+							orderby();
+						});
 				    },
 			error: function(xhr, status, error) {
 				   	console.log('Error: ' + error);
