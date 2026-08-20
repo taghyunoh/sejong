@@ -213,6 +213,9 @@
   // [2026-07-11] 오늘 데이터가 없을 때 이동한 '마지막 측정일'(없으면 null)
   var lastMeasureDate = null;
   
+  /* ⚠[2026-08-20] 안 쓰는 값이다 — 화살표는 2026-08-16 에 이미지 → 글자로 바뀌었고,
+     2026-08-20 에는 그 글자마저 **하나(→)를 기울이는 방식**이 되어 단계별 그림이 필요 없다.
+     지우지 않고 남겨 둔다(그림 파일도 그대로) — 되돌릴 때 경로를 다시 찾지 않도록. */
   const BLOOD_IMG = {
 		    fastUp:  "<c:url value='/asset/images/blood/blood_arrow_sspeeh_h.png'/>",
 		    up:      "<c:url value='/asset/images/blood/blood_arrow_speeh_h.png'/>",
@@ -798,34 +801,49 @@
 		      	 		_diffEl.style.color = _dirColor;
 		      	 		_diffEl.style.fontWeight = '700';
 
+		      	 		/* ★[2026-08-20 요청 「증감 화살표를 좀더 세분화 — 지금은 단계적 단순함」]
+		      	 		   종전 : 글자 화살표 7개(↑↑ ↑ ↗ → ↘ ↓ ↓↓) 중 하나를 골라 끼웠다.
+		      	 		          +4 도 +2 와 똑같은 ↗ 라 변화 크기가 화살표에 안 담겼다(뚝뚝 끊김).
+		      	 		   이제 : **화살표 하나를 변화율만큼 기울인다(연속).** 단계가 없으니 +2 와 +4 가 다르게 보인다.
+		      	 		     · 기울기 기준 = 변화율(mg/dL/분) — 국제 CGM 표기 관례가 쓰는 단위다.
+		      	 		       ±3 mg/dL/분(= 5분당 ±15)에서 수직(↑·↓), 0 이면 수평(→), 그 사이는 비례해서 이어진다.
+		      	 		     · 각도만 바뀌고 **숫자(#diff)는 종전 그대로 '직전 5분 차이'** — 좌우에 보이는
+		      	 		       두 측정값의 차이와 반드시 같아야 해서 계산 근거를 바꾸지 않았다.
+		      	 		     · 말글(상태·설명)은 익숙한 7단계 표현을 유지하되 분당 변화율을 함께 적는다.
+		      	 		       경계값(±2/±5/±10 per 5분 = ±0.4/±1/±2 per 분)은 종전과 동일 — 판정이 달라지지 않는다. */
+		      	 		const _rate = _hasBoth ? (point / 5) : 0;      // mg/dL/분 (측정 간격 5분)
+		      	 		const _rAbs = Math.abs(_rate);
+
 		      	 		let blood_status = "";
 		      	 		let blood_name   = "";
-		      	 		let _arrowKey    = "normal";
+
+		      	 		const _rateTxt = (_rate > 0 ? '+' : _rate < 0 ? '-' : '') + _rAbs.toFixed(1) + ' mg/dL/분';
+		      	 		const _tail    = ' (분당 ' + _rateTxt + ' · 최근 5분 ' + (point > 0 ? '+' : '') + point + ' mg/dL)';
 
 		      	 		if (!_hasBoth) {
 		      	 		    blood_status = "알수없음";
 		      	 		    blood_name   = "혈당값 변화의 속도와 방향을 계산할 수 없습니다";
-		      	 		} else if (point >= 10) {
-		      	 		    blood_status = "빠르게 증가"; _arrowKey = "fastUp";
-		      	 		    blood_name   = "혈당이 직전 측정보다 10 mg/dL 이상 빠르게 증가하고 있습니다";
-		      	 		} else if (point >= 5) {
-		      	 		    blood_status = "증가"; _arrowKey = "up";
-		      	 		    blood_name   = "혈당이 직전 측정보다 5-9 mg/dL 증가하고 있습니다";
-		      	 		} else if (point >= 2) {
-		      	 		    blood_status = "서서히 증가"; _arrowKey = "slowUp";
-		      	 		    blood_name   = "혈당이 직전 측정보다 2-4 mg/dL 증가하고 있습니다";
-		      	 		} else if (point > -2) {
-		      	 		    blood_status = "안정적"; _arrowKey = "normal";
-		      	 		    blood_name   = "혈당이 직전 측정과 거의 같은 수준으로 안정적입니다";
-		      	 		} else if (point > -5) {
-		      	 		    blood_status = "서서히 감소"; _arrowKey = "slowDn";
-		      	 		    blood_name   = "혈당이 직전 측정보다 2-4 mg/dL 감소하고 있습니다";
-		      	 		} else if (point > -10) {
-		      	 		    blood_status = "감소"; _arrowKey = "down";
-		      	 		    blood_name   = "혈당이 직전 측정보다 5-9 mg/dL 감소하고 있습니다";
+		      	 		} else if (_rate >= 2) {
+		      	 		    blood_status = "빠르게 증가";
+		      	 		    blood_name   = "혈당이 빠르게 증가하고 있습니다" + _tail;
+		      	 		} else if (_rate >= 1) {
+		      	 		    blood_status = "증가";
+		      	 		    blood_name   = "혈당이 증가하고 있습니다" + _tail;
+		      	 		} else if (_rate >= 0.4) {
+		      	 		    blood_status = "서서히 증가";
+		      	 		    blood_name   = "혈당이 서서히 증가하고 있습니다" + _tail;
+		      	 		} else if (_rate > -0.4) {
+		      	 		    blood_status = "안정적";
+		      	 		    blood_name   = "혈당이 직전 측정과 거의 같은 수준으로 안정적입니다" + _tail;
+		      	 		} else if (_rate > -1) {
+		      	 		    blood_status = "서서히 감소";
+		      	 		    blood_name   = "혈당이 서서히 감소하고 있습니다" + _tail;
+		      	 		} else if (_rate > -2) {
+		      	 		    blood_status = "감소";
+		      	 		    blood_name   = "혈당이 감소하고 있습니다" + _tail;
 		      	 		} else {
-		      	 		    blood_status = "빠르게 감소"; _arrowKey = "fastDn";
-		      	 		    blood_name   = "혈당이 직전 측정보다 10 mg/dL 이상 빠르게 감소하고 있습니다";
+		      	 		    blood_status = "빠르게 감소";
+		      	 		    blood_name   = "혈당이 빠르게 감소하고 있습니다" + _tail;
 		      	 		}
 
 		      	 		document.getElementById('blood_status').textContent = blood_status;
@@ -834,10 +852,18 @@
 		      	 		// [2026-08-16] 글자 화살표 — 숫자와 동일한 색(_dirColor) 적용
 		      	 		const arrowEl = document.getElementById('bloodArrow');
 		      	 	    if (!arrowEl) return; // 엘리먼트가 없다면 조용히 종료
-		      	 	    const ARROW_TXT = { fastUp:'↑↑', up:'↑', slowUp:'↗', normal:'→', slowDn:'↘', down:'↓', fastDn:'↓↓' };
-		      	 	    arrowEl.textContent = ARROW_TXT[_arrowKey] || '→';
+		      	 	    // 각도 : 0=수평(→) · -90=수직 상승(↑) · +90=수직 하강(↓).
+		      	 	    // ★[2026-08-20 요청] 수직이 되는 기준을 3 → **2 mg/dL/분**(= 5분당 10)으로 낮췄다 —
+		      	 	    //   3 은 좀처럼 안 닿아 화살표가 늘 눕는 편이었다. 여기 숫자 하나만 고치면 기울기가 조절된다.
+		      	 	    const _RATE_FULL = 2;
+		      	 	    let _r = _rate / _RATE_FULL; if (_r > 1) _r = 1; else if (_r < -1) _r = -1;
+		      	 	    const _deg = -(_r * 90);
+		      	 	    arrowEl.textContent = '→';                       // 글자는 하나만 쓰고 기울여서 방향·속도를 낸다
+		      	 	    arrowEl.style.display = 'inline-block';           // transform 이 먹으려면 필요(기본 inline 이면 무시된다)
+		      	 	    arrowEl.style.transition = 'transform .35s ease'; // 값이 갱신될 때 부드럽게 돌아간다
+		      	 	    arrowEl.style.transform = 'rotate(' + _deg.toFixed(1) + 'deg)';
 		      	 	    arrowEl.style.color = _dirColor;
-		      	 	    arrowEl.title = blood_status;
+		      	 	    arrowEl.title = blood_status + (_hasBoth ? (' · ' + _rateTxt) : '');
 
 	          }
 	  	)	  	
