@@ -1299,6 +1299,66 @@
             chart = echarts.init(document.getElementById("chart"+cntval));
             chart.setOption(option1);
 		}	
+		// [2026-08-21] 식후·전체·공복 세 선을 한 축에 겹치면 값이 비슷해 서로 가린다(사용자 지적) →
+		// 위/중/아래 3칸으로 나눠 칸마다 자기 눈금(scale)으로 변화를 보인다. 날짜축·툴팁은 세 칸이 공유.
+		// 0(자료 없음)은 null 로 두어 칸의 눈금을 끌어내리지 않는다. 「일별 평균 혈당」·「최근 일주일 평균 혈당」 공용.
+		//   panels = [{name, color, data}] (위→아래 순 — 호출부가 식후·전체·공복으로 넘긴다) · chartEl = 높이를 잴 컨테이너 · opt = {zoom:슬라이더, xMax:날짜축 상한}
+		function wnnAvgPanelOption(title, xData, panels, chartEl, opt) {
+		    opt = opt || {};
+		    var nz = function(arr){ return arr.map(function(v){ return (v && v > 0) ? v : null; }); };
+		    var P_TOP = 60, P_GAP = 38, P_BOTTOM = opt.zoom ? 70 : 40;   // 제목 · 칸 사이(날짜 라벨 자리) · 슬라이더/여백
+		    // ⚠높이는 clientHeight 로 재면 안 된다 — 첫 화면은 「개요」 탭이라 혈당 그래프·통계 컨테이너는 display:none 상태(0px)로
+		    //   그려지고, 탭을 열 때의 resize() 는 칸 배치(grid top/height)를 다시 계산하지 않는다 → inline style 높이(720px)를 우선.
+		    var H  = parseFloat(chartEl.style && chartEl.style.height) || chartEl.clientHeight || 720;
+		    var pH = Math.max(90, Math.floor((H - P_TOP - P_BOTTOM - P_GAP * 2) / 3));
+		    var grids = [], xAxes = [], yAxes = [], series = [];
+		    panels.forEach(function(p, i){
+		        var top = P_TOP + i * (pH + P_GAP);
+		        grids.push({ left: 70, right: 40, top: top, height: pH });
+		        var xa = { type: 'category', gridIndex: i, data: xData,   // boundaryGap 기본(true) — 양 끝 점이 축선에 붙지 않게
+		                   axisLabel: { fontSize: 11, fontWeight: 'bolder' } };
+		        if (opt.xMax != null) xa.max = opt.xMax;
+		        xAxes.push(xa);
+		        yAxes.push({
+		            type: 'value', gridIndex: i, scale: true,        // 칸마다 값 범위에 맞춘 눈금 — 변화가 보이게
+		            name: p.name, nameLocation: 'middle', nameGap: 48,
+		            nameTextStyle: { color: p.color === 'pink' ? '#e06b8a' : p.color, fontWeight: 'bolder', fontSize: 12 },
+		            splitNumber: 3,
+		            axisLabel: { fontSize: 11, fontWeight: 'bolder' }
+		        });
+		        series.push({
+		            name: p.name, type: 'line', xAxisIndex: i, yAxisIndex: i,
+		            data: nz(p.data), connectNulls: true,
+		            itemStyle: { color: p.color }, lineStyle: { color: p.color, width: 2 },
+		            symbolSize: 9,
+		            label: { show: true, position: 'top', fontSize: 11, fontWeight: 'bolder' }
+		        });
+		    });
+		    var o = {
+		        title: { text: title },
+		        tooltip: {
+		            trigger: 'axis',
+		            // 칸이 셋이라 기본 툴팁은 날짜 머리를 세 번 찍는다 → 날짜 한 줄 + 칸 순서(식후·전체·공복) 한 덩이로
+		            formatter: function(ps){
+		                ps = Array.isArray(ps) ? ps : [ps];
+		                var seen = {}, rows = [];
+		                panels.forEach(function(p){
+		                    ps.forEach(function(q){
+		                        if (q.seriesName !== p.name || seen[p.name]) return;
+		                        seen[p.name] = 1;
+		                        rows.push(q.marker + ' ' + p.name + ' <b style="float:right;margin-left:18px">' + (q.value == null ? '-' : q.value) + '</b>');
+		                    });
+		                });
+		                return (ps[0] ? ps[0].axisValue : '') + '<br/>' + rows.join('<br/>');
+		            }
+		        },
+		        axisPointer: { link: [{ xAxisIndex: 'all' }] },   // 한 날짜를 가리키면 세 칸 모두 표시
+		        legend: { data: panels.map(function(p){ return p.name; }), top: 4, right: 10 },
+		        grid: grids, xAxis: xAxes, yAxis: yAxes, series: series
+		    };
+		    if (opt.zoom) o.dataZoom = [{ type: 'slider', show: true, xAxisIndex: [0, 1, 2], start: 0, end: 100 }];
+		    return o;
+		}
 		//전체 평균 line 차트(일별 평균 혈당)
 		function drawWeeklyBloodChart(day_after_start_date, end_date, userId) {
 	  	    var formData = {
@@ -1330,89 +1390,16 @@
 	  	              max.push(response[i].max || 0);
 	  	          }
 
-	  	          var option3 = {
-	  	              title: {
-	  	                  text: '일별 평균 혈당'
-	  	              },
-	  	              tooltip: {
-	  	                  trigger: 'axis'
-	  	              },
-	  	              xAxis: {
-	  	                  type: 'category',
-	  	                  data: date2,
-			  	          axisLabel: {
-				  	          	fontSize: 11, // 레이블 글씨 크기
-		                        fontWeight: 'bolder'
-				  	          }
-	  	              },
-	  	              legend: {
-	  	                  data: ['공복 평균', '전체 평균', '식후 평균']
-	  	              },	  	              
-	  	              yAxis: {
-	  	                  type: 'value',
-	  	               //   min: 70,
-	  	               //   max: 300,
-	  	               // interval: 30,
-	  	                  interval: 0,
-			  	          axisLabel: {
-				  	          	fontSize: 15, // 레이블 글씨 크기
-		                        fontWeight: 'bolder'
-				  	          }
-	  	              },
-	  	              series: [
-  	                  {
-  	                      name: '공복 평균',
-  	                      type: 'line',
-  	                      data: avgpost ,
-  	                      itemStyle: { color: 'pink' },
-  	                      stack: 'blood',
-  	                      symbolSize: 11, // 동그라미 크기 설정
-	  	                  label: {
-	  	                    show: true, // 숫자 값을 표시
-	  	                    position: 'top', // 점 위에 위치
-                            fontSize: 11,
-                            fontWeight: 'bolder'
-	  	                  }
-  	                  },
-  	                  {
-  	                      name: '전체 평균',
-  	                      type: 'line',
-  	                      data: avgBlood ,
-  	                      itemStyle: { color: 'blue' },
-  	                      stack: 'blood',
-  	                      symbolSize: 11, // 동그라미 크기 설정
-	  	                  label: {
-	  	                      show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 11,
-                              fontWeight: 'bolder'
-	  	                  }
-  	                  },  	                  
-                      {  
-  	                      name: '식후 평균',
-  	                      type: 'line',
-  	                      data: avgfasting ,
-  	                      itemStyle: { color: 'orange' },
-  	                      stack: 'blood',
-  	                      symbolSize: 11, // 동그라미 크기 설정
-	  	                  label: {
-	  	                      show: true, // 숫자 값을 표시
-	  	                      position: 'top', // 점 위에 위치
-                              fontSize: 11,
-                              fontWeight: 'bolder'
-	  	                  }
-  	                  } 
-       
-	  	              ],
-	      	 		  dataZoom: [{
-	       		      			type: 'slider',
-	        	        		show: true,
-	        	       			xAxisIndex: [0],
-	        		        	start: 0, // 초기 시작 비율
-	        		        	end: 100 // 전체 데이터를 보여주고 슬라이드로 조정 가능
-	        		    		}
-	      	 		 		]
-	  	          };
+	  	          // 3칸 분리 — 공용 wnnAvgPanelOption (2026-08-21). ★칸 순서는 위→아래 = 식후 · 전체 · 공복
+	  	          //   (「공복 값이 제일 밑에 있게」 — 혈당이 낮은 공복을 바닥에, 높은 식후를 위에. 범례·툴팁도 같은 순서).
+	  	          // 값 = getDaylyBloodData : 공복 avgfasting = 그날 03~05시 평균 · 식후 avgpost = 끼니마다 [식사+2h,+3h) 첫 측정 평균
+	  	          //   (2026-08-21 확정 정의로 쿼리 교체 — 종전 버킷 방식은 공복·식후가 뒤섞였다. 정의는 Blood_SQL.xml 머리말).
+	  	          var panels = [
+	  	              { name: '식후 평균', color: 'orange', data: avgpost    },
+	  	              { name: '전체 평균', color: 'blue',   data: avgBlood   },
+	  	              { name: '공복 평균', color: 'pink',   data: avgfasting }
+	  	          ];
+	  	          var option3 = wnnAvgPanelOption('일별 평균 혈당', date2, panels, document.getElementById('BloodAveChart'), { zoom: true });
 
 	  	          // 두 번째 차트 적용
 		  	          var myChart3 = echarts.init(document.getElementById('BloodAveChart'));
@@ -1965,80 +1952,15 @@
 	  	          while (avgPostMeal.length < 7) avgPostMeal.unshift(0);
 	  	          while (avgBlood.length < 7) avgBlood.unshift(0);
 
-	  	          var option = {
-	  	              title: {
-	  	                  text: '최근 일주일 평균 혈당'
-	  	              },
-	  	              tooltip: {
-		  	              trigger: 'axis',
-		  	              order:'seriesDesc' //역순
-		  	                 
-	  	              },
-	  	              legend: {
-	  	                  data: ['공복 평균', '전체 평균', '식후 평균']
-	  	              },
-	  	              xAxis: {
-	  	                  type: 'category',
-	  	                  data: rotatedWeekdays,
-	  	                  max: 6,
-				  	      axisLabel: {
-					  	  	fontSize: 15, // 레이블 글씨 크기
-			              	fontWeight: 'bolder'
-					  	  }
-	  	              },
-	  	              yAxis: {
-	  	                  type: 'value',
-	  	                  interval: 0,
-				          axisLabel: {
-				          	fontSize: 14, // 레이블 글씨 크기
-				            fontWeight: 'bolder'
-				          }
-	  	              },
-	  	              series: [
-	  	                  {
-	  	                      name: '공복 평균',
-	  	                      type: 'line',
-	  	                      data: avgFasting,
-	  	                      itemStyle: { color: 'pink' },
-	  	                      stack: 'blood',
-	  	                      symbolSize: 6, // 동그라미 크기 설정
-		  	                  label: {
-		  	                      show: true, // 숫자 값을 표시
-		  	                      position: 'top', // 점 위에 위치
-	                              fontSize: 12,
-	                              fontWeight: 'bolder'
-		  	                  }	
-	  	                  },
-	  	                  {
-	  	                      name: '전체 평균',
-	  	                      type: 'line',
-	  	                      data: avgBlood,
-	  	                      itemStyle: { color: 'green' },
-	  	                      stack: 'blood',
-	  	                      symbolSize: 6, // 동그라미 크기 설정
-		  	                  label: {
-		  	                      show: true, // 숫자 값을 표시
-		  	                      position: 'top', // 점 위에 위치
-	                              fontSize: 12,
-	                              fontWeight: 'bolder'
-		  	                  }	
-	  	                  },
-	  	                  {
-	  	                      name: '식후 평균',
-	  	                      type: 'line',
-	  	                      data: avgPostMeal,
-	  	                      itemStyle: { color: 'orange' },
-	  	                      stack: 'blood',
-	  	                      symbolSize: 6, // 동그라미 크기 설정
-		  	                  label: {
-		  	                      show: true, // 숫자 값을 표시
-		  	                      position: 'top', // 점 위에 위치
-	                              fontSize: 12,
-	                              fontWeight: 'bolder'
-		  	                  }	  	                      
-	  	                  }
-	  	              ]
-	  	          };
+	  	          // 공복·전체·식후 3칸 분리 — 일별 평균 혈당과 같은 공용 wnnAvgPanelOption (2026-08-21, 개요·통계 두 탭에 같은 option)
+	  	          // 칸 순서 위→아래 = 식후 · 전체 · 공복(일별 차트와 동일). 값 = getFastingBlood(03~05시) · getPostBlood(식사+2h~3h)
+	  	          //   — 세 응답은 같은 날짜 목록 위에 LEFT JOIN 되어 길이가 같다(위치로 맞추는 아래 unshift 패딩이 어긋나지 않게).
+	  	          var panels = [
+	  	              { name: '식후 평균', color: 'orange', data: avgPostMeal },
+	  	              { name: '전체 평균', color: 'green',  data: avgBlood    },
+	  	              { name: '공복 평균', color: 'pink',   data: avgFasting  }
+	  	          ];
+	  	          var option = wnnAvgPanelOption('최근 일주일 평균 혈당', rotatedWeekdays, panels, document.getElementById('mealAveChart'), { xMax: 6, zoom: true }); // zoom: 혈당 그래프와 같은 배치(칸 높이 동일)
 
 	  	          var myChart = echarts.init(document.getElementById('mealAveChart'));
 	  	          myChart.setOption(option);
@@ -2327,13 +2249,14 @@
 			                <span class="num" id="std"></span>
 			                <span>mg/dL</span>
 			              </p>
+			            </section><%-- 2026-08-21 누락돼 있던 닫힘 — 없으면 뒤의 차트 카드가 이 카드 안으로 말려 들 수 있다 --%>
 			          </div>
 			          <!-- <section class="content-box">
 			            <h5>요일별<span>평균혈당</span></h5>
 			            <div><div id="weeklyBloodChart" style="width: 1100px; height: 400px;"></div></div>
 			          </section> -->
 			            <div class="chart-wrap">
-				          <section class="content-box"><div id="mealAveChart" style="height: 500PX; width: 1100px; margin: 0 auto;"></div></section>
+				          <section class="content-box"><div id="mealAveChart" style="height: 600px; width: 1100px; margin: 0 auto;"></div></section>
 						</div>
 						<div class="chart-wrap">
 				          <section class="content-box"><div id="weeklyChart" style="height: 500PX; width: 1100px; margin: 0 auto; "></div></section>
@@ -2455,7 +2378,7 @@
 					<div class="steb-container">
 					<div class="section"> <!-- 분리 출력을 위해 나눔  -->
 						<div class="chart-wrap">
-				          <section class="content-box"><div id="BloodAveChart" style="height: 600PX; width: 1100px; margin: 0 auto;"></div></section>
+				          <section class="content-box"><div id="BloodAveChart" style="height: 600px; width: 1100px; margin: 0 auto;"></div></section>
 						</div>
 						<div class="chart-wrap">
 				          <section class="content-box">
@@ -2472,13 +2395,13 @@
 				<div class="stab-content" id="sub-tab4">
 					<div class="steb-container">
 						<div class="chart-wrap">
-						  <section class="content-box"><div id="mealsChart" style="height: 500PX; width: 1100px;"></div></section>
+						  <section class="content-box"><div id="mealsChart" style="height: 500PX; width: 1100px; margin: 0 auto;"></div></section>
 						</div>
 						<div class="chart-wrap">
-				          <section class="content-box"><div id="mealAveChart2" style="height: 500PX; width: 1100px;"></div></section>
+				          <section class="content-box"><div id="mealAveChart2" style="height: 600px; width: 1100px; margin: 0 auto;"></div></section>
 						</div>
 						<div class="chart-wrap">
-				          <section class="content-box"><div id="weeklyChart2" style="height: 500PX; width: 1100px;"></div></section>
+				          <section class="content-box"><div id="weeklyChart2" style="height: 500PX; width: 1100px; margin: 0 auto;"></div></section>
 						</div>
 					</div>
 				</div>
