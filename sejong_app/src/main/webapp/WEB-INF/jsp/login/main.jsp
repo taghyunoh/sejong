@@ -534,21 +534,26 @@ function _setCgmNotice(html){
     }
     $e.css('display', html ? 'block' : 'none');
 }
-/* [2026-08-05 검토회의 — 홈 혈당상태 기준 변경] '오늘 하루' → '오늘 기준 과거 일주일'.
-   Case1(최근 일주일에 측정값 있음) : "오늘 기준 과거 일주일간 발생한 혈당지표 상태입니다."
-   Case2(최근 일주일에 측정값 없음) : "<마지막 측정일> 이후 발생한 혈당 측정값이 없습니다
-                                    (마지막 일주일 기준 상태입니다)"
-     → Case2 는 마지막 측정일로 끝나는 일주일로 상태를 계산해 표시한다.
+/* [2026-08-21 요청 — 홈 혈당상태 기준 변경] '과거 일주일' → '최근 24시간'. 문구도 함께 수정.
+   (이력 : '오늘 하루' → 2026-08-05 '과거 일주일' → 2026-08-21 '최근 24시간')
+   Case1(최근 24시간에 측정값 있음) : "최근 24시간 동안 발생한 혈당지표 상태입니다."
+   Case2(최근 24시간에 측정값 없음) : "<마지막 측정일> 이후 발생한 혈당 측정값이 없습니다
+                                    (마지막 측정 24시간 기준 상태입니다)"
+     → Case2 는 마지막 측정 시각으로 끝나는 24시간으로 상태를 계산해 표시한다.
    상태 판정은 종전과 동일하게 TIR(70~180 mg/dL 범위 내 비율) 70% 기준. */
 function _ymd(d){
     return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
 }
-/* 일주일(끝나는 날 포함 7일) 범위의 측정값을 받아 TIR 계산 → cb(tir 또는 null) */
-function _weekTir(uid, endDate, cb){
-    var start = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-    start.setDate(start.getDate() - 6);
+function _ymdhms(d){
+    var p2 = function(n){ return ('0'+n).slice(-2); };
+    return _ymd(d) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+}
+/* 끝 시각(endDt)까지의 24시간 범위 측정값을 받아 TIR 계산 → cb(tir 또는 null).
+   ★일 단위(00:00~23:59)가 아니라 시각까지 넣은 '굴러가는 24시간'이다 — 기준 변경의 요지. */
+function _dayTir(uid, endDt, cb){
+    var start = new Date(endDt.getTime() - 24*60*60*1000);
     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getBloodChartData.do","POST",
-        { userId: uid, start: _ymd(start)+"T00:00:00", end: _ymd(endDate)+"T23:59:59" }, function(list){
+        { userId: uid, start: _ymdhms(start), end: _ymdhms(endDt) }, function(list){
             list = Array.isArray(list) ? list : [];
             var vals = [];
             list.forEach(function(r){
@@ -574,23 +579,27 @@ function updateBloodState(data){
         return;
     }
     // [2026-07-31 깜빡임 개선] 조회 전에는 초기 '확인 중'을 유지하고, 결과가 나온 뒤 한 번만 반영한다.
-    _weekTir(uid, new Date(), function(tir){
-        if(tir != null){   // Case1 — 최근 일주일에 측정값 있음
-            _paintBloodState(tir, "오늘 기준 과거 일주일간 발생한 혈당지표 상태입니다.");
+    _dayTir(uid, new Date(), function(tir){
+        if(tir != null){   // Case1 — 최근 24시간에 측정값 있음
+            _paintBloodState(tir, "최근 24시간 동안 발생한 혈당지표 상태입니다.");
             return;
         }
-        // Case2 — 최근 일주일에 측정값 없음 → 마지막 측정일 기준 일주일로 대체 표시
+        // Case2 — 최근 24시간에 측정값 없음 → 마지막 측정 시각 기준 24시간으로 대체 표시
         CommonUtil.callAjax(CommonUtil.getContextPath() + "/getLastBloodDate.do","POST",{ userId: uid },function(res){
             if(!(res && res.IsSucceed && res.Data)){
                 _setStable('#bloodState', "측정값 없음", 'st-none');
                 _setStable('#bloodTir', "혈당기(CGM) 측정값이 들어오면 상태가 표시됩니다");
                 return;
             }
-            var day  = String(res.Data).substring(0,10);                       // 'YYYY-MM-DD'
+            var raw  = String(res.Data);
+            var day  = raw.substring(0,10);                                    // 'YYYY-MM-DD'
             var parts = day.split('-');
-            var lastD = new Date(+parts[0], +parts[1]-1, +parts[2]);
-            var msg   = day + " 이후 발생한 혈당 측정값이 없습니다 (마지막 일주일 기준 상태입니다)";
-            _weekTir(uid, lastD, function(lastTir){
+            /* 시각까지 오면 그 시각을 24시간 창의 끝으로, 날짜뿐이면 그날 23:59:59 로 */
+            var tm   = /^\d{2}:\d{2}/.test(raw.substring(11,16)) ? raw.substring(11,19) : '';
+            var hms  = (tm || '23:59:59').split(':');
+            var lastD = new Date(+parts[0], +parts[1]-1, +parts[2], +hms[0], +hms[1], +(hms[2]||0));
+            var msg   = day + " 이후 발생한 혈당 측정값이 없습니다 (마지막 측정 24시간 기준 상태입니다)";
+            _dayTir(uid, lastD, function(lastTir){
                 if(lastTir == null){
                     _setStable('#bloodState', "측정값 없음", 'st-none');
                     _setStable('#bloodTir', msg);

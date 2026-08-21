@@ -495,6 +495,7 @@
 .date-range,
 .date-range input[type="date"],
 .date-range button,
+.date-range .date-txt,   /* [2026-08-21] 갤럭시 큰글씨 설정에서 표시 텍스트가 커지며 잘리지 않게 */
 .date-range .tilde {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -515,12 +516,18 @@
   padding-left: 2px;
   padding-right: 2px;
 }
+/* [2026-08-21] 날짜 표시 텍스트 — nowrap 이라 어떤 기기·배율에서도 잘리지 않는다 */
+.date-range .date-txt {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d303f;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+}
 
 .date-range .tilde {
-  /* [360px 대응] 0 5px → 0. 이 화면의 .tilde 는 <span class="tilde"></span> 로 **내용이 비어 있어**
-     폭 0 인데 좌우 여백 10px 만 차지하고 있었다. 위 16px 상향분을 메우는 데 그 10px 을 쓴다.
-     (여기서 지정해야 한다 — 위쪽에 같은 특이도로 먼저 써 봐야 이 블록이 뒤에 있어 덮인다) */
-  margin: 0;
+  /* [2026-08-21] 날짜를 텍스트(.date-txt)로 그리며 ~ 도 글자로 되살렸다(종전엔 빈 span). */
+  margin: 0 2px;
   font-size: 17px;
   font-weight: 600;
   color: #444;
@@ -707,9 +714,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	<div class="top2-card decrease-card" style="margin-top:40px;">
 	  <div class="date-range">
 	    <button id="prev7" class="btn" type="button" aria-label="이전 7일">◀</button>
-	    <input type="date" id="startDate" aria-label="시작일" readonly>
-	    <span class="tilde"></span>
-	    <input type="date" id="endDate" aria-label="종료일" readonly>
+	    <%-- ★[2026-08-21] 날짜 짤림 근본 해결 — date input 의 표시(2026. 08. 21.)는 브라우저·기기마다
+	         폭이 달라 아이콘 숨김·패딩 축소로도 계속 잘렸다(08-18 두 차례 보정 후에도 재발).
+	         이 두 칸은 readonly(이동은 ◀▶)라 **input 은 값 보관용으로 숨기고**, 표시는
+	         우리가 그리는 텍스트(2026.08.21 — 공백 없는 점 표기)로 한다. 값 세터는 setDateInputs 한 곳. --%>
+	    <input type="date" id="startDate" aria-label="시작일" readonly style="display:none">
+	    <span class="date-txt" id="startDateTxt"></span>
+	    <span class="tilde">~</span>
+	    <input type="date" id="endDate" aria-label="종료일" readonly style="display:none">
+	    <span class="date-txt" id="endDateTxt"></span>
 	    <button id="next7" class="btn" type="button" aria-label="다음 7일">▶</button>
 	  </div>
 	</div>	
@@ -943,9 +956,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    if(intro && !(isNaN(tir) && isNaN(tar) && isNaN(tbr))){
 	      var ln=function(s){ return "<span style='display:block; word-break:keep-all;'>"+s+"</span>"; };
 	      var L=[ln('최근 일주일 지표 분석입니다.')];
-	      if(!isNaN(tir)) L.push(ln("• TIR(목표유지) <b>"+tir+"%</b> — 권장 70%↑ "+(tir>=70?'충족&nbsp;👍':"<b style='color:"+WARN+"'>미달</b>")));
-	      if(!isNaN(tar)) L.push(ln("• TAR(고혈당) <b>"+tar+"%</b> — 권장 25%↓ "+(tar<25?'충족':"<b style='color:"+WARN+"'>초과</b>")));
-	      if(!isNaN(tbr)) L.push(ln("• TBR(저혈당) <b>"+tbr+"%</b> — 권장 4%↓ "+(tbr<4?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      /* [2026-08-21 지적] ①이름을 풀어 쓴다(TIR(목표유지) → TIR(목표혈당 유지시간))
+	         ②권장 70%↑ 같은 화살표 표기는 이상/이하/미만이 헷갈린다 — 권장 기준은 바로 위
+	           지표 목록의 「권장 : 70% 이상」 힌트가 이미 보여 주므로 여기서는 값 → 판정만 적는다. */
+	      if(!isNaN(tir)) L.push(ln("• TIR(목표혈당 유지시간) <b>"+tir+"%</b> → "+(tir>=70?'충족&nbsp;👍':"<b style='color:"+WARN+"'>미달</b>")));
+	      if(!isNaN(tar)) L.push(ln("• TAR(고혈당 시간) <b>"+tar+"%</b> → "+(tar<25?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      if(!isNaN(tbr)) L.push(ln("• TBR(저혈당 시간) <b>"+tbr+"%</b> → "+(tbr<4?'충족':"<b style='color:"+WARN+"'>초과</b>")));
 	      intro.innerHTML = L.join('');
 	    }
 
@@ -1027,6 +1043,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     if ('valueAsDate' in eInput) eInput.valueAsDate = end;
     eInput.value = toYMD(end);
+    /* [2026-08-21] 표시 텍스트 동기화 — input 은 숨겨 두고(짤림 방지) 여기서만 그린다 */
+    var dot = function(d){ return d.getFullYear() + '.' + pad2(d.getMonth()+1) + '.' + pad2(d.getDate()); };
+    var st = document.getElementById('startDateTxt'), et = document.getElementById('endDateTxt');
+    if (st) st.textContent = dot(start);
+    if (et) et.textContent = dot(end);
   }
 
   function parseDateInput(value){
@@ -1483,10 +1504,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     var L = [];
     if (avg != null) L.push('• 주간 평균 <b>' + avg + ' mg/dL</b> — 권장 : 70~180');
-    if (tir != null) L.push('• TIR(목표유지) <b>' + tir + '%</b> — 권장 70% 이상 ' + (tir >= 70 ? '충족' : '<b style="color:#e67e22">미달</b>'));
-    if (tar != null) L.push('• TAR(고혈당) <b>' + tar + '%</b> — 권장 25% 미만 ' + (tar < 25 ? '충족' : '<b style="color:#e67e22">초과</b>'));
-    if (tbr != null) L.push('• TBR(저혈당) <b>' + tbr + '%</b> — 권장 4% 미만 ' + (tbr < 4 ? '충족' : '<b style="color:#e67e22">초과</b>'));
-    if (cv  != null) L.push('• CV(변동성) <b>' + cv + '%</b> — 권장 36% 이하 ' + (cv <= 36 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+    /* [2026-08-21] 챗봇 전 위치를 같은 형식으로 — 값 → 판정만(권장 기준·화살표 기호 없음, 사용자 예시 그대로) */
+    if (tir != null) L.push('• TIR(목표혈당 유지시간) <b>' + tir + '%</b> → ' + (tir >= 70 ? '충족' : '<b style="color:#e67e22">미달</b>'));
+    if (tar != null) L.push('• TAR(고혈당 시간) <b>' + tar + '%</b> → ' + (tar < 25 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+    if (tbr != null) L.push('• TBR(저혈당 시간) <b>' + tbr + '%</b> → ' + (tbr < 4 ? '충족' : '<b style="color:#e67e22">초과</b>'));
+    if (cv  != null) L.push('• CV(혈당변동성) <b>' + cv + '%</b> → ' + (cv <= 36 ? '충족' : '<b style="color:#e67e22">초과</b>'));
 
     var head = (tir != null)
       ? ('현재 혈당 상태는 ' + (tir >= 70 ? "<b style='color:#2e7d32'>‘정상’</b>" : "<b style='color:#e67e22'>‘관리 필요’</b>") + ' 입니다.')
@@ -1823,9 +1845,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           코칭을 함께 봐야 본인 혈당 상태를 즉시 알 수 있다는 요청. 문장은 화면의 '생활습관 코칭'을 재사용. */
     function ln(s){ return '<span style="display:block; word-break:keep-all;">'+s+'</span>'; }
     var L=[];
-    if(tir!=null) L.push(ln('• TIR(목표유지) <b>'+tir+'%</b> — 권장 70%↑ '+(tir>=70?'충족&nbsp;👍':'<b style="color:#e67e22">미달</b>')));
-    if(tar!=null) L.push(ln('• TAR(고혈당) <b>'+tar+'%</b> — 권장 25%↓ '+(tar<25?'충족':'<b style="color:#e67e22">초과</b>')));
-    if(tbr!=null) L.push(ln('• TBR(저혈당) <b>'+tbr+'%</b> — 권장 4%↓ '+(tbr<4?'충족':'<b style="color:#e67e22">초과</b>')));
+    /* [2026-08-21 지적 — 챗봇도 동일] 이름을 풀어 쓰고(목표혈당 유지시간 등) ↑↓·권장 문구 없이 값 → 판정만 */
+    if(tir!=null) L.push(ln('• TIR(목표혈당 유지시간) <b>'+tir+'%</b> → '+(tir>=70?'충족&nbsp;👍':'<b style="color:#e67e22">미달</b>')));
+    if(tar!=null) L.push(ln('• TAR(고혈당 시간) <b>'+tar+'%</b> → '+(tar<25?'충족':'<b style="color:#e67e22">초과</b>')));
+    if(tbr!=null) L.push(ln('• TBR(저혈당 시간) <b>'+tbr+'%</b> → '+(tbr<4?'충족':'<b style="color:#e67e22">초과</b>')));
     var coach = '';
     var cbox = document.getElementById('wkCoach');
     if(cbox && cbox.innerHTML && cbox.innerHTML.indexOf('불러오면') === -1){

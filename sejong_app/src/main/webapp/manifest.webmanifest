@@ -6,7 +6,7 @@
   "id": "/app/loginPage.do",
   "start_url": "loginPage.do",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#005b8e",

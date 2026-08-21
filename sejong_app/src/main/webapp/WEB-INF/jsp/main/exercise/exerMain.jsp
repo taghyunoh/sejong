@@ -525,7 +525,15 @@ function getExerciseList(gubun) {
 	  apply.textContent = '✓ 입력내용 적용';
 	  const applyTyped = (e) => { e.preventDefault(); e.stopPropagation(); close(); input.blur(); };
 	  apply.addEventListener('mousedown', applyTyped);
-	  apply.addEventListener('touchstart', applyTyped, { passive:false });
+	  /* ★[2026-08-21] 탭/스크롤 구분 — touchstart 즉시 발동이면 목록을 굴리려고 이 줄에 손을 댄
+	     순간 닫혀 버린다(식사등록과 같은 수정. 「검색 후 스크롤이 안 됩니다」). */
+	  let applyTouchY = null;
+	  apply.addEventListener('touchstart', function(e){ applyTouchY = e.touches[0].clientY; }, { passive:true });
+	  apply.addEventListener('touchend', function(e){
+	    if (applyTouchY == null) return;
+	    var dy = Math.abs(e.changedTouches[0].clientY - applyTouchY); applyTouchY = null;
+	    if (dy < 10) applyTyped(e);
+	  });
 	  box.insertBefore(apply, box.firstChild);
 
 	  /* ★[2026-08-20 「모바일에서 선택하면 검색 떴다가 없어짐」] 연 시각을 적어 둔다.
@@ -570,7 +578,11 @@ function getExerciseList(gubun) {
 	  document.addEventListener('click',       outside, true);
 	  /* 굴리면 닫는다 — 단, **연 직후 0.8초 안의 스크롤은 무시**한다(키보드가 올라오며 생기는 스크롤).
 	     사람이 손으로 굴리는 것은 그 뒤라 그대로 닫힌다. */
-	  window.addEventListener('scroll', function(){
+	  /* ★[2026-08-21] 목록(셀렉트 상자) 안 스크롤은 닫지 않는다 — capture 라 안쪽 스크롤에도
+	     깨어나 목록을 굴리는 순간 닫혔다(「검색 후 스크롤이 안 됩니다」). 바깥 스크롤만 닫는다. */
+	  window.addEventListener('scroll', function(e){
+	    var t = e.target;
+	    if (t && t.nodeType === 1 && select.contains(t)) return;   // 목록 안 스크롤
 	    if (Date.now() - openedAt < 800) return;
 	    close();
 	  }, true);

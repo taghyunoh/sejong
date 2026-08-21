@@ -581,7 +581,16 @@ function initFoodAutosuggest(){
       setTimeout(()=>{ inputName.blur(); }, 30);
     };
     cls.addEventListener('mousedown', applyTyped);
-    cls.addEventListener('touchstart', applyTyped, {passive:false});
+    /* ★[2026-08-21 「검색 후 스크롤이 안 됩니다」] touchstart 에서 바로 발동하면
+       이 줄(맨 위 sticky)에 손을 대고 **목록을 굴리려는 순간** 적용·닫힘이 되어 버린다.
+       ⇒ 눌린 자리에서 거의 안 움직였을 때(탭)만 발동 — 움직였으면 스크롤로 보고 그대로 둔다. */
+    let clsTouchY = null;
+    cls.addEventListener('touchstart', (e)=>{ clsTouchY = e.touches[0].clientY; }, {passive:true});
+    cls.addEventListener('touchend', (e)=>{
+      if (clsTouchY == null) return;
+      const dy = Math.abs(e.changedTouches[0].clientY - clsTouchY); clsTouchY = null;
+      if (dy < 10) applyTyped(e);
+    });
     listbox.appendChild(cls);
 
     items.forEach((it, idx)=>{
@@ -684,7 +693,15 @@ function initFoodAutosuggest(){
   document.addEventListener('mousedown',   outsideClose, true);   // 마우스 쓰는 PC 화면
   /* 화면을 굴리면 닫는다 — 목록이 칸에 붙어 있어 굴리면 자리가 어긋난다(휴대폰에서 흔한 동작) */
   /* 굴리면 닫는다 — **연 직후 0.8초 안의 스크롤은 무시**(키보드가 올라오며 생기는 스크롤) */
-  window.addEventListener('scroll', function(){ if (Date.now() - openedAt < 800) return; hideList(); }, true);
+  /* ★[2026-08-21] **목록 자체를 굴리는 스크롤은 닫지 않는다** — capture 라 목록 안 스크롤에도
+     이 핸들러가 깨어나, 검색 결과를 굴리려는 순간 목록이 닫혔다(「검색 후 스크롤이 안 됩니다」).
+     페이지(다른 곳) 스크롤은 종전대로 닫는다 — 목록이 칸에서 떨어져 보이는 것을 막는 원래 목적. */
+  window.addEventListener('scroll', function(e){
+    var t = e.target;
+    if (t && t.nodeType === 1 && (t === listbox || listbox.contains(t))) return;   // 목록 안 스크롤
+    if (Date.now() - openedAt < 800) return;
+    hideList();
+  }, true);
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') hideList(); });
 }
 
