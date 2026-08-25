@@ -779,12 +779,13 @@
      기준이 '직전 5분'이 아니라 **「혈당이 지난 30분 동안 얼마나 변했는가」**(설명서 원문):
        ≤30 안정적(→) · 31~60 서서히 증가/감소(↗↘) · 61~90 증가/감소 · ≥91 빠르게 증가/감소(↑↓) · 계산불가 = 알 수 없음(=)
      30분 전 값은 차트가 이미 받아 둔 시리즈(getBloodChartData)에서 찾는다 — 서버는 안 바꿨다.
-     화살표는 [2026-08-20]의 연속 기울임을 유지하되 근거만 30분 변화량으로: 1 mg/dL(30분) = 1° 라
-     설명서 구간(31~60 = 비스듬, 91 = 수직)과 각도가 저절로 맞는다. */
+     ★[2026-08-25 저녁 수정] **화살표는 여기서 만들지 않는다.** 30분 추세로 기울이면
+     바로 옆 숫자(직전 5분 · 예 -2)와 반대 방향을 가리켜 한 덩어리 안에서 어긋나 보였다
+     (실화면 지적: 165 → 163 인데 화살표는 ↗). 화살표는 옆 숫자와 같은 근거(5분)로
+     showBloodData 에서 그린다. 여기는 하단 '현재 혈당 변화' 상태·설명만 담당한다. */
   function applyTrend30(points){
       var stEl = document.getElementById('blood_status');
       var nmEl = document.getElementById('blood_name');
-      var arrowEl = document.getElementById('bloodArrow');
       if (!stEl || !nmEl) return;
 
       // 최신 측정점과, 그보다 30분 앞선 측정점(±10분 이내 근사 — 그 안에 없으면 계산 불가)
@@ -801,12 +802,11 @@
           }
       }
 
-      var status, name, color, deg = 0, glyph = '→';
+      var status, name, color;
       if (!latest || !past) {
           status = "알 수 없음";
           name   = "혈당값 변화의 속도와 방향을 계산할 수 없습니다";
           color  = '#6c757d';
-          glyph  = '=';
       } else {
           var delta = latest.value - past.value;
           var a = Math.abs(delta);
@@ -826,20 +826,11 @@
           }
           name += " (최근 30분 " + (delta > 0 ? '+' : '') + delta + " mg/dL)";
           color = a <= 30 ? '#2f9e63' : delta > 0 ? '#dc3545' : '#0d6efd';
-          deg = -Math.max(-90, Math.min(90, delta));   // 1 mg/dL(30분) = 1°, ±91 이상 = 수직
       }
 
       stEl.textContent = status;
       stEl.style.color = color;
       nmEl.textContent = name;
-      if (arrowEl) {
-          arrowEl.textContent = glyph;
-          arrowEl.style.display = 'inline-block';
-          arrowEl.style.transition = 'transform .35s ease';
-          arrowEl.style.transform = 'rotate(' + deg.toFixed(1) + 'deg)';
-          arrowEl.style.color = color;
-          arrowEl.title = status;
-      }
   }
 
   //날짜, 현재혈당, 5분전 혈당 등등 각종 가져오기
@@ -885,9 +876,31 @@
 		      	 		_diffEl.style.color = _dirColor;
 		      	 		_diffEl.style.fontWeight = '700';
 
-		      	 		/* ★[2026-08-25 요청] 상태·설명·화살표는 **기기 설명서의 「지난 30분」 기준표** 그대로 —
-		      	 		   판정에 30분 전 값이 필요해서 차트 시리즈를 받은 곳(applyTrend30)에서 계산한다.
-		      	 		   여기(#diff 숫자·색)는 종전 그대로 '직전 5분 차이' — 좌우 두 측정값의 차이와 같아야 해서. */
+		      	 		/* ★[2026-08-25 저녁 요청] 화살표 = **화면에 보이는 혈당수치가 움직인 대로** 그린다.
+		      	 		   ①「화살표 방향 수정」(↗ 인데 옆 숫자는 -2 였다) ②「직관적으로 · 사용자한테 설명해야 하는
+		      	 		   변수는 배제」 두 지적을 함께 반영한 결과 —
+		      	 		     · 근거는 **바로 옆 두 수치의 차이(point)** 하나뿐. 분당 변화율(mg/dL/분)·30분 추세처럼
+		      	 		       화면에 없는 값은 쓰지 않는다. **보고 있는 숫자가 곧 화살표**라 설명이 필요 없다.
+		      	 		     · 오르면 위(↗·↑) · 내리면 아래(↘·↓) · 그대로면 수평(→). 색은 숫자와 같은 _dirColor.
+		      	 		     · 기울기는 단계 없이 이어진다 : 0=수평 · ±ARROW_FULL 이상=수직. 이 상수 하나로 조절.
+		      	 		   ※하단 '현재 혈당 변화' 상태·설명문은 **설명서의 「지난 30분」 기준 그대로**(applyTrend30). */
+		      	 		const arrowEl = document.getElementById('bloodArrow');
+		      	 		if (arrowEl) {
+		      	 		    const ARROW_FULL = 10;                      // 직전 5분에 ±10 mg/dL 이면 수직
+		      	 		    let _r = _hasBoth ? (point / ARROW_FULL) : 0;
+		      	 		    if (_r > 1) _r = 1; else if (_r < -1) _r = -1;
+		      	 		    const _deg = -(_r * 90);                    // 0=수평(→) · -90=위(↑) · +90=아래(↓)
+		      	 		    arrowEl.textContent = _hasBoth ? '→' : '=';  // 계산 불가는 '=' (수평 화살표는 '안정적'으로 읽힌다)
+		      	 		    arrowEl.style.display = 'inline-block';      // transform 이 먹으려면 필요(기본 inline 이면 무시된다)
+		      	 		    arrowEl.style.transition = 'transform .35s ease';
+		      	 		    arrowEl.style.transform = 'rotate(' + _deg.toFixed(1) + 'deg)';
+		      	 		    arrowEl.style.color = _hasBoth ? _dirColor : '#6c757d';
+		      	 		    arrowEl.title = _hasBoth
+		      	 		        ? (point > 0 ? '5분 전보다 ' + point + ' 높아졌습니다'
+		      	 		         : point < 0 ? '5분 전보다 ' + Math.abs(point) + ' 낮아졌습니다'
+		      	 		         : '5분 전과 같습니다')
+		      	 		        : '직전 측정값이 없어 변화를 계산할 수 없습니다';
+		      	 		}
 
 	          }
 	  	)	  	

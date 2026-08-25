@@ -697,6 +697,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    ⚠글자 크기는 건드리지 않는다(.chat-intro 는 13.5px 로 줄이는데, 분석은 본문 크기를 유지해야 읽힌다).
    ※[2026-08-25] 답변(.chat-bot)도 100% 로 바뀌어 이 클래스는 사실상 같은 폭이다 — 표식으로 남겨 둔다. */
 .chat-wide { max-width:100% !important; align-self:stretch !important; }
+/* ★[2026-08-25 저녁 요청 「표시글자 폰트 크게 · AI 챗봇도 같이」] 말풍선 안 ※ 각주.
+   <small> 은 기본이 0.8em(본문 15px → 12px)이라 위 '적용 기준' 줄과 같은 이유로 안 읽혔다.
+   화면(생활습관 가이드)의 ※ 줄(14px)과 눈높이를 맞춘다. */
+.chat-bot small, .chat-user small, .chat-bot .wk-coach small { font-size:13.5px; line-height:1.55; }
 
 </style>
 
@@ -1022,10 +1026,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	      if(!isNaN(_age)) _who.push(_age + '세');
 	      if(_dm) _who.push(_dm);
 	      var _basis = "TIR " + _STD.tir + "% 이상 · TAR " + _STD.tar + "% 미만 · TBR " + _STD.tbr + "% 미만";
-	      var _whoTxt = "<div style='margin-top:6px; font-size:12px; color:#6b7889;'>※ "
+	      /* ★[2026-08-25 저녁 요청 「표시글자 폰트 크게 · AI 챗봇도 같이」]
+	         12px → 14px(본문 15px 바로 아래) + 줄간격·색을 함께 올려 읽히게 한다.
+	         ⚠이 문자열은 #wkCoach 안에 들어가고, **챗봇이 그 innerHTML 을 그대로 가져다 쓴다**
+	           (_chatIntroAnalysis · _chatStatusSummary) — 여기 한 곳만 고치면 챗봇 말풍선도 같이 커진다. */
+	      var _whoTxt = "<div style='margin-top:8px; font-size:14px; line-height:1.55; color:#5b6a7d;'>※ "
 	                  + (_who.length ? _who.join(' · ') + " — " : "")
 	                  + _STD.nm + " 적용 (" + _basis + ")"
-	                  + (_STD.note ? "<br>※ " + _STD.note : "")
+	                  /* ★[2026-08-25 저녁 요청 「표시부분 제거」] 두 번째 ※ 줄(_STD.note —
+	                     「나이를 고려해 저혈당을 더 엄격히, 고혈당은 조금 느슨하게 봅니다」)은 **띄우지 않는다.**
+	                     바로 윗줄이 이미 적용 기준 수치(TIR 50% 이상 · TAR 50% 미만 · TBR 1% 미만)를 밝혀 주므로
+	                     같은 말을 풀어 쓴 설명이 한 줄 더 붙는 셈이었다.
+	                     ⚠서버(CgmTarget.note)·`${stdNote}` 는 그대로 둔다 — 되살릴 때 이 줄만 되돌리면 된다. */
 	                  + "</div>";
 
 	      box.innerHTML = head + '<ul>' + tips.map(function(s){ return '<li>'+s+'</li>'; }).join('') + '</ul>' + _whoTxt;
