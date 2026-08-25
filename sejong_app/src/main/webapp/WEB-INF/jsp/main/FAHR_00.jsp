@@ -758,6 +758,73 @@
 	function getPastDate(baseDate, hours = 0, minutes = 0) {
 	    return new Date(baseDate.getTime() - (hours * 60 + minutes) * 60 * 1000);
 	}
+  /* ★[2026-08-25 요청] 혈당 변화 상태·설명·화살표 = **기기 설명서의 변화 속도 화살표 표** 그대로.
+     기준이 '직전 5분'이 아니라 **「혈당이 지난 30분 동안 얼마나 변했는가」**(설명서 원문):
+       ≤30 안정적(→) · 31~60 서서히 증가/감소(↗↘) · 61~90 증가/감소 · ≥91 빠르게 증가/감소(↑↓) · 계산불가 = 알 수 없음(=)
+     30분 전 값은 차트가 이미 받아 둔 시리즈(getBloodChartData)에서 찾는다 — 서버는 안 바꿨다.
+     화살표는 [2026-08-20]의 연속 기울임을 유지하되 근거만 30분 변화량으로: 1 mg/dL(30분) = 1° 라
+     설명서 구간(31~60 = 비스듬, 91 = 수직)과 각도가 저절로 맞는다. */
+  function applyTrend30(points){
+      var stEl = document.getElementById('blood_status');
+      var nmEl = document.getElementById('blood_name');
+      var arrowEl = document.getElementById('bloodArrow');
+      if (!stEl || !nmEl) return;
+
+      // 최신 측정점과, 그보다 30분 앞선 측정점(±10분 이내 근사 — 그 안에 없으면 계산 불가)
+      var latest = null, i;
+      for (i = 0; i < points.length; i++)
+          if (points[i] && !isNaN(points[i].time) && !isNaN(points[i].value) && (!latest || points[i].time > latest.time)) latest = points[i];
+      var past = null;
+      if (latest) {
+          var target = latest.time.getTime() - 30 * 60 * 1000, best = 10 * 60 * 1000 + 1;
+          for (i = 0; i < points.length; i++) {
+              var p = points[i]; if (!p || isNaN(p.time) || isNaN(p.value)) continue;
+              var d = Math.abs(p.time.getTime() - target);
+              if (d < best) { best = d; past = p; }
+          }
+      }
+
+      var status, name, color, deg = 0, glyph = '→';
+      if (!latest || !past) {
+          status = "알 수 없음";
+          name   = "혈당값 변화의 속도와 방향을 계산할 수 없습니다";
+          color  = '#6c757d';
+          glyph  = '=';
+      } else {
+          var delta = latest.value - past.value;
+          var a = Math.abs(delta);
+          var dirTxt = delta >= 0 ? '증가' : '감소';
+          if (a <= 30) {
+              status = "안정적";
+              name   = "혈당이 지난 30분 동안 30 mg/dL 이하로 증가 또는 감소하고 있습니다";
+          } else if (a <= 60) {
+              status = "서서히 " + dirTxt;
+              name   = "혈당이 지난 30분 동안 31~60 mg/dL " + dirTxt + "하고 있습니다";
+          } else if (a <= 90) {
+              status = dirTxt;
+              name   = "혈당이 지난 30분 동안 61~90 mg/dL " + dirTxt + "하고 있습니다";
+          } else {
+              status = "빠르게 " + dirTxt;
+              name   = "혈당이 지난 30분 동안 91 mg/dL 이상 " + dirTxt + "하고 있습니다";
+          }
+          name += " (최근 30분 " + (delta > 0 ? '+' : '') + delta + " mg/dL)";
+          color = a <= 30 ? '#2f9e63' : delta > 0 ? '#dc3545' : '#0d6efd';
+          deg = -Math.max(-90, Math.min(90, delta));   // 1 mg/dL(30분) = 1°, ±91 이상 = 수직
+      }
+
+      stEl.textContent = status;
+      stEl.style.color = color;
+      nmEl.textContent = name;
+      if (arrowEl) {
+          arrowEl.textContent = glyph;
+          arrowEl.style.display = 'inline-block';
+          arrowEl.style.transition = 'transform .35s ease';
+          arrowEl.style.transform = 'rotate(' + deg.toFixed(1) + 'deg)';
+          arrowEl.style.color = color;
+          arrowEl.title = status;
+      }
+  }
+
   //날짜, 현재혈당, 5분전 혈당 등등 각종 가져오기
   function showBloodData(endDate, startDate){
 	  console.log(userId);
@@ -801,69 +868,9 @@
 		      	 		_diffEl.style.color = _dirColor;
 		      	 		_diffEl.style.fontWeight = '700';
 
-		      	 		/* ★[2026-08-20 요청 「증감 화살표를 좀더 세분화 — 지금은 단계적 단순함」]
-		      	 		   종전 : 글자 화살표 7개(↑↑ ↑ ↗ → ↘ ↓ ↓↓) 중 하나를 골라 끼웠다.
-		      	 		          +4 도 +2 와 똑같은 ↗ 라 변화 크기가 화살표에 안 담겼다(뚝뚝 끊김).
-		      	 		   이제 : **화살표 하나를 변화율만큼 기울인다(연속).** 단계가 없으니 +2 와 +4 가 다르게 보인다.
-		      	 		     · 기울기 기준 = 변화율(mg/dL/분) — 국제 CGM 표기 관례가 쓰는 단위다.
-		      	 		       ±3 mg/dL/분(= 5분당 ±15)에서 수직(↑·↓), 0 이면 수평(→), 그 사이는 비례해서 이어진다.
-		      	 		     · 각도만 바뀌고 **숫자(#diff)는 종전 그대로 '직전 5분 차이'** — 좌우에 보이는
-		      	 		       두 측정값의 차이와 반드시 같아야 해서 계산 근거를 바꾸지 않았다.
-		      	 		     · 말글(상태·설명)은 익숙한 7단계 표현을 유지하되 분당 변화율을 함께 적는다.
-		      	 		       경계값(±2/±5/±10 per 5분 = ±0.4/±1/±2 per 분)은 종전과 동일 — 판정이 달라지지 않는다. */
-		      	 		const _rate = _hasBoth ? (point / 5) : 0;      // mg/dL/분 (측정 간격 5분)
-		      	 		const _rAbs = Math.abs(_rate);
-
-		      	 		let blood_status = "";
-		      	 		let blood_name   = "";
-
-		      	 		const _rateTxt = (_rate > 0 ? '+' : _rate < 0 ? '-' : '') + _rAbs.toFixed(1) + ' mg/dL/분';
-		      	 		const _tail    = ' (분당 ' + _rateTxt + ' · 최근 5분 ' + (point > 0 ? '+' : '') + point + ' mg/dL)';
-
-		      	 		if (!_hasBoth) {
-		      	 		    blood_status = "알수없음";
-		      	 		    blood_name   = "혈당값 변화의 속도와 방향을 계산할 수 없습니다";
-		      	 		} else if (_rate >= 2) {
-		      	 		    blood_status = "빠르게 증가";
-		      	 		    blood_name   = "혈당이 빠르게 증가하고 있습니다" + _tail;
-		      	 		} else if (_rate >= 1) {
-		      	 		    blood_status = "증가";
-		      	 		    blood_name   = "혈당이 증가하고 있습니다" + _tail;
-		      	 		} else if (_rate >= 0.4) {
-		      	 		    blood_status = "서서히 증가";
-		      	 		    blood_name   = "혈당이 서서히 증가하고 있습니다" + _tail;
-		      	 		} else if (_rate > -0.4) {
-		      	 		    blood_status = "안정적";
-		      	 		    blood_name   = "혈당이 직전 측정과 거의 같은 수준으로 안정적입니다" + _tail;
-		      	 		} else if (_rate > -1) {
-		      	 		    blood_status = "서서히 감소";
-		      	 		    blood_name   = "혈당이 서서히 감소하고 있습니다" + _tail;
-		      	 		} else if (_rate > -2) {
-		      	 		    blood_status = "감소";
-		      	 		    blood_name   = "혈당이 감소하고 있습니다" + _tail;
-		      	 		} else {
-		      	 		    blood_status = "빠르게 감소";
-		      	 		    blood_name   = "혈당이 빠르게 감소하고 있습니다" + _tail;
-		      	 		}
-
-		      	 		document.getElementById('blood_status').textContent = blood_status;
-		      	 		document.getElementById('blood_name').textContent   = blood_name;
-
-		      	 		// [2026-08-16] 글자 화살표 — 숫자와 동일한 색(_dirColor) 적용
-		      	 		const arrowEl = document.getElementById('bloodArrow');
-		      	 	    if (!arrowEl) return; // 엘리먼트가 없다면 조용히 종료
-		      	 	    // 각도 : 0=수평(→) · -90=수직 상승(↑) · +90=수직 하강(↓).
-		      	 	    // ★[2026-08-20 요청] 수직이 되는 기준을 3 → **2 mg/dL/분**(= 5분당 10)으로 낮췄다 —
-		      	 	    //   3 은 좀처럼 안 닿아 화살표가 늘 눕는 편이었다. 여기 숫자 하나만 고치면 기울기가 조절된다.
-		      	 	    const _RATE_FULL = 2;
-		      	 	    let _r = _rate / _RATE_FULL; if (_r > 1) _r = 1; else if (_r < -1) _r = -1;
-		      	 	    const _deg = -(_r * 90);
-		      	 	    arrowEl.textContent = '→';                       // 글자는 하나만 쓰고 기울여서 방향·속도를 낸다
-		      	 	    arrowEl.style.display = 'inline-block';           // transform 이 먹으려면 필요(기본 inline 이면 무시된다)
-		      	 	    arrowEl.style.transition = 'transform .35s ease'; // 값이 갱신될 때 부드럽게 돌아간다
-		      	 	    arrowEl.style.transform = 'rotate(' + _deg.toFixed(1) + 'deg)';
-		      	 	    arrowEl.style.color = _dirColor;
-		      	 	    arrowEl.title = blood_status + (_hasBoth ? (' · ' + _rateTxt) : '');
+		      	 		/* ★[2026-08-25 요청] 상태·설명·화살표는 **기기 설명서의 「지난 30분」 기준표** 그대로 —
+		      	 		   판정에 30분 전 값이 필요해서 차트 시리즈를 받은 곳(applyTrend30)에서 계산한다.
+		      	 		   여기(#diff 숫자·색)는 종전 그대로 '직전 5분 차이' — 좌우 두 측정값의 차이와 같아야 해서. */
 
 	          }
 	  	)	  	
@@ -1011,6 +1018,7 @@
 	            };
 	        }) : [];
 	        _fillPage2Stats(dataPoints);   // [2026-07-31] 2페이지 상세 지표(TIR·TAR·TBR·GMI·CV) — 차트와 동일 데이터
+	        applyTrend30(dataPoints);      // [2026-08-25] 변화 상태·설명·화살표 — 설명서의 「지난 30분」 기준표로 판정
 	        
 	        var foodIndex = 0;
 	        var foodList = [];

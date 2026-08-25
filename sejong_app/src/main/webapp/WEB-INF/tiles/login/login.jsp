@@ -11,7 +11,8 @@
 	response.setDateHeader("Expires", 0);
 %>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<%-- [2026-08-25] viewport-fit=cover — 하단 안전영역(env) 활성화(main.jsp 와 동일) --%>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <tiles:insertAttribute name="header" />
 <%@ include file="/WEB-INF/inc/pwa-head.jsp" %>
 </head>

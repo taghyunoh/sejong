@@ -4,9 +4,12 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 <style>
 /* [슬라이드 메뉴 상단 로그아웃 버튼] 닫기(X) 왼쪽에 배치 (기존 .menuWrap .logout 스타일 재사용, 위치만 조정) */
+/* ★[2026-08-25 요청] 조금 크게(2.96→3.7vw) + 좌측으로 조금 이동(right 15→19vw) — 닫기(X)와 간격도 더 벌어진다 */
 .menuWrap .user .logout{
-  right: calc(15 * var(--vwu, 1vw)); /* 닫기(X)와 간격 확보 위해 좌측으로 이동 */
-  top: calc(2.2 * var(--vwu, 1vw));
+  right: calc(19 * var(--vwu, 1vw)); /* 닫기(X)와 간격 확보 위해 좌측으로 이동 */
+  top: calc(1.6 * var(--vwu, 1vw));  /* 커진 만큼 살짝 올려 세로 가운데 유지 */
+  font-size: calc(3.7 * var(--vwu, 1vw));
+  padding: calc(0.9 * var(--vwu, 1vw)) calc(3.2 * var(--vwu, 1vw));
   z-index: 2;
   cursor: pointer;
   text-decoration: none;
