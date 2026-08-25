@@ -126,9 +126,10 @@
            평균 3종은 위 패널에 이미 있으므로 여기서는 반복하지 않는다(중복 제거 요청). --%>
       <section class="p2list">
         <div class="p2item"><p class="lb">GMI지수(%) <span class="hint">혈당 관리지표(참고사항)</span></p><div class="v" id="p2gmi">-</div></div>
-        <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p><div class="v" id="p2tir">-</div></div>
-        <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p><div class="v" id="p2tar">-</div></div>
-        <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p><div class="v" id="p2tbr">-</div></div>
+        <%-- [2026-08-25] 권장 수치는 **나이·당뇨 유형에 따라 달라진다**(서버 CgmTarget → 아래 _P2STD 가 채운다) --%>
+        <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint" id="p2hintTir">권장 : 70% 이상</span></p><div class="v" id="p2tir">-</div></div>
+        <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint" id="p2hintTar">권장 : 25% 미만</span></p><div class="v" id="p2tar">-</div></div>
+        <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint" id="p2hintTbr">권장 : 4% 미만</span></p><div class="v" id="p2tbr">-</div></div>
         <div class="p2item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p><div class="v" id="p2cv">-</div></div>
       </section>
       <%-- 기존 GMI지수·TIR 큰 패널 — 위 목록과 중복이라 숨김(#gmi/#tir 은 기존 스크립트가 채우므로 요소는 유지) --%>
@@ -231,10 +232,26 @@
   // [2026-08-05] 화면 2페이지 전환 폐기(한 화면 통합) — 외부에서 호출되던 흔적 대비 no-op 로만 남긴다.
   function bloodPage(){ window.scrollTo(0,0); }
   // [2026-07-31 상세 기획] 상세 지표 — 차트에 그린 것과 같은 데이터(dataPoints)로 계산.
-  //   TIR=70~180 비율(권장 70% 이상) / TAR=180 초과(권장 25% 미만) / TBR=70 미만(권장 4% 미만)
+  //   TIR=70~180 비율 / TAR=180 초과 / TBR=70 미만  ★권장 %는 나이·유형별로 다르다(_P2STD, 2026-08-25)
   //   CV=표준편차÷평균×100(권장 36% 이하) / GMI=3.31+0.02392×평균(참고치 — 색 조건 없음)
   //   ★값 색: 목표 안=초록(#2e7d32) / 벗어남=황토(#e67e22) — 메인 화면 혈당상태 색과 동일 규칙
   var P2_OK='#2e7d32', P2_WARN='#e67e22', P2_PLAIN='#2d303f';
+  /* ★[2026-08-25 요청 — 의사 협의] 권장 수치는 **나이·당뇨 유형마다 다르다.**
+     기준은 서버(CgmTarget) 한 곳에서 정하고 여기서는 받아 쓰기만 한다 —
+     홈·AI 종합분석·이 화면이 각자 계산하면 같은 사람에게 서로 다른 판정이 나온다.
+     EL 이 비어 있으면(옛 화면) 70/25/4 로 떨어져 종전과 똑같이 동작한다. */
+  var _P2STD = { nm:'${stdName}',
+                 tir:parseInt('${stdTir}',10), tar:parseInt('${stdTar}',10), tbr:parseInt('${stdTbr}',10),
+                 note:'${stdNote}' };
+  if(isNaN(_P2STD.tir)) _P2STD.tir = 70;
+  if(isNaN(_P2STD.tar)) _P2STD.tar = 25;
+  if(isNaN(_P2STD.tbr)) _P2STD.tbr = 4;
+  (function(){   // 권장 힌트를 그 기준으로 — 화면 숫자와 색 판정이 어긋나지 않게
+    var h;
+    if((h=document.getElementById('p2hintTir'))) h.textContent = '권장 : ' + _P2STD.tir + '% 이상';
+    if((h=document.getElementById('p2hintTar'))) h.textContent = '권장 : ' + _P2STD.tar + '% 미만';
+    if((h=document.getElementById('p2hintTbr'))) h.textContent = '권장 : ' + _P2STD.tbr + '% 미만';
+  })();
   function _fillPage2Stats(points){
     function put(id,txt,col){ var e=document.getElementById(id); if(e){ e.textContent=txt; e.style.color=col||P2_PLAIN; } }
     var vals=(points||[]).map(function(p){ return +p.value; }).filter(function(v){ return !isNaN(v) && v>0; });
@@ -246,9 +263,9 @@
     var mean=vals.reduce(function(a,b){ return a+b; },0)/n;
     var sd=Math.sqrt(vals.reduce(function(a,b){ return a+(b-mean)*(b-mean); },0)/n);
     var cv=Math.round(sd*100/mean);
-    put('p2tir', tir+' %', (tir>=70)?P2_OK:P2_WARN);
-    put('p2tar', tar+' %', (tar<25)?P2_OK:P2_WARN);
-    put('p2tbr', tbr+' %', (tbr<4)?P2_OK:P2_WARN);
+    put('p2tir', tir+' %', (tir>=_P2STD.tir)?P2_OK:P2_WARN);
+    put('p2tar', tar+' %', (tar<_P2STD.tar)?P2_OK:P2_WARN);
+    put('p2tbr', tbr+' %', (tbr<_P2STD.tbr)?P2_OK:P2_WARN);
     put('p2cv',  cv +' %', (cv<=36)?P2_OK:P2_WARN);
     /* ★[2026-08-18 요청] GMI 에도 단위 **%** — 바로 위 TIR·TAR·TBR·CV 가 전부 `%` 라 이것만 맨숫자였다.
        ★색은 종전대로 검정(참고치라 좋고 나쁨을 칠하지 않는다). */

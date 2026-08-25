@@ -97,6 +97,9 @@ public class BloodController {
 	@RequestMapping("/goBloodPage.do")
 	public String goSamplePage(HttpSession session,Model model) {
 		model.addAttribute("menuName","연속혈당 측정");
+		/* ★[2026-08-25 요청] 이 화면의 지표 권장 수치도 **나이·당뇨 유형에 따라** 달라진다.
+		   홈·AI 종합분석과 같은 CgmTarget 을 쓴다 — 세 화면이 같은 잣대를 봐야 판정이 갈리지 않는다. */
+		egovframework.sejong.util.CgmTarget.addToModel(model, (UserDTO) session.getAttribute("user"));
 		return ".main/FAHR_00";
 	}
 	
@@ -1052,8 +1055,8 @@ public class BloodController {
 	 * ★[2026-08-25 요청] 챗봇 프롬프트에 붙일 **사용자 프로필** — 나이(생년월일)와 당뇨 유형.
 	 *   · 원천 = 세션의 T_USER_TRAN 값(의료정보변경 팝업에서 입력). 화면이 보내는 값이 아니라 서버가 직접 읽는다.
 	 *   · 둘 다 없으면 빈 문자열 → 프롬프트가 종전과 완전히 같아진다(있을 때만 조언이 달라진다).
-	 *   · 유형별 주의점을 함께 일러 준다 — 1형은 인슐린, 임신성은 산과 상담처럼 방향이 크게 다르다.
-	 *   ⚠생년월일 자체는 넣지 않고 **나이만** 넣는다(프롬프트에 들어가는 개인정보를 최소로).
+	 *   · [2026-08-25] 유형별 **말글 조언은 넣지 않는다** — 나이·유형은 **적용 목표 수치**로만 반영한다.
+	 *   ⚠나이·생년월일 자체를 넣지 않는다 — 목표 수치만 넘기면 되므로 개인정보가 프롬프트에 안 나간다.
 	 */
 	private String userProfileForPrompt(HttpSession session) {
 		try {
@@ -1064,22 +1067,15 @@ public class BloodController {
 			String  type = egovframework.sejong.util.CgmTarget.typeName(u.getBlodGb());
 			if (age == null && type.isEmpty()) return "";
 
-			StringBuilder who = new StringBuilder("사용자 정보 — ");
-			if (age != null)      who.append("나이 ").append(age).append("세");
-			if (age != null && !type.isEmpty()) who.append(", ");
-			if (!type.isEmpty())  who.append("당뇨 유형 ").append(type);
-			who.append(". 이 나이와 유형에 맞게 조언의 초점을 맞춰. ");
-
-			/* ★[2026-08-25 요청] **단정적인 말투를 쓰지 않게** 한다 — 이 앱은 진단을 하는 곳이 아니다.
-			   「당뇨병이 아니다」처럼 상태를 단정하면 사용자가 진단으로 받아들인다. 여지를 남긴 표현을 지시한다. */
+			/* ★[2026-08-25 요청] 나이·유형에 따른 **말글 조언은 넣지 않는다**(「1형은 인슐린…」 같은 문장 제거).
+			   나이·유형은 **판정 수치**로만 반영한다 — 그 사람에게 적용되는 목표치를 알려 주어
+			   AI 가 엉뚱한 기준(누구에게나 TIR 70%)으로 말하지 않게 한다. */
+			egovframework.sejong.util.CgmTarget t = egovframework.sejong.util.CgmTarget.of(age, type);
+			StringBuilder who = new StringBuilder("이 사용자에게 적용되는 관리 목표는 ");
+			who.append("TIR ").append(t.tir).append("% 이상, TAR ").append(t.tar).append("% 미만, TBR ").append(t.tbr).append("% 미만")
+			   .append(" (").append(t.name).append(") 이야. 이 목표를 기준으로 말해. ");
+			/* ★단정적인 말투를 쓰지 않게 — 이 앱은 진단을 하는 곳이 아니다. */
 			who.append("상태를 단정하지 말고 '~일 수 있어요', '~ 편이 좋습니다' 처럼 부드럽게 말해. ");
-			if (!type.isEmpty()) {
-				if (type.startsWith("1형"))       who.append("1형은 인슐린이 중요하니 용량 조절은 담당 의사와 상의하도록 권해. ");
-				else if (type.startsWith("2형"))  who.append("2형은 식사량·체중·규칙적인 운동이 도움이 된다는 쪽으로 안내해. ");
-				else if (type.startsWith("당뇨병 전단계")) who.append("전단계로 입력해 둔 사용자야. 진단하듯 단정하지 말고, 지금의 생활습관을 이어가면 도움이 될 수 있다는 쪽으로 알려 줘. ");
-				else if (type.startsWith("임신성")) who.append("임신성은 태아 안전이 우선이니 식단·약은 산부인과와 함께 정하도록 권해. ");
-			}
-			if (age != null && age >= 65) who.append("나이를 고려해 저혈당에 주의가 필요하니 무리한 절식·공복 운동은 피하는 편이 좋다고 짚어 줘. ");
 			return who.toString();
 		} catch (Exception e) {
 			log.warn("userProfileForPrompt 실패(무시하고 진행): {}", e.getMessage());
