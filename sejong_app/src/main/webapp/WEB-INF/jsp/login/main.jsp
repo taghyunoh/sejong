@@ -30,15 +30,34 @@
 /* 의료정보변경 팝업 취소 버튼 색·간격은 common.css 에 있다(팝업이 top.jsp·userSetting.jsp 에도 복제돼 있어 공통 처리) */
 
 /* [메인 개편 2026-07-31 — 기획 이미지] 4카드 대신 혈당상태 카드 + AI 메뉴.
-   색은 통일성: 앱 파랑(#218ecb) / 정상=초록 / 관리 필요=주황. 기존 4카드는 삭제 아닌 숨김(원복 대비, #oldMainCards) */
+   색은 통일성: 앱 파랑(#218ecb) / 양호=초록 / 주의=노랑(2026-08-25). 기존 4카드는 삭제 아닌 숨김(원복 대비, #oldMainCards) */
 .mainState{ background:#fff; border:1px solid #dfe6f0; border-radius:calc(2.8 * var(--vwu,1vw));
   padding:calc(4.2 * var(--vwu,1vw)) calc(4.2 * var(--vwu,1vw)) calc(3 * var(--vwu,1vw));
   margin-top:calc(4 * var(--vwu,1vw)); box-shadow:0 2px 8px rgba(18,38,99,.08); }
-/* [2026-08-05 검토회의] 홈 혈당상태 카드 글씨 키움(상태 문장·기준 안내 모두) */
-.mainState .stateText{ font-size:calc(5 * var(--vwu,1vw)); color:#2d303f; font-weight:500; line-height:1.4; }
+/* ★[2026-08-25 요청] 홈 「현재혈당」 — 파란 배경 위라 흰 글자. 연속혈당 화면의 최신 수치와 같은 값이다. */
+/* [2026-08-25] 위치 — **조금 위로**(일러스트 아래 여백을 파고들게 음수 margin) ·
+   **오른쪽은 일러스트 다리까지**(max-width 83% = 그림 다리 언저리에서 끝난다).
+   일러스트는 .recently 의 배경(x 201~367)이라 글자와 겹쳐도 레이아웃이 밀리지 않는다. */
+.nowBlood{ display:flex; align-items:baseline; flex-wrap:wrap;
+  gap:0 calc(2 * var(--vwu,1vw));
+  margin:calc(-8.5 * var(--vwu,1vw)) 0 calc(1 * var(--vwu,1vw)); max-width:83%; color:#fff; }
+/* [2026-08-25] 「현재혈당」은 **윗줄에 혼자**, 수치·단위·시각은 **아랫줄에 나란히**(사용자 요청).
+   flex-basis 100% 로 라벨이 한 줄을 다 차지하게 해 뒤 항목이 다음 줄로 넘어간다. */
+/* [2026-08-25] 라벨은 **진하지 않게**(700 → 500) — 아래 수치가 주인공이라 라벨이 앞서 보이지 않게 */
+.nowBlood .nbLabel{ flex:0 0 100%; font-size:calc(4.2 * var(--vwu,1vw)); font-weight:500;
+  margin-bottom:calc(0.4 * var(--vwu,1vw)); }
+.nowBlood .nbVal{ font-size:calc(9.5 * var(--vwu,1vw)); font-weight:800; line-height:1.15; }
+.nowBlood .nbUnit{ font-size:calc(3.4 * var(--vwu,1vw)); opacity:.9; }
+.nowBlood .nbTime{ font-size:calc(3.8 * var(--vwu,1vw)); opacity:.9; }
+/* [2026-08-05 검토회의] 홈 혈당상태 카드 글씨 키움(상태 문장·기준 안내 모두)
+   [2026-08-25] 5 → 4.6vw : 「최근 24시간 혈당지표는 '양호' 입니다」 가 **한 줄**에 들어가게(끝의 '다' 만 넘어가 두 줄이었다).
+     실측(폭 375) — 카드 안쪽 280px / 이 문장 267px 로 여유 있게 들어간다. 8% 만 줄여 읽기 쉬움은 그대로. */
+.mainState .stateText{ font-size:calc(4.6 * var(--vwu,1vw)); color:#2d303f; font-weight:500; line-height:1.4; }
 .mainState .stateText em{ font-style:normal; font-weight:800; }
-.mainState .stateText em.st-good{ color:#2e7d32; }   /* 정상 */
-.mainState .stateText em.st-warn{ color:#e67e22; }   /* 관리 필요 */
+.mainState .stateText em.st-good{ color:#2e7d32; }   /* 양호 — 기존 초록 그대로 (2026-08-25 '정상'→'양호') */
+/* 주의 = 노란색 (2026-08-25 요청, 종전 주황 #e67e22).
+   흰 바탕에 노랑은 흐려 보여 **진한 노랑(골드)** 으로 — 큰 굵은 글자 기준 대비 3:1 을 넘겨 어르신도 읽힌다. */
+.mainState .stateText em.st-warn{ color:#b8860b; }   /* 주의 */
 .mainState .stateText em.st-none{ color:#8a98a8; }   /* 측정값 없음/확인 중 */
 .mainState .tirTxt{ display:block; margin-top:calc(1.6 * var(--vwu,1vw)); font-size:calc(3.8 * var(--vwu,1vw));
   line-height:1.45; color:#6b7889; word-break:keep-all; }
@@ -131,12 +150,21 @@
          혈당관리, 식사관리, 운동관리를 통한 일상속 건강관리를 해보세요.
        </p>
      </div>
-     <%-- [메인 개편 2026-07-31 — 기획 이미지] 현재 혈당상태(TIR 기준) + AI 메뉴.
-          · 상태 판정 = 오늘 혈당의 TIR(70~180mg/dL 범위 내 비율): 70% 이상 '정상' / 미만 '관리 필요' / 데이터 없으면 측정값 없음
+     <%-- ★[2026-08-25 요청] 홈에도 **현재혈당**(연속혈당 화면 오른쪽의 최신 측정값)을 보여 준다.
+          값·시각은 todayBlod() 가 이미 받아오는 getTodayBlood.do 의 첫 줄 — 조회를 더 하지 않는다. --%>
+     <div class="nowBlood" id="nowBloodBox">
+       <span class="nbLabel">현재혈당</span>
+       <b class="nbVal" id="homeBloodVal">-</b>
+       <span class="nbUnit">mg/dL</span>
+       <span class="nbTime" id="homeBloodTime"></span>
+     </div>
+     <%-- [메인 개편 2026-07-31 — 기획 이미지] 최근 24시간 혈당지표(TIR 기준) + AI 메뉴.
+          · 상태 판정 = 최근 24시간 TIR(70~180mg/dL 범위 내 비율): 70% 이상 '양호' / 미만 '주의' / 데이터 없으면 측정값 없음
+            (2026-08-25 요청으로 '정상/관리 필요' → '양호/주의', 문구도 「최근 24시간 혈당지표는 …」 로)
           · [혈당 지표 확인] = 기존 연속혈당 화면(goBloodPage.do)
           · AI 종합분석(주간)·AI 챗봇 = 추후 연결(일단 자리만 — 준비 중 안내) --%>
      <div class="mainState">
-       <p class="stateText">현재 혈당상태는 <em id="bloodState" class="st-none">확인 중</em> 입니다</p>
+       <p class="stateText">최근 24시간 혈당지표는 <em id="bloodState" class="st-none">확인 중</em> 입니다</p>
        <span class="tirTxt" id="bloodTir"></span>
        <a href="<c:url value='/goBloodPage.do'/>" class="stateLink">혈당 지표 확인 &nbsp;&gt;&gt;</a>
      </div>
@@ -289,6 +317,21 @@
             </dd>
           </dl>
 
+          <%-- ★[2026-08-25 요청] 생년월일·나이 — AI 챗봇이 나이와 당뇨 유형에 맞춰 답하도록 쓴다.
+               생년월일은 가입 때 이미 받은 값(T_USER_TRAN.BIRTH)이라 여기서는 확인·수정만 한다.
+               나이는 저장하지 않는다 — 해가 바뀌면 틀리므로 생년월일에서 그때그때 계산한다. --%>
+          <dl class="formList">
+            <dt><span>생년월일</span></dt>
+            <dd>
+              <div class="inputWrap">
+                <input type="text" class="inpText" id="birthYmd" value="" maxlength="8" inputmode="numeric"
+                       placeholder="8자리 예) 19631126"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,''); _showAge();">
+                <span class="add_inf" id="ageTxt"></span>
+              </div>
+            </dd>
+          </dl>
+
           <dl class="formList">
             <dt><span class="vital">당뇨 유형</span></dt>
             <dd>
@@ -419,6 +462,19 @@ $(document).ready(function() {
 	todayExecs();
 	todayFood();
 });
+/* ★[2026-08-25] 생년월일 8자리 → 만 나이. 형식이 안 맞으면 null(라벨을 비운다). */
+function _calcAge(ymd){
+	if(!/^\d{8}$/.test(ymd || "")) return null;
+	var y = +ymd.substr(0,4), m = +ymd.substr(4,2), d = +ymd.substr(6,2);
+	if(m < 1 || m > 12 || d < 1 || d > 31) return null;
+	var t = new Date(), age = t.getFullYear() - y;
+	if((t.getMonth()+1) < m || ((t.getMonth()+1) === m && t.getDate() < d)) age--;
+	return (age >= 0 && age < 130) ? age : null;
+}
+function _showAge(){
+	var a = _calcAge($("#birthYmd").val().trim());
+	$("#ageTxt").text(a == null ? "" : a + "세");
+}
 function getUserInfo(){
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/getUserInfo.do","POST",'',function(response){
 		console.log(response.Data);
@@ -426,6 +482,8 @@ function getUserInfo(){
 		_userPhone = user.phone; // 로그아웃 시 자동로그인 해제에 사용
 		$("#height").val(user.height);
 		$("#weight").val(user.weight);
+		$("#birthYmd").val(user.birth || "");   // [2026-08-25] 생년월일 — 나이는 아래에서 계산해 보여 준다
+		_showAge();
 		$('input:radio[name=rdo_sugar]:input[value='+user.blodGb+']').attr("checked", true);
 	});
 }
@@ -446,6 +504,15 @@ function updateUserInfo(){
 	const data = {};
 	data.height = $("#height").val();
 	data.weight = $("#weight").val();
+	/* [2026-08-25] 생년월일 — 비워 두면 보내지 않는다(서버가 기존 값을 그대로 둔다).
+	   적었는데 8자리가 아니면 잘못 저장되지 않도록 여기서 막는다. */
+	const _b = $("#birthYmd").val().trim();
+	if(_b !== "" && _calcAge(_b) == null){
+		alert("생년월일을 8자리로 정확히 입력해 주세요. 예) 19631126");
+		$("#birthYmd").focus();
+		return;
+	}
+	data.birth = _b;
 	data.blodGb = $('input[name=rdo_sugar]:checked').val();
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/updateUserInfo.do","POST",data,function(response){
 		console.log(response.Data);
@@ -525,7 +592,11 @@ function refreshToken(){
 	)
 }
 /* [메인 개편 2026-07-31] 오늘 혈당의 TIR(70~180mg/dL 범위 내 비율)로 상태 표시.
-   기준: TIR 70% 이상 = '정상'(초록) / 미만 = '관리 필요'(주황) / 유효 측정값 없음 = 회색 안내.
+   기준: TIR 이 목표치 이상 = '양호'(초록) / 미만 = '주의'(노랑) / 유효 측정값 없음 = 회색 안내.
+   ★목표치는 나이·당뇨 유형에 따라 다르다(일반 70% / 65세 이상 50%) — 서버 CgmTarget 이 정해 내려 준다.
+   [2026-08-25] 그 값을 담는 상수. EL 이 비어 있으면(옛 화면) 70 으로 떨어져 종전과 같이 동작한다. */
+var _STD_TIR = parseInt('${stdTir}', 10); if (isNaN(_STD_TIR)) _STD_TIR = 70;
+/*
    원천 = todayBlod() 가 이미 받아오는 getTodayBlood.do(오늘 측정 목록) — 추가 조회 없음. */
 /* [2026-07-31] 같은 내용이면 DOM 을 건드리지 않는다 — todayBlod() 가 진입 시 1회,
    외부 CGM 재수집(getBloodData) 성공 후 1회 더 불려 글자가 두 번 바뀌며 깜빡였다. */
@@ -576,7 +647,11 @@ function _dayTir(uid, endDt, cb){
         });
 }
 function _paintBloodState(tir, tirTxt){
-    _setStable('#bloodState', (tir>=70) ? "'정상'" : "'관리 필요'", (tir>=70) ? 'st-good' : 'st-warn');
+    /* [2026-08-25 요청] '정상' → '양호'(기존 초록) · '관리 필요' → '주의'(노란색).
+       ★판정 기준(TIR)은 **나이·당뇨 유형에 따라 다르다**(의사 협의) — 서버(CgmTarget)가 내려 준 값을 쓴다.
+         AI 종합분석 화면과 **같은 기준**이라 홈과 상세의 판정이 어긋나지 않는다. */
+    var _ok = tir >= _STD_TIR;
+    _setStable('#bloodState', _ok ? "'양호'" : "'주의'", _ok ? 'st-good' : 'st-warn');
     _setStable('#bloodTir', tirTxt);
 }
 function updateBloodState(data){
@@ -591,7 +666,9 @@ function updateBloodState(data){
     // [2026-07-31 깜빡임 개선] 조회 전에는 초기 '확인 중'을 유지하고, 결과가 나온 뒤 한 번만 반영한다.
     _dayTir(uid, new Date(), function(tir){
         if(tir != null){   // Case1 — 최근 24시간에 측정값 있음
-            _paintBloodState(tir, "최근 24시간 동안 발생한 혈당지표 상태입니다.");
+            /* [2026-08-25] 밑줄 안내는 비운다 — 윗줄이 이미 「최근 24시간 혈당지표는 …」 이라 같은 말이 두 번 나왔다.
+               (측정값이 없을 때(Case2)의 안내는 알려 줄 내용이 달라 그대로 둔다) */
+            _paintBloodState(tir, "");
             return;
         }
         // Case2 — 최근 24시간에 측정값 없음 → 마지막 측정 시각 기준 24시간으로 대체 표시
@@ -620,6 +697,17 @@ function updateBloodState(data){
         });
     });
 }
+/* ★[2026-08-25 요청] 홈 「현재혈당」 채우기 — 값이 없거나 0 이면 줄째로 숨긴다
+   (0 은 센서 미착용·미연동일 때 들어오는 값이라, 그대로 두면 '현재혈당 0' 으로 잘못 읽힌다.
+    그 경우의 안내는 아래 _setCgmNotice 가 따로 띄운다). */
+function _setHomeBlood(val, tm){
+    var $box = $("#nowBloodBox"); if(!$box.length) return;
+    var v = parseInt(val, 10);
+    if(!v || isNaN(v)){ $box.hide(); return; }
+    $("#homeBloodVal").text(v);
+    $("#homeBloodTime").text(tm || "");
+    $box.show();
+}
 function todayBlod() {
     CommonUtil.callAjax(CommonUtil.getContextPath() + "/getTodayBlood.do", "POST", '', function(response) {
         console.log(response);
@@ -629,6 +717,7 @@ function todayBlod() {
         if (data && data.length > 0) {
             $("#formatedDate").text(data[0].formatedDate);
             $("#nowVal").text(data[0].UPT_VALUE);
+            _setHomeBlood(data[0].UPT_VALUE, data[0].formatedDate);   // [2026-08-25] 홈 「현재혈당」
 
             if (data.length > 1) {
                 const diff = data[0].UPT_VALUE - data[1].UPT_VALUE;
@@ -648,6 +737,7 @@ function todayBlod() {
             $("#formatedDate").text("-");
             $("#nowVal").text(0);
             $("#diff").text(0);
+            _setHomeBlood(0, "");   // [2026-08-25] 측정값 없음 → 홈 「현재혈당」 은 숨긴다
 
             // [2026-07-11] 데이터 없음: 연동됨이면 센서착용 안내, 미연동이면 연동필요 안내 (오표시 '로그인 해주세요' 방지)
             _setCgmNotice(window.__hasToken

@@ -94,6 +94,19 @@
             </dd>
           </dl>
 
+          <%-- ★[2026-08-25 요청] 생년월일·나이 (홈 main.jsp 의 같은 팝업과 동일하게) --%>
+          <dl class="formList">
+            <dt><span>생년월일</span></dt>
+            <dd>
+              <div class="inputWrap">
+                <input type="text" class="inpText" id="birthYmd" value="" maxlength="8" inputmode="numeric"
+                       placeholder="8자리 예) 19631126"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,''); _showAge();">
+                <span class="add_inf" id="ageTxt"></span>
+              </div>
+            </dd>
+          </dl>
+
           <dl class="formList">
             <dt><span class="vital">당뇨 유형</span></dt>
             <dd>
@@ -214,12 +227,27 @@ $(document).ready(function(){
 	getUserInfo();
 });
 
+/* ★[2026-08-25] 생년월일 8자리 → 만 나이 (홈 main.jsp 와 같은 함수) */
+function _calcAge(ymd){
+	if(!/^\d{8}$/.test(ymd || "")) return null;
+	var y = +ymd.substr(0,4), m = +ymd.substr(4,2), d = +ymd.substr(6,2);
+	if(m < 1 || m > 12 || d < 1 || d > 31) return null;
+	var t = new Date(), age = t.getFullYear() - y;
+	if((t.getMonth()+1) < m || ((t.getMonth()+1) === m && t.getDate() < d)) age--;
+	return (age >= 0 && age < 130) ? age : null;
+}
+function _showAge(){
+	var a = _calcAge($("#birthYmd").val().trim());
+	$("#ageTxt").text(a == null ? "" : a + "세");
+}
 function getUserInfo(){
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/getUserInfo.do","POST",'',function(response){
 		console.log(response.Data);
 		const user = response.Data;
 		$("#height").val(user.height);
 		$("#weight").val(user.weight);
+		$("#birthYmd").val(user.birth || "");   // [2026-08-25]
+		_showAge();
 		$('input:radio[name=rdo_sugar]:input[value='+user.blodGb+']').attr("checked", true);
 	});
 }
@@ -228,6 +256,13 @@ function updateUserInfo(){
 	const data = {};
 	data.height = $("#height").val();
 	data.weight = $("#weight").val();
+	const _b = $("#birthYmd").val().trim();   // [2026-08-25] 비우면 안 보낸다(서버가 기존 값 유지)
+	if(_b !== "" && _calcAge(_b) == null){
+		alert("생년월일을 8자리로 정확히 입력해 주세요. 예) 19631126");
+		$("#birthYmd").focus();
+		return;
+	}
+	data.birth = _b;
 	data.blodGb = $('input[name=rdo_sugar]:checked').val();
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/updateUserInfo.do","POST",data,function(response){
 		console.log(response.Data);

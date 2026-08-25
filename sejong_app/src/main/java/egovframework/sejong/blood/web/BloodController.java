@@ -106,6 +106,10 @@ public class BloodController {
 		// [2026-08-20] ?chat=1(메인 [AI 챗봇] 진입)이면 상단 제목도 'AI 챗봇' —
 		//   화면 안의 중복 제목줄(< 🤖 AI 챗봇)은 뺐으므로 상단이 유일한 제목이다.
 		model.addAttribute("menuName", "1".equals(chat) ? "AI 챗봇" : "AI 종합분석(주간)");  // [2026-08-18] 홈 버튼 명칭과 통일
+		/* ★[2026-08-25 요청 — 의사 협의] 나이·당뇨 유형에 따라 **판정 기준 자체가 달라진다.**
+		   기준은 CgmTarget 한 곳에서만 정하고(홈 화면도 같은 것을 쓴다), 화면은 받은 숫자로 판정만 한다.
+		   생년월일은 내려보내지 않는다 — 화면에 필요한 건 나이뿐. */
+		egovframework.sejong.util.CgmTarget.addToModel(model, (UserDTO) session.getAttribute("user"));
 		return ".main/Blood_Consult";
 	}
 	
@@ -980,7 +984,7 @@ public class BloodController {
 	// =====================================================================
 	@RequestMapping(value = "/blood/chatAsk.do", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseObject chatAsk(@RequestBody HashMap<String, Object> params) {
+	public ResponseObject chatAsk(HttpSession session, @RequestBody HashMap<String, Object> params) {
 		ResponseObject json = new ResponseObject();
 
 		String q = params != null && params.get("q") != null ? params.get("q").toString().trim() : "";
@@ -1020,6 +1024,10 @@ public class BloodController {
 			+ "숫자·퍼센트·지표 이름(TIR/TAR/TBR/CV)은 답변에 쓰지 마 — 수치는 사용자 화면 표가 이미 보여주고 있어. "
 			+ "판정유형별 방향 — 우수: 현재 식사·운동 유지를 격려 / 고혈당형: 식사량·탄수화물 비율 조절과 식후 걷기 / "
 			+ "저혈당형: 공복 운동 회피, 운동 전후 혈당 확인, 식사 거르지 않기 / 변동형: 식사·운동 시간을 일정하게. "
+			/* ★[2026-08-25 요청] **당뇨 유형·나이**도 함께 본다(의료정보변경에서 입력한 값).
+			   세션의 사용자 정보에서 서버가 직접 만든다 — 화면이 개인정보를 실어 보낼 필요가 없다.
+			   값이 없으면(미입력) 문장 자체를 붙이지 않아 종전과 똑같이 동작한다. */
+			+ userProfileForPrompt(session)
 			+ (ctx.isEmpty() ? "" : "참고 — 앱이 계산한 사용자 지표: " + ctx);
 
 		try {
@@ -1039,6 +1047,48 @@ public class BloodController {
 			return json;
 		}
 	}
+
+	/**
+	 * ★[2026-08-25 요청] 챗봇 프롬프트에 붙일 **사용자 프로필** — 나이(생년월일)와 당뇨 유형.
+	 *   · 원천 = 세션의 T_USER_TRAN 값(의료정보변경 팝업에서 입력). 화면이 보내는 값이 아니라 서버가 직접 읽는다.
+	 *   · 둘 다 없으면 빈 문자열 → 프롬프트가 종전과 완전히 같아진다(있을 때만 조언이 달라진다).
+	 *   · 유형별 주의점을 함께 일러 준다 — 1형은 인슐린, 임신성은 산과 상담처럼 방향이 크게 다르다.
+	 *   ⚠생년월일 자체는 넣지 않고 **나이만** 넣는다(프롬프트에 들어가는 개인정보를 최소로).
+	 */
+	private String userProfileForPrompt(HttpSession session) {
+		try {
+			UserDTO u = (session == null) ? null : (UserDTO) session.getAttribute("user");
+			if (u == null) return "";
+
+			Integer age  = egovframework.sejong.util.CgmTarget.ageFromBirth(u.getBirth());
+			String  type = egovframework.sejong.util.CgmTarget.typeName(u.getBlodGb());
+			if (age == null && type.isEmpty()) return "";
+
+			StringBuilder who = new StringBuilder("사용자 정보 — ");
+			if (age != null)      who.append("나이 ").append(age).append("세");
+			if (age != null && !type.isEmpty()) who.append(", ");
+			if (!type.isEmpty())  who.append("당뇨 유형 ").append(type);
+			who.append(". 이 나이와 유형에 맞게 조언의 초점을 맞춰. ");
+
+			/* ★[2026-08-25 요청] **단정적인 말투를 쓰지 않게** 한다 — 이 앱은 진단을 하는 곳이 아니다.
+			   「당뇨병이 아니다」처럼 상태를 단정하면 사용자가 진단으로 받아들인다. 여지를 남긴 표현을 지시한다. */
+			who.append("상태를 단정하지 말고 '~일 수 있어요', '~ 편이 좋습니다' 처럼 부드럽게 말해. ");
+			if (!type.isEmpty()) {
+				if (type.startsWith("1형"))       who.append("1형은 인슐린이 중요하니 용량 조절은 담당 의사와 상의하도록 권해. ");
+				else if (type.startsWith("2형"))  who.append("2형은 식사량·체중·규칙적인 운동이 도움이 된다는 쪽으로 안내해. ");
+				else if (type.startsWith("당뇨병 전단계")) who.append("전단계로 입력해 둔 사용자야. 진단하듯 단정하지 말고, 지금의 생활습관을 이어가면 도움이 될 수 있다는 쪽으로 알려 줘. ");
+				else if (type.startsWith("임신성")) who.append("임신성은 태아 안전이 우선이니 식단·약은 산부인과와 함께 정하도록 권해. ");
+			}
+			if (age != null && age >= 65) who.append("나이를 고려해 저혈당에 주의가 필요하니 무리한 절식·공복 운동은 피하는 편이 좋다고 짚어 줘. ");
+			return who.toString();
+		} catch (Exception e) {
+			log.warn("userProfileForPrompt 실패(무시하고 진행): {}", e.getMessage());
+			return "";
+		}
+	}
+
+	/* [2026-08-25] 나이 계산·유형 이름은 egovframework.sejong.util.CgmTarget 으로 옮겼다 —
+	   홈 화면(LoginController)도 같은 것을 써야 판정이 갈리지 않는다. */
 
 	/** Gemini generateContent 호출 → 첫 후보 텍스트 반환 (실패 시 null) */
 	private String callGemini(String systemInstruction, String userText) {

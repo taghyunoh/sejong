@@ -673,7 +673,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* [2026-08-05] 방금 누른 질문칩 — 다시 눌러도 동작하지 않는다는 것을 눈으로 알 수 있게 흐리게 */
 .qa-quick .qbtn.used { background:#f1f4f8; border-color:#dde3ea; color:#9aa6b4; cursor:default; }
 .chat-user { position:relative; background:#0d6efd; color:#fff; border-radius:14px 14px 0 14px; padding:9px 13px; align-self:flex-end; max-width:88%; font-size:15px; line-height:1.5; word-break:break-word; }
-.chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:flex-start; max-width:92%; font-size:15px; line-height:1.5; word-break:break-word; }
+/* ★[2026-08-25 요청 「기본으로 보여주는 내용 사이즈에 맞게 질문 시 사이즈도 동일하게(우측)」]
+   답변 말풍선도 처음 뜨는 안내·분석(.chat-intro/.chat-wide, 100%)과 **오른쪽 끝을 맞춘다**.
+   종전 92% 라 답변만 오른쪽이 남아 위 내용과 어긋나 보였다(2026-08-20 에 분석 말풍선만 먼저 맞췄던 것을 답변까지 넓힘). */
+.chat-bot  { position:relative; background:#fff; color:#222; border:1px solid #dee2e6; border-radius:14px 14px 14px 0; padding:9px 13px; align-self:stretch; max-width:100%; font-size:15px; line-height:1.5; word-break:break-word; }
 /* [2026-08-13] AI 응답 대기 진행바 — 종전 「…」 한 글자는 멈춘 것처럼 보였다.
    .cp-bar 의 width 는 JS 가 90% 까지 점근시키고, 응답이 오면 100% 로 닫는다. */
 .chat-progress { min-width:180px; }
@@ -692,7 +695,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ★[2026-08-20 요청 「우측 공간 위하고 맞추어 주세요」] 처음 뜨는 **지표 분석** 말풍선을
    인사말과 **같은 폭**으로 — 보통 답변(.chat-bot 92%)이라 오른쪽이 남아 위 인사말과 어긋나 보였다.
    ⚠글자 크기는 건드리지 않는다(.chat-intro 는 13.5px 로 줄이는데, 분석은 본문 크기를 유지해야 읽힌다).
-   ⚠주고받는 답변에는 붙이지 않는다 — 대화는 말풍선이 내용만큼만 차지하는 편이 자연스럽다. */
+   ※[2026-08-25] 답변(.chat-bot)도 100% 로 바뀌어 이 클래스는 사실상 같은 폭이다 — 표식으로 남겨 둔다. */
 .chat-wide { max-width:100% !important; align-self:stretch !important; }
 
 </style>
@@ -759,11 +762,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		  <section class="p2list">
 		    <div class="p2item"><p class="lb">GMI지수(%) <span class="hint">혈당 관리지표(참고사항)</span></p>
 		      <div class="v"><span id="gmi" data-value="-">-</span></div></div>
-		    <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint">권장 : 70% 이상</span></p>
+		    <%-- [2026-08-25] 권장 기준은 **나이·당뇨 유형에 따라 달라진다**(아래 스크립트의 _STD 가 채운다) --%>
+		    <div class="p2item"><p class="lb">목표혈당 유지시간(TIR) <span class="hint" id="hintTir">권장 : 70% 이상</span></p>
 		      <div class="v"><span id="tir" data-value="-">-</span></div></div>
-		    <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint">권장 : 25% 미만</span></p>
+		    <div class="p2item"><p class="lb">고혈당 시간(TAR) <span class="hint" id="hintTar">권장 : 25% 미만</span></p>
 		      <div class="v"><span id="tar" data-value="-">-</span></div></div>
-		    <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint">권장 : 4% 미만</span></p>
+		    <div class="p2item"><p class="lb">저혈당 시간(TBR) <span class="hint" id="hintTbr">권장 : 4% 미만</span></p>
 		      <div class="v"><span id="tbr" data-value="-">-</span></div></div>
 		    <div class="p2item"><p class="lb">혈당변동성(CV) <span class="hint">권장 : 36% 이하</span></p>
 		      <div class="v"><span id="cv" data-value="-">-</span></div></div>
@@ -779,7 +783,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 		    <div id="wkIntro" class="wk-intro">지표 수치를 불러오면 분석이 표시됩니다.</div>
 		    <div class="wk-coach-label">AI 코칭</div>
 		    <div id="wkCoach" class="wk-coach">지표 수치를 불러오면 코칭 내용이 표시됩니다.</div>
-		    <small class="wk-basis">※ 대한당뇨병학회 관리지표 기준</small>
+		    <%-- [2026-08-25 요청 「표시부분까지 하고 나머지는 제거」] 종전의 「※ 대한당뇨병학회 관리지표 기준」 줄은 뺐다 —
+		         이제 코칭 끝에 **어떤 기준을 적용했는지**(나이·유형별 TIR/TAR/TBR)를 구체적으로 적어 주므로
+		         그 아래 한 줄짜리 출처 문구는 같은 말이 겹치기만 한다. --%>
 		  </div>
 		</div>
     <%-- [2026-08-18] 전면폭 묶음 — 제목·기간버튼·차트·범례를 한 덩이로 감싸 좌우 쫙 펴지게 --%>
@@ -940,13 +946,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	   그 변화를 감시(MutationObserver)해 색과 문장을 갱신한다 — 기존 계산 로직 무변경. */
 	(function(){
 	  var OK='#2e7d32', WARN='#e67e22', PLAIN='#2d303f';
+
+	  /* ★★[2026-08-25 요청 — 의사 협의] **나이·당뇨 유형에 따라 판정 기준 자체가 다르다.**
+	     종전에는 누구에게나 TIR 70 / TAR 25 / TBR 4 를 대고 문장만 덧붙였는데, 그건 의사 지적대로 틀린 방식이다.
+	     국제 CGM 합의(ADA 포함)의 목표는 대상군마다 이렇게 갈린다 :
+	       · 일반(1형·2형)      TIR ≥70% · TAR <25% · TBR <4%
+	       · 고령·고위험(65세~) TIR ≥50% · TAR <50% · TBR <1%   ← 저혈당을 더 엄격히, 고혈당은 느슨하게
+	       · 임신 중            TIR ≥70% · TAR <25% · TBR <4%   (단, 목표 범위가 63~140 으로 더 좁다)
+	     ⚠임신 중 목표 범위(63~140)는 이 앱의 TIR 계산 범위(70~180)와 달라 **그대로 견줄 수 없다** —
+	       숫자를 바꿔 오해를 만들지 않고, 담당 의사와 확인하라는 안내를 함께 띄운다. */
+	  var _age = parseInt('${userAge}', 10);
+	  var _dm  = '${userDmType}';
+	  /* 기준은 **서버(CgmTarget)가 정해 내려 준다** — 홈 화면도 같은 값을 쓴다.
+	     화면에서 따로 계산하면 같은 사람에게 홈과 여기가 다른 판정을 내게 된다. */
+	  var _STD = { nm:'${stdName}', tir:parseInt('${stdTir}',10), tar:parseInt('${stdTar}',10),
+	               tbr:parseInt('${stdTbr}',10), note:'${stdNote}' };
+
+	  /* 권장 기준 힌트도 그 기준으로 바꿔 준다 — 화면 숫자와 판정이 어긋나지 않게 */
+	  (function(){
+	    var h;
+	    if((h=document.getElementById('hintTir'))) h.textContent = '권장 : ' + _STD.tir + '% 이상';
+	    if((h=document.getElementById('hintTar'))) h.textContent = '권장 : ' + _STD.tar + '% 미만';
+	    if((h=document.getElementById('hintTbr'))) h.textContent = '권장 : ' + _STD.tbr + '% 미만';
+	  })();
+
 	  function num(id){ var e=document.getElementById(id); if(!e) return NaN;
 	    return parseFloat(String(e.textContent).replace(/[^0-9.\-]/g,'')); }
 	  function paint(id, ok){ var e=document.getElementById(id); if(e && !isNaN(num(id))) e.style.color = ok?OK:WARN; }
 	  function upd(){
 	    var gmi=num('gmi'), tir=num('tir'), tar=num('tar'), tbr=num('tbr'), cv=num('cv');
 	    var g=document.getElementById('gmi'); if(g) g.style.color=PLAIN;   // GMI = 참고치(색 조건 없음)
-	    paint('tir', tir>=70); paint('tar', tar<25); paint('tbr', tbr<4); paint('cv', cv<=36);
+	    paint('tir', tir>=_STD.tir); paint('tar', tar<_STD.tar); paint('tbr', tbr<_STD.tbr); paint('cv', cv<=36);
 	    // 평균 3종 색 — 평균 70~180 / 공복 100 미만 / 식후 140 미만이면 초록, 벗어나면 황토(기획 색 예시와 일치)
 	    var avg=num('avgUpt'), fast=num('avgFastingBlood'), after=num('after2hBlood');
 	    paint('avgUpt', avg>=70 && avg<=180); paint('avgFastingBlood', fast>=70 && fast<100); paint('after2hBlood', after>=70 && after<140);
@@ -959,9 +989,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	      /* [2026-08-21 지적] ①이름을 풀어 쓴다(TIR(목표유지) → TIR(목표혈당 유지시간))
 	         ②권장 70%↑ 같은 화살표 표기는 이상/이하/미만이 헷갈린다 — 권장 기준은 바로 위
 	           지표 목록의 「권장 : 70% 이상」 힌트가 이미 보여 주므로 여기서는 값 → 판정만 적는다. */
-	      if(!isNaN(tir)) L.push(ln("• TIR(목표혈당 유지시간) <b>"+tir+"%</b> → "+(tir>=70?'충족&nbsp;👍':"<b style='color:"+WARN+"'>미달</b>")));
-	      if(!isNaN(tar)) L.push(ln("• TAR(고혈당 시간) <b>"+tar+"%</b> → "+(tar<25?'충족':"<b style='color:"+WARN+"'>초과</b>")));
-	      if(!isNaN(tbr)) L.push(ln("• TBR(저혈당 시간) <b>"+tbr+"%</b> → "+(tbr<4?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      if(!isNaN(tir)) L.push(ln("• TIR(목표혈당 유지시간) <b>"+tir+"%</b> → "+(tir>=_STD.tir?'충족&nbsp;👍':"<b style='color:"+WARN+"'>미달</b>")));
+	      if(!isNaN(tar)) L.push(ln("• TAR(고혈당 시간) <b>"+tar+"%</b> → "+(tar<_STD.tar?'충족':"<b style='color:"+WARN+"'>초과</b>")));
+	      if(!isNaN(tbr)) L.push(ln("• TBR(저혈당 시간) <b>"+tbr+"%</b> → "+(tbr<_STD.tbr?'충족':"<b style='color:"+WARN+"'>초과</b>")));
 	      intro.innerHTML = L.join('');
 	    }
 
@@ -969,10 +999,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	    var box=document.getElementById('wkCoach');
 	    if(box && !isNaN(tir)){
 	      var head='', tips=[];
-	      if(!isNaN(tar) && tar>=25){
+	      /* ★[2026-08-25] 코칭의 판정도 위 _STD(나이·유형별 기준)를 쓴다 —
+	         지표 목록·분석 문장·코칭이 서로 다른 잣대를 쓰면 「충족인데 왜 고혈당 코칭이?」가 된다. */
+	      if(!isNaN(tar) && tar>=_STD.tar){
 	        head='지난 일주일 동안 고혈당 시간이 다소 길었습니다.<br>특히 식후 혈당 상승이 반복되는 것으로 보입니다.';
 	        tips=['식사량을 줄이세요.','탄수화물 비율을 줄이세요.','식후 20~30분 걷기를 실천해 보세요.'];
-	      }else if(!isNaN(tbr) && tbr>=4){
+	      }else if(!isNaN(tbr) && tbr>=_STD.tbr){
 	        head='지난 일주일 동안 저혈당이 발생했습니다.<br>저혈당은 즉각적인 대처가 필요합니다.';
 	        tips=['공복 상태의 운동을 피하세요.','식사를 거르지 말고 규칙적으로 하세요.','저혈당 증상이 느껴지면 즉시 당분을 섭취하세요.'];
 	      }else if(!isNaN(cv) && cv>36){
@@ -982,7 +1014,32 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	        head='지난 일주일 혈당이 안정적으로 관리되고 있습니다.';
 	        tips=['현재 생활습관을 그대로 유지하세요.','꾸준한 측정과 기록을 계속해 주세요.'];
 	      }
-	      box.innerHTML = head + '<ul>' + tips.map(function(s){ return '<li>'+s+'</li>'; }).join('') + '</ul>';
+	      /* 유형별 한 줄 — 방향이 크게 다른 것만(1형 인슐린 / 임신성 산과 상담 / 전단계 예방 / 2형 체중)
+	         ★[2026-08-25 요청] **단정적으로 쓰지 않는다.** 이 앱은 진단을 하는 곳이 아니어서
+	           「아직 당뇨병은 아닙니다」처럼 상태를 단정하면 사용자가 진단으로 받아들일 수 있다.
+	           입력해 둔 유형을 근거로 삼되 「~일 수 있어요 / ~ 편이 좋습니다」처럼 여지를 남긴다. */
+	      if(_dm === '1형 당뇨병')            tips.push('인슐린 용량 조절은 담당 의사와 상의해 주세요.');
+	      else if(_dm === '2형 당뇨병')       tips.push('체중 관리가 혈당에 도움이 될 수 있습니다.');
+	      else if(_dm === '당뇨병 전단계')     tips.push('당뇨병 전단계로 입력해 두셨습니다 — 지금의 관리를 이어가시면 도움이 될 수 있어요.');
+	      else if(_dm === '임신성 당뇨병')     tips.push('식단과 약은 산부인과와 함께 정하시는 것이 좋습니다.');
+	      /* 고령은 저혈당에 특히 주의가 필요하다 — 저혈당이 이미 잡힌 경우엔 위 문구와 겹치지 않게 표현을 나눈다 */
+	      if(!isNaN(_age) && _age >= 65){
+	        tips.push(( !isNaN(tbr) && tbr>=_STD.tbr )
+	          ? '저혈당은 특히 주의가 필요합니다 — 담당 의사와 상의해 보시는 것이 좋습니다.'
+	          : '무리한 절식이나 공복 운동은 피하시는 편이 좋습니다.');
+	      }
+	      /* 어떤 기준으로 본 코칭인지 — **적용한 기준까지** 밝힌다(나이·유형에 따라 잣대가 달라지므로) */
+	      var _who = [];
+	      if(!isNaN(_age)) _who.push(_age + '세');
+	      if(_dm) _who.push(_dm);
+	      var _basis = "TIR " + _STD.tir + "% 이상 · TAR " + _STD.tar + "% 미만 · TBR " + _STD.tbr + "% 미만";
+	      var _whoTxt = "<div style='margin-top:6px; font-size:12px; color:#6b7889;'>※ "
+	                  + (_who.length ? _who.join(' · ') + " — " : "")
+	                  + _STD.nm + " 적용 (" + _basis + ")"
+	                  + (_STD.note ? "<br>※ " + _STD.note : "")
+	                  + "</div>";
+
+	      box.innerHTML = head + '<ul>' + tips.map(function(s){ return '<li>'+s+'</li>'; }).join('') + '</ul>' + _whoTxt;
 	    }
 	    // [기획 7] 챗봇이 열려 있고 아직 인사 분석을 못 붙였으면 지표 도착 시 1회 게시
 	    if (window._chatIntroHook) try{ window._chatIntroHook(); }catch(e){}

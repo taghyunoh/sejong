@@ -5,6 +5,29 @@
 
 
 <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+<script>
+/* ★[2026-08-25 요청] **로그인 화면에서 ◀ 한 번이면 앱 종료.**
+   종전: 여러 화면을 돌다 로그아웃하면 로그인 화면 뒤에 옛 항목(홈·연속혈당…)이 남아 있고,
+         ◀ 를 누르면 그 항목으로 갔다가 세션이 없어 서버가 다시 로그인 화면으로 보낸다
+         → 화면은 로그인 그대로라 "눌러도 안 나간다". 남은 항목 수만큼 눌러야 했다.
+   이제: 로그인 화면을 히스토리 **첫 항목**으로 내려 둔다. 첫 항목에서 ◀ 를 누르면 안드로이드가 앱을 닫는다.
+
+   ⚠**설치형(PWA)일 때만** 한다 — 그 창은 히스토리 첫 항목이 곧 앱 시작 화면(start_url=loginPage.do)이라
+     아무리 내려가도 앱 안이다. 일반 브라우저 탭은 아래에 다른 사이트가 있을 수 있어 건드리지 않는다.
+   ⚠홈 화면에는 절대 넣지 말 것 — 홈에서 내려가면 로그인 화면에 착지한다(2026-08-25 사고, docs 9~10장).
+     로그인 화면은 어디로 내려가든 (세션이 없어) 결국 로그인 화면이라 안전하다. */
+(function(){
+  try{
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                     || window.navigator.standalone === true;
+    if (!standalone) return;
+    if (history.state && history.state.__loginRoot) return;   // 이 항목에서 이미 시도했다(되풀이 방지)
+    history.replaceState({ __loginRoot: 1 }, '');
+    var n = history.length - 1;
+    if (n > 0) history.go(-n);        // 첫 항목으로. 이미 첫 항목이면 브라우저가 무시한다
+  }catch(e){}
+})();
+</script>
 <style>
 /* [로그인 화면 고정] 위/아래로 드래그하면 빈 공간(고무줄 스크롤)이 보이던 문제 —
    기존 common.css 의 .splash.login 이 103vh/103% 로 뷰포트보다 크게 잡혀 있어 발생.

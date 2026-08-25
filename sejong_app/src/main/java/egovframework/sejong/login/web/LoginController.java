@@ -112,6 +112,9 @@ public class LoginController {
 		   ⇒ 홈에 들어올 때 세션 값을 '홈' 으로 덮어쓴다(footer.jsp 가 이 값으로 탭을 고른다). */
 		session.setAttribute("menuName", "홈");
 		model.addAttribute("gender",user.getGender());
+		/* ★[2026-08-25 요청] 홈의 「최근 24시간 혈당지표는 양호/주의」도 **AI 종합분석과 같은 기준**으로.
+		   기준(나이·당뇨 유형별 TIR/TAR/TBR)은 CgmTarget 한 곳에서만 정한다 — 화면마다 따로 계산하면 판정이 갈린다. */
+		egovframework.sejong.util.CgmTarget.addToModel(model, user);
 		return ".login/main";
 	}
 	
