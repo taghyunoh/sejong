@@ -2,8 +2,8 @@
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
 <head>
-<%-- [2026-08-25] viewport-fit=cover — 하단 안전영역(env) 활성화(main.jsp 와 동일) --%>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<%-- [2026-08-25] viewport-fit=cover 는 쓰지 않는다 — 앱이 하단 네비게이션 바를 덮는다(main.jsp 주석 참고) --%>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <tiles:insertAttribute name="header" />
 </head>
 <body>

@@ -63,6 +63,10 @@
   padding:calc(2.8 * var(--vwu,1vw)) calc(3.6 * var(--vwu,1vw));
   font-size:calc(3.4 * var(--vwu,1vw)); line-height:1.45; color:#fff; word-break:keep-all; }
 </style>
+<%-- ★[2026-08-25] 「홈에서 ◀ = 앱 종료」는 **히스토리를 되감지 않고**, 홈을 뿌리에 앉히는 방식만 쓴다.
+     한때 여기서 history.go(-n) 으로 되감았다가 **로그인 화면으로 되돌아가는 사고**가 났다 —
+     로그아웃(→로그인)·카카오 경유로 항목이 늘면 그 수만큼 로그인 이전 항목까지 걸어 내려갔다.
+     지금은 로그인 성공(login.jsp)·로그아웃(아래 logout)이 모두 replace 라 홈이 늘 같은 자리(뿌리)에 얹힌다. --%>
 <!-- wrap : s -->
  <div class="wrap main">
 	<header class="header">
@@ -431,7 +435,10 @@ function logout(){
 	if(!confirm("로그아웃 하시겠습니까?")) return;
 	try { callAndroid("f102", { phone: _userPhone, autoYn: false, saveYn: true }); } catch(e){ console.warn("자동로그인 해제 실패:", e); }
 	CommonUtil.callAjax(CommonUtil.getContextPath() + "/logout.do","POST",'',function(response){
-		location.href = CommonUtil.getContextPath() + "/loginPage.do";
+		/* [2026-08-25] href→replace : 로그인 화면이 **홈 자리를 덮는다.**
+		   ① 로그아웃 뒤 ◀ 로 로그인된 홈으로 되돌아가지지 않는다.
+		   ② 로그아웃→재로그인을 반복해도 히스토리가 쌓이지 않아 홈이 늘 뿌리에 있다(홈에서 ◀ = 앱 종료 유지). */
+		location.replace(CommonUtil.getContextPath() + "/loginPage.do");
 	});
 }
 

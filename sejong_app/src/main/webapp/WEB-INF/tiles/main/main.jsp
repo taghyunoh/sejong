@@ -12,9 +12,11 @@
 	response.setDateHeader("Expires", 0);
 %>
 <head>
-<%-- [2026-08-25] viewport-fit=cover — 이게 없으면 env(safe-area-inset-bottom)이 항상 0이라
-     하단 탭(.footerNav)의 제스처바 여백(common.css)이 한 번도 발동하지 않았다(하단 탭이 시스템 네비게이션에 가림) --%>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<%-- ★[2026-08-25] viewport-fit=cover 는 **넣지 않는다**(넣었다가 되돌림).
+     cover 를 주면 페이지가 시스템 바 아래까지 그려져(edge-to-edge) **앱이 하단 네비게이션 바를 덮는다.**
+     안드로이드 WebView 는 env(safe-area-inset-bottom) 을 0 으로 주는 경우가 많아 보정도 안 된다.
+     cover 없이 두면 뷰포트가 시스템 바를 뺀 영역으로 잡혀 네비 바가 그대로 보인다. --%>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <tiles:insertAttribute name="header" />
 <%@ include file="/WEB-INF/inc/pwa-head.jsp" %>
 </head>

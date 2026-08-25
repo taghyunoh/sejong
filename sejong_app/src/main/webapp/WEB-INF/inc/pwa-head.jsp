@@ -10,7 +10,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="allCare">
+<%-- [2026-08-25] 설치 아이콘 이름 allCare → 올케어 (manifest 의 short_name 과 같게 맞춘다) --%>
+<meta name="apple-mobile-web-app-title" content="올케어">
 <script>
   // 서비스워커 등록 (https 또는 localhost 에서만 동작)
   // 컨텍스트 경로(/app 등) 아래 배포이므로 scope 도 컨텍스트로 제한한다.

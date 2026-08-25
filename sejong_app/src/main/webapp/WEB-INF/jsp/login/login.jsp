@@ -489,7 +489,7 @@ function userInfoCallBack(data){
 			userData.phone = obj.phone;
 			CommonUtil.callAjax(CommonUtil.getContextPath() + "/autoLogin.do","POST",userData,function(response){
 				if(response.IsSucceed){
-					location.href = CommonUtil.getContextPath() + "/mainPage.do";
+					location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
 				}else{
 					alert("자동 로그인 실패");
 				}
@@ -509,7 +509,7 @@ function reqAuth(){
 		CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/testUser.do","POST",'',function(response){
 			console.log(response.Data);
 			alert("테스트 유저");
-			location.href = CommonUtil.getContextPath() + "/mainPage.do";
+			location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
 		});
 		return;
 	}
@@ -517,7 +517,7 @@ function reqAuth(){
 		CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/testUser2.do","POST",'',function(response){
 			console.log(response.Data);
 			alert("테스트 유저");
-			location.href = CommonUtil.getContextPath() + "/mainPage.do";
+			location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
 		//	location.href = CommonUtil.getContextPath() + "/goBloodPage.do";
 
 
@@ -557,7 +557,7 @@ function checkAuth(){
 			alert(response.Message);
 			if(response.Data >= 1){
 				saveUserInfo();
-				location.href = CommonUtil.getContextPath() + "/mainPage.do";
+				location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
 			}else{
 				$("#email").removeAttr("readonly");
 				$("#phone").val(phone);
@@ -753,7 +753,7 @@ function registerUser() {
       if (resp && resp.IsSucceed) {
         saveUserInfo();
         alert("회원가입 성공 하였습니다.");
-        location.href = ctx + "/mainPage.do";
+        location.replace(ctx + "/mainPage.do");   // [2026-08-25] href→replace: 홈을 히스토리 뿌리로(홈에서 ◀=앱 종료)
       } else {
         alert("회원 가입 실패. 관리자에게 문의 부탁드립니다.");
         $btn.prop("disabled", false);
@@ -848,7 +848,7 @@ function loginWithKakao() {
 	       function (response) {
 	         console.log(response.Data);
 	         if (response.Data) {
-	           location.href = CommonUtil.getContextPath() + "/mainPage.do";
+	           location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
 	         } else {
 	           alert(response.message || "'확인'을 클릭하여 회원정보를 입력해주세요");
 	           $("#phone").removeAttr("readonly");
@@ -924,7 +924,7 @@ function loginWithKakao() {
      userData,
      function(response) {
        console.log("서버 응답:", response.Data);
-       location.href = CommonUtil.getContextPath() + "/mainPage.do";
+       location.replace(CommonUtil.getContextPath() + "/mainPage.do");   // [2026-08-25] href→replace: 로그인 항목을 홈으로 대체해 홈이 히스토리 뿌리가 된다(홈에서 ◀=앱 종료, main.jsp 참고)
      },
      function(error) {
        console.error("Ajax 실패", error);
