@@ -95,7 +95,10 @@
 	               <label for="chk_saveID">휴대폰번호 저장</label>
 	             </span>
             </div>
-			<div class="btnArea mt1 w100">
+			<!-- 카카오 로그인 — 화면에서 감춤(사용자 2026-08-27 「화면에서 카카오 히든」).
+			     ★지운 것이 아니라 숨긴 것뿐이다 : 아래 div 의 display:none 만 빼면 그대로 되살아난다.
+			     (loginWithKakao()·Kakao SDK·서버 쪽 처리는 손대지 않았다) -->
+			<div class="btnArea mt1 w100" id="kakaoLoginArea" style="display:none;">
 			  <a href="#"
 			     class="btn btnCol01 round pl20 pr20"  onclick="loginWithKakao();"
 			     style="background-color: #FEE500; color: #000; 
