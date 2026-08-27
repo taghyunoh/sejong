@@ -49,6 +49,56 @@
 /* [전체 동의] 행은 상세보기 링크가 아니므로 제목 옆 화살표 제거 + 강조 */
 .agreeItem.agreeAll .agreeAnchor > span { background: none; padding-right: 0; }
 .agreeItem.agreeAll .agreeAnchor { color: #2b6fff; }
+
+/* ── [2026-08-27 요청] 로그인 화면 다듬기 ──────────────────────────────
+   ① 빨간 안내문 두 줄 : 글자 살짝 키우고 위아래 공간·줄간격 넓게
+   ② 개인정보처리방침·회원탈퇴 줄 : 위로 (카카오 버튼을 감춘 자리)
+   ③ 아래 안내 : 한 문단 → 3줄 목록
+   ※ 이 화면에서만 — common.css 의 .comment 는 다른 화면도 쓰므로 건드리지 않는다. */
+.loginWrap .login .form p.comment {
+  font-size: calc(3.9 * var(--vwu, 1vw));       /* 3.4 → 3.9 */
+  line-height: 1.7;                              /* normal → 넓게 */
+  margin-top: calc(5 * var(--vwu, 1vw));
+  margin-bottom: calc(1.5 * var(--vwu, 1vw));   /* ① 자동로그인 줄을 위로 — 안내문 아래 여백만 줄인다(2.5 → 1.5) */
+}
+/* ① 자동로그인·휴대폰번호 저장 줄을 조금 위로 (사용자 2026-08-27) — .pt15 가 !important 라 같이 걸어야 이긴다 */
+.loginWrap .login .form .checkboxWrap.pt15 { padding-top: calc(1 * var(--vwu, 1vw)) !important; }
+.loginWrap .login .notice_wrap {
+  display: block;                                 /* flex 해제 — 여러 줄 목록이 되도록 */
+  margin-top: calc(7 * var(--vwu, 1vw));          /* 살짝 위로 (10 → 7, 사용자 2026-08-27) */
+}
+/* 문의 메일 줄이 카드 바닥에 붙어 보인다(사용자 2026-08-27) — 카드 아래 여백을 넓힌다(5.56 → 9).
+   ※ 목록에 margin-bottom 을 주는 대신 카드 padding 을 넓혔다. 밑줄(링크)까지 여유 있게 보이게. */
+.loginWrap .login { padding-bottom: calc(9 * var(--vwu, 1vw)); }
+.loginWrap .login .notice_wrap ul {
+  /* ② 글자를 키우면서도 한 줄을 지키려면 쓸 수 있는 폭을 넓혀야 한다 —
+     카드 안쪽 폭이 77.76vwu 인데 가장 긴 문구가 약 24.8em 이라, 3.0 이 한 줄의 한계였다.
+     목록만 카드 좌우 여백(5.56) 안쪽으로 2vwu 씩 내밀고 들여쓰기도 줄여 4.4vwu 를 벌었다. */
+  /* 왼쪽으로 내밀던 것을 되돌려 **우측으로 조금 이동**(사용자 2026-08-27) — 오른쪽만 내민 채로 둔다.
+     오른쪽 여유(2vwu)는 남겨 두어야 3.0 글자가 한 줄로 유지된다. */
+  margin: 0 calc(-2 * var(--vwu, 1vw)) 0 0;
+  padding-left: calc(1.4 * var(--vwu, 1vw));   /* 글자를 키우려고 들여쓰기를 더 줄였다(2.2 → 1.4, 2026-08-27) */
+  list-style: disc;
+}
+.loginWrap .login .notice_wrap li {
+  /* ★[2026-08-27] 크기 내력 4.1 → 3.7 → 3.0 → 3.2(접힘) → **3.15**.
+     실기기(iPhone)로 잰 결과 쓸 수 있는 폭은 **77.6vwu** 이고 각 문구의 폭은 대략
+       ①「사용앱은 세종시 … 실증용입니다.」 ≈ 27.9em   ②「사용기간은 … 까지입니다.」 ≈ 24.5em   ③ 문의 ≈ 16em
+     → ②가 한 줄로 남는 한계가 3.15 다(24.5 × 3.15 × 0.98 ≈ 75.6 < 77.6).
+     ⚠**①은 이 폭에서 어떤 크기로도 한 줄이 안 된다**(2.84 이하라야 하는데 그건 지금보다 작다).
+       ①까지 한 줄로 하려면 문구를 줄여야 한다 — 「사용앱은」 4자만 빼면 3.15 에서 한 줄이 된다. */
+  font-size: calc(3.25 * var(--vwu, 1vw));
+  letter-spacing: -0.03em;   /* 자간을 조금 더 좁혀 폭을 벌었다 */
+  line-height: 1.5;
+  word-break: keep-all;   /* 접히더라도 낱말 중간에서 끊기지 않게 */
+  margin-bottom: calc(1.6 * var(--vwu, 1vw));
+  /* ⚠common.css 164줄의 `ul, li { list-style: none }` 리셋이 **li 에 직접** 걸려 있어
+     ul 에만 disc 를 줘서는 점이 안 나온다 — li 에서 되살린다(2026-08-27 실기기 확인). */
+  list-style: disc outside;
+}
+.loginWrap .login .notice_wrap li:last-child { margin-bottom: 0; }
+/* 문의 메일 — 밑줄 제거(사용자 2026-08-27). 눌러서 메일 앱이 열리는 것은 그대로. */
+.loginWrap .login .notice_wrap a { color: inherit; text-decoration: none; border-bottom: 0; }
 </style>
 <!-- wrap : s -->
  <div class="wrap splash login">
@@ -71,7 +121,8 @@
                 <a href="#" class="btn btnLine01 round pl20 pr20"  onclick="reqAuth();"><span>인증번호 요청</span></a>
               </div>
             </div>
-            <p class="comment mt15 pl15">* 본인 인증을 위하여 귀하의 휴대폰번호를 입력해 <br> 주세요.(번호만)</p>
+            <!-- [2026-08-27] 강제 줄바꿈(br) 제거 — 글자를 키우니 자연 줄바꿈과 겹쳐 「해 / 주세요」로 3줄이 됐다(실기기 확인) -->
+            <p class="comment mt15 pl15">* 본인 인증을 위하여 귀하의 휴대폰번호를 입력해 주세요.(번호만)</p>
             
             <div class="left_right_wrap mt30">
               <div class="inputWrap mr10">
@@ -83,7 +134,7 @@
             </div>
             
             
-            <p class="comment mt15 pl15">* 수신 문자를 확인 후 6자리 인증번호(숫자)를 입력 <br> 하세요</p>
+            <p class="comment mt15 pl15">* 수신 문자를 확인 후 6자리 인증번호(숫자)를 입력하세요.</p>
             <div class="checkboxWrap pt15" >
 	             <span class="inputCheckbox">
 	               <input type="checkbox" id="chk_login" />
@@ -107,15 +158,20 @@
 			  </a>
 			</div>
 			<!-- 추가 영역 -->
-			<div class="comment_text mt20 pl15" style="display: flex; justify-content: space-between;">
+			<div class="comment_text mt15 pl15" style="display: flex; justify-content: space-between;">
 			  <a href="#" onclick="goJoin10();" >개인정보처리방침</a>
 			  <div class ="pr15">
 			    <a href="#" onclick="goJoin4();">회원탈퇴</a>
 			  </div>  
 			</div>
          </div>
+         <!-- [2026-08-27 요청] 한 문단 → 3줄 목록으로 (문구도 지정하신 대로) -->
          <div class="notice_wrap">
-           ※ 사용하시는 앱은 세종시 AI기반 디지털 헬스케어서비스 실증을 위한 체험형 혈당관리용 앱입니다. <span style="color:#4a90d9;">(v2)</span> 
+           <ul>
+             <li>사용앱은 세종시 AI기반 디지털헬스케어 서비스 실증용입니다.</li>
+             <li>사용기간은 착수 시점부터 실증완료(10월) 까지입니다.</li>
+             <li>문의 : <a href="mailto:service@allcare365.kr">service@allcare365.kr</a></li>
+           </ul>
          </div>
        </div>
      </div>
