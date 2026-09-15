@@ -1,5 +1,10 @@
 Sejong_WEB/target
 target
-.settings
+# Eclipse 프로젝트 설정 — PC 마다 다르므로 올리지 않되 **.jsdtscope 는 올린다**.
+#   ★webapp/bootstrap(부트스트랩 5, 최신 JS 문법)을 Eclipse JS 검사기가 못 읽어 가짜 빨간 X 를 붙인다.
+#     .jsdtscope 가 그 폴더를 검사에서 뺀다 — 설정이 git 에 안 실려 PC 마다 따로 고쳐야 했다(2026-09-15, wnn_medcost 와 같은 조치).
+#   ★폴더째 무시하면(`.settings`) 안의 파일을 되살릴 수 없다 — `.settings/*` 로 내용물만 무시해야 예외(!)가 먹는다.
+.settings/*
+!.settings/.jsdtscope
 .classpath
 bin
