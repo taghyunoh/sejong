@@ -2105,8 +2105,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	            
 	        }
 	    );
-	    //gmi 
-	    CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/calcBlood.do", "POST", formData,
+	    //gmi
+	    /* ★[2026-09-22] calcBlood 만 기간 파라미터를 %Y-%m-%dT%H:%i:%s 로 파싱한다
+	       (연속혈당 24시간 화면이 시각까지 보내는 그 형식 — 그쪽이 정상 사용자다).
+	       여기서 날짜만 보내면 end 가 00:00:00 으로 읽혀 ***마지막 날(오늘)이 통째로 빠진다*** —
+	       오늘부터 착용한 환자는 기간에 0건이라 GMI 가 0 % 로 나왔다(TAR·TBR·CV 는
+	       showBloodAvgData 를 타서 오늘을 포함 — 같은 화면 안에서 창이 달랐던 것).
+	       ⇒ 시각을 붙여 다른 지표와 같은 창(첫날 00:00 ~ 끝날 23:59:59)으로 맞춘다. */
+	    var formDataCalc = {
+	        start: (String(startDate).indexOf('T') >= 0 ? startDate : startDate + "T00:00:00"),
+	        end:   (String(endDate).indexOf('T')   >= 0 ? endDate   : endDate   + "T23:59:59"),
+	        userId: userId
+	    };
+	    CommonUtil.callSyncAjax(CommonUtil.getContextPath() + "/calcBlood.do", "POST", formDataCalc,
 	        function(response) {
 	            console.log("표준편차, 변동계수 가져옴. :", response);
 	            let gmi = parseFloat(response.GMI);

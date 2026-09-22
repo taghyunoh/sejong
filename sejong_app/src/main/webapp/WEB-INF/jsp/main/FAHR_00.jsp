@@ -258,15 +258,21 @@
     if(!vals.length){ ['p2tir','p2tar','p2tbr','p2gmi','p2cv'].forEach(function(i){ put(i,'-'); }); return; }
     var n=vals.length;
     var tir=Math.round(vals.filter(function(v){ return v>=70 && v<=180; }).length*100/n);
-    var tar=Math.round(vals.filter(function(v){ return v>180; }).length*100/n);
-    var tbr=Math.round(vals.filter(function(v){ return v<70; }).length*100/n);
+    /* ★[2026-09-22 「주간과 수치 불일치」] TAR·TBR·CV 를 **소수 1자리**로 —
+       주간(AI 종합분석)·의사 웹은 SQL ROUND(…,1) 로 1자리(8.7 %)인데 여기만 정수(9 %)라
+       같은 데이터인데 다른 값으로 보였다. 1자리 통일은 2026-08-18 확정 방향 그대로.
+       (TIR 은 두 화면 다 정수라 손대지 않는다 — 주간 TIR 은 서버 BloodLowHigh 가 정수로 준다) */
+    var tar=+(vals.filter(function(v){ return v>180; }).length*100/n).toFixed(1);
+    var tbr=+(vals.filter(function(v){ return v<70; }).length*100/n).toFixed(1);
     var mean=vals.reduce(function(a,b){ return a+b; },0)/n;
-    var sd=Math.sqrt(vals.reduce(function(a,b){ return a+(b-mean)*(b-mean); },0)/n);
-    var cv=Math.round(sd*100/mean);
+    /* ★CV 도 주간과 공식 통일 — 주간은 STDDEV_SAMP(표본, n-1). 종전 이 화면은 모표준편차(n)라
+       표본 수가 적은 날 소수 1자리에서 어긋날 수 있었다. n=1 이면 표본편차가 없어 0 처리. */
+    var sd=(n>1)?Math.sqrt(vals.reduce(function(a,b){ return a+(b-mean)*(b-mean); },0)/(n-1)):0;
+    var cv=+(sd*100/mean).toFixed(1);
     put('p2tir', tir+' %', (tir>=_P2STD.tir)?P2_OK:P2_WARN);
-    put('p2tar', tar+' %', (tar<_P2STD.tar)?P2_OK:P2_WARN);
-    put('p2tbr', tbr+' %', (tbr<_P2STD.tbr)?P2_OK:P2_WARN);
-    put('p2cv',  cv +' %', (cv<=36)?P2_OK:P2_WARN);
+    put('p2tar', tar.toFixed(1)+' %', (tar<_P2STD.tar)?P2_OK:P2_WARN);
+    put('p2tbr', tbr.toFixed(1)+' %', (tbr<_P2STD.tbr)?P2_OK:P2_WARN);
+    put('p2cv',  cv.toFixed(1)+' %', (cv<=36)?P2_OK:P2_WARN);
     /* ★[2026-08-18 요청] GMI 에도 단위 **%** — 바로 위 TIR·TAR·TBR·CV 가 전부 `%` 라 이것만 맨숫자였다.
        ★색은 종전대로 검정(참고치라 좋고 나쁨을 칠하지 않는다). */
     put('p2gmi', (3.31+0.02392*mean).toFixed(1) + ' %');   // 참고치 — 검정 유지

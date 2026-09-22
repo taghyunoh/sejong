@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(export SP=\"C:/Users/user/AppData/Local/Temp/claude/C--Users-user-git-sejong-sejong-app/6caaa8dd-6b76-4de5-9a66-11180d6110ac/scratchpad\")"
+    ]
+  }
+}
