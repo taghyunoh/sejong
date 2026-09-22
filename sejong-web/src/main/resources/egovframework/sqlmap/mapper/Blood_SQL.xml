@@ -197,9 +197,10 @@
     		     ⚠종전 웹은 구간 카운트(LOWEST/LOW/NORMAL/HIGHT/HIGHTEST)를 따로 조회해 화면에서 비율을 냈다.
     		       ***쿼리가 둘이면 기간·0값 필터가 갈라진다*** — 실제로 앱 95% / 웹 96% 로 어긋났다.
     		     ★같은 WHERE(기간·UPT_VALUE>0)를 그대로 쓰므로 정의가 저절로 일치한다.
-    		     ★TIR 은 앱과 같이 **버림(FLOOR)**, TAR·TBR 은 소수 1자리. */
-    		  ,COALESCE(FLOOR(100 * SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END)
-    		                       / NULLIF(COUNT(*),0)), 0) AS TIR
+    		     ★TIR 은 앱과 같이 **반올림(ROUND, 정수)**, TAR·TBR 은 소수 1자리.
+    		     ★[2026-09-22] FLOOR → ROUND — 앱 화면이 96/97 로 갈려 앱·웹 둘 다 반올림으로 맞춤. */
+    		  ,COALESCE(ROUND(100 * SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END)
+    		                       / NULLIF(COUNT(*),0), 0), 0) AS TIR
     		  ,COALESCE(ROUND(100 * SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END)
     		                       / NULLIF(COUNT(*),0), 1), 0) AS TAR
     		  ,COALESCE(ROUND(100 * SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END)

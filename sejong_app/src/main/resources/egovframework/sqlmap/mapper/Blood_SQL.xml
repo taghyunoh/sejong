@@ -490,10 +490,12 @@
 		<![CDATA[
 			SELECT
 			  CONCAT(
-			    FLOOR(
+			    /* ★[2026-09-22] FLOOR → ROUND — 연속혈당 화면 목록(_fillPage2Stats, Math.round)과 같은 반올림.
+			       버림이면 96.6% 가 한 화면 안에서 97(목록)·96(문장)으로 갈렸다. sejong-web 도 같이 고침. */
+			    ROUND(
 			      100 * SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END)
 			        / NULLIF(COUNT(*), 0)
-			    ), '%'
+			    , 0), '%'
 			  ) AS TIR
 			FROM T_BLDINF_TRAN
 			WHERE USER_UUID = #{userId}
