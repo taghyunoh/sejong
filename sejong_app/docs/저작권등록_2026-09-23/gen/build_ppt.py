@@ -85,7 +85,12 @@ def paginate(blocks, budgets):
             raise Overflow()
 
     for title, lines in blocks:
-        if used + HEAD_COST + 3 > budgets[ci]:
+        if title.startswith('■'):        # 부(部) 구분 — 새 장의 왼쪽 단에서 시작
+            if cur:
+                flush()
+            if ci % 2 == 1:
+                flush()
+        elif used + HEAD_COST + 3 > budgets[ci]:
             flush()
         cur.append(('h', title))
         used += HEAD_COST
@@ -122,10 +127,11 @@ def _run(p, text, *, font=SANS, size=12, bold=False, color=INK):
 
 
 def code_columns(slide, cols, top, height):
+    single = sum(1 for c in cols if c) == 1        # 한 단만 남은 장은 가운데로
     for ci, col in enumerate(cols):
         if not col:
             continue
-        x = MARGIN + ci * (COL_W + GAP)
+        x = (SLIDE_W - COL_W) / 2 if single else MARGIN + ci * (COL_W + GAP)
         card = slide.shapes.add_shape(1, Inches(x), Inches(top), Inches(COL_W), Inches(height))
         card.fill.solid()
         card.fill.fore_color.rgb = CARD
@@ -239,9 +245,14 @@ def build(title, meta_rows, blocks, note, outfile, max_slides=4):
     rest = cols[2:]
     total = 1 + math.ceil(len(rest) / 2)
     slide1(prs, title, meta_rows, cols[:2], total)
-    h2 = min(S2_CARD_H, max(budgets[2:]) * CODE_LEAD / 72.0 + PAD * 2 + 0.06)
+    def col_units(c):
+        return sum(HEAD_COST if it[0] == 'h' else cost('%4s  %s' % (it[1], it[2])) for it in c)
+
     for i in range(0, len(rest), 2):
-        slide_cont(prs, title, rest[i:i + 2], note, 2 + i // 2, total, h2)
+        pair = rest[i:i + 2]
+        # 카드 높이는 그 장에 실제로 담긴 줄 수에 맞춘다 — 아래가 텅 비어 보이지 않게
+        h2 = min(S2_CARD_H, max(col_units(c) for c in pair) * CODE_LEAD / 72.0 + PAD * 2 + 0.06)
+        slide_cont(prs, title, pair, note, 2 + i // 2, total, h2)
 
     path = os.path.join(OUT, outfile + '.pptx')
     prs.save(path)
@@ -292,23 +303,24 @@ bot_blocks = [
 ]
 
 app_meta = [
-    ('프로그램의 명칭', '세종 당뇨·혈당관리 모바일 앱 (Sejong_APP)'),
+    ('프로그램의 명칭', '개인 맞춤형 혈당관리 플랫폼 소프트웨어 (Sejong_APP)'),
     ('주요 기능', '연속혈당측정(CGM) 기기 연동 및 혈당 자료 수집 · 혈당 지표(TIR/TAR/TBR/CV/GMI) 산출과 도표 표시 · '
-                 '식사·운동 기록과 혈당 연관 분석 · 회원 인증 및 개인 의료정보 관리 · PWA 설치형 모바일 화면'),
+                 '식사·운동 기록과 혈당 연관 분석 · RAG 기반 AI 상담 챗봇 · 회원 인증 및 개인 의료정보 관리 · PWA 설치형 모바일 화면'),
     ('개발 언어 및 환경', 'Java 17 (Spring Framework / 전자정부표준프레임워크) · JSP · JavaScript · MyBatis SQL(MySQL) · '
                      'HTML5/CSS3 · Apache Tomcat 9'),
     ('전체 소스 분량', '약 33,800줄 (서드파티 라이브러리 및 KISA 제공 암호모듈 제외)'),
-    ('본 문서의 범위', '전체 소스 중 주요 기능 6개 부분 발췌. AI 혈당상담 챗봇 모듈은 별도 저작물로 등록하므로 이 문서에서 제외하였다.'),
+    ('본 문서의 범위', '플랫폼 전체 소스(AI 상담 챗봇 모듈 포함) 중 주요 기능 7개 부분 발췌.'),
 ]
 
 bot_meta = [
-    ('프로그램의 명칭', 'AI 혈당상담 챗봇 (Sejong AI Glucose Chatbot)'),
-    ('주요 기능', '혈당 관련 질의를 규칙 기반 지식베이스로 우선 응답하고, 해당 답변이 없을 때 생성형 AI를 호출해 상담 문장을 생성 · '
-                 '혈당 지표(TIR/TAR/TBR/CV)로 혈당 유형 4종을 자체 판정해 AI 참고자료로 제공 · 연령·당뇨 유형별 관리목표 자동 적용'),
+    ('프로그램의 명칭', '개인 혈당데이터 분석용 RAG 기반 AI 상담 챗봇 (Sejong AI Glucose Chatbot)'),
+    ('주요 기능', 'RAG(검색증강생성) 구조의 혈당 상담 챗봇 — ①질의로 혈당 지식베이스를 검색(Retrieval)해 근거가 있으면 그 내용으로 응답 '
+                 '②없으면 이용자의 혈당 분석 결과(유형 판정·연령별 관리목표·주의 음식·추천 운동)를 프롬프트에 결합(Augmentation) '
+                 '③생성형 AI가 상담 문장을 생성(Generation)'),
     ('개발 언어 및 환경', 'Java 17 (Spring Framework) · JavaScript · JSP · 생성형 AI API(Google Gemini generateContent) 연동'),
-    ('설계상의 특징', '수치 계산과 상태 판정은 프로그램이 직접 수행하고 생성형 AI에는 수치를 전달하지 않으며 정성적 표현만 전달해 '
-                  '문장 생성에만 사용한다. AI 미설정·호출 실패 시 자체 지표 요약으로 대체 응답한다.'),
-    ('본 문서의 범위', '챗봇 모듈 소스 중 주요 기능 8개 부분 발췌 (서버 질의 처리·AI 호출부, 화면 대화 처리부, 지식베이스)'),
+    ('설계상의 특징', '검색 단계는 자체 구축 혈당 지식베이스에 대한 키워드 가중치 매칭으로 구현해 외부 벡터 DB 없이 동작한다. '
+                  '수치 계산·판정은 프로그램이 수행하고 생성형 AI에는 수치를 전달하지 않으며 정성적 표현만 결합한다.'),
+    ('본 문서의 범위', '챗봇 모듈 소스 중 주요 기능 8개 부분 발췌 (질의 처리·검색·증강·생성 각 단계와 지식베이스)'),
 ]
 
 app_note = ('※ 각 코드 왼쪽 번호는 해당 파일 내 실제 줄번호이며, 가독성을 위해 발췌 구간의 공통 들여쓰기만 제거하였다. '
@@ -318,5 +330,7 @@ bot_note = ('※ 각 코드 왼쪽 번호는 해당 파일 내 실제 줄번호�
 
 if __name__ == '__main__':
     # 발췌 구간은 PDF 판(build_docs.py)과 동일하게 쓴다 — 두 첨부물의 내용을 어긋나지 않게.
-    build('세종 당뇨·혈당관리 모바일 앱', app_meta, C.app_blocks, app_note, '01_app_source')
-    build('AI 혈당상담 챗봇', bot_meta, C.bot_blocks, bot_note, '02_chatbot_source')
+    build('혈당관리 플랫폼 S/W · RAG 기반 AI 상담 챗봇', C.merged_meta, C.merged_blocks,
+          C.merged_note, '00_merged_source', max_slides=9)
+    build('개인 맞춤형 혈당관리 플랫폼 소프트웨어', app_meta, C.app_blocks, app_note, '01_platform_source')
+    build('개인 혈당데이터 분석용 RAG 기반 AI 상담 챗봇', bot_meta, C.bot_blocks, bot_note, '02_chatbot_source')

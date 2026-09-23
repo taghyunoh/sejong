@@ -62,7 +62,9 @@ def layout(blocks, first_budget, budget):
 
     for title, lines in blocks:
         cost = 3  # 블록 제목줄 + 여백
-        if used + cost + 4 > cap:      # 제목만 덜렁 남기지 않는다
+        if title.startswith('■'):      # 부(部) 구분 — 새 쪽에서 시작
+            flush()
+        elif used + cost + 4 > cap:    # 제목만 덜렁 남기지 않는다
             flush()
         cur.append(('h', title))
         used += cost
