@@ -149,8 +149,9 @@
   .search-box .search-dt { cursor:pointer; }
   .search-box .search-dt::-webkit-calendar-picker-indicator { display:block; cursor:pointer; opacity:.75; }
   .search-box .search-dt:hover { border-color:var(--reg-teal); }
-  .search-box .btn-dt-clr { height:34px; width:30px; margin:0 10px 0 4px; border:1px solid #ccc; background:#fff; border-radius:4px; color:#888; cursor:pointer; }
-  .search-box .btn-dt-clr:hover { background:#f2f2f2; color:#333; }
+  .search-box .btn-search { height:34px; padding:0 18px; margin:0 10px 0 6px; border:1px solid var(--reg-teal); background:var(--reg-teal);
+    color:#fff; border-radius:4px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .search-box .btn-search:hover { background:var(--reg-teal-dark); border-color:var(--reg-teal-dark); }
   .reg-table td#userGb { border-color:var(--reg-teal); }
   /* 라디오 체크 표시(가운데 점)가 그려지지 않는 문제 —
      부트스트랩 기본 배경이미지가 이 화면에서 적용되지 않아 테두리 원만 보였다.
@@ -724,7 +725,7 @@ function modalClose(){
             <input type="date" id="joinFrom" class="form-control search-dt" onchange="fnSearch()" onclick="try{this.showPicker();}catch(e){}">
             <span class="dt-sep">~</span>
             <input type="date" id="joinTo" class="form-control search-dt" onchange="fnSearch()" onclick="try{this.showPicker();}catch(e){}">
-            <button type="button" class="btn-dt-clr" onclick="$('#joinFrom,#joinTo').val('');fnSearch();" title="가입일 조건 지우기">✕</button>
+            <button type="button" class="btn-search" onclick="fnSearch();">조회</button>
             <input class="form-check-input" type="checkbox" name="user_gubun"  onchange="fnSearch()"
 						id="user_gubun" value="Y"> <span class="ml-1">모니터링(미등록 1일이상 경과)</span>
 			<input type="hidden" name="userCheck" id="userCheck" />
