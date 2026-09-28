@@ -45,6 +45,36 @@
   .gb-count b { color:#222; }
   .gb-count b.c1 { color:var(--reg-teal-dark); font-size:15px; }
   .gb-count .sep { margin:0 10px; color:#bbb; }
+  /* 일자별 가입인원 */
+  .gb-count .btn-jd { margin-left:12px; height:26px; padding:0 10px; font-size:13px; border:1px solid var(--reg-teal-border);
+    background:var(--reg-teal-bg); color:var(--reg-teal-dark); border-radius:13px; cursor:pointer; font-weight:600; }
+  .gb-count .btn-jd:hover { border-color:var(--reg-teal); }
+  /* 팝업 틀 — 화면을 덮는 반투명 배경 + 가운데 카드 (바깥 누르기·✕·닫기·ESC 로 닫힘) */
+  .jd-pop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1060;
+    align-items:center; justify-content:center; }
+  .jd-pop.on { display:flex; }
+  .jd-card { background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.25); min-width:420px; max-width:92vw; }
+  .jd-hd { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:2px solid var(--reg-teal);
+    color:var(--reg-teal); font-weight:700; font-size:17px; }
+  .jd-hd .jd-sub { font-size:13px; font-weight:500; color:#666; }
+  .jd-hd .jd-only { margin-left:14px; font-size:14px; font-weight:600; color:var(--reg-teal-dark); cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px; }
+  .jd-hd .jd-only input { width:15px; height:15px; accent-color:var(--reg-teal); cursor:pointer; }
+  .jd-hd .jd-x { margin-left:auto; border:0; background:none; font-size:18px; color:#888; cursor:pointer; }
+  .jd-hd .jd-x:hover { color:#333; }
+  .jd-box { max-height:60vh; overflow-y:auto; margin:14px 16px; border:1px solid var(--reg-teal-border); }
+  .jd-box .jd-table { width:100%; }
+  .jd-ft { padding:0 16px 14px; text-align:right; }
+  .jd-ft .jd-close { height:32px; padding:0 18px; border:1px solid var(--reg-teal); background:var(--reg-teal); color:#fff;
+    border-radius:4px; font-weight:600; cursor:pointer; }
+  .jd-ft .jd-close:hover { background:var(--reg-teal-dark); }
+  .jd-table { border-collapse:collapse; font-size:13px; }
+  .jd-table th, .jd-table td { border:1px solid #e3e3e3; padding:4px 14px; white-space:nowrap; text-align:center; }
+  .jd-table thead th { position:sticky; top:0; background:#d9edf7; z-index:1; }
+  .jd-table td.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .jd-table td.c1 { color:var(--reg-teal-dark); font-weight:600; }
+  .jd-table tfoot td { position:sticky; bottom:0; background:var(--reg-teal-bg); font-weight:700; }
+  .jd-table .jd-empty { color:#888; text-align:center; }
   /* 그리드 폭 = 내용 폭 (화면 끝까지 늘리지 않는다) — 칸이 화면보다 넓어지면 그때만 가로 스크롤.
      admin-common.css·common.css 의 width:100% 를 이기려고 !important. */
   #infoTable { width: auto !important; }
@@ -182,6 +212,53 @@ function ymdOf(d){
 }
 function fmtDash(ymd){ return ymd ? ymd.substring(0,4) + '-' + ymd.substring(4,6) + '-' + ymd.substring(6,8) : ''; }
 
+// ── 일자별 가입인원 (조회 결과를 가입일로 묶어 센다 — 서버 조회 없음) ──
+var gJoinDays = {};
+var gJoinSub = "";   // 팝업 제목 옆 조건 설명(가입일 기간)
+function openJoinDays(){
+   renderJoinDays();
+   $("#jdSub").text(gJoinSub);
+   $("#jdPop").addClass("on");
+}
+function closeJoinDays(){ $("#jdPop").removeClass("on"); }
+// ESC 로 닫기 (화면이 메뉴마다 ajax 로 다시 들어와도 한 번만 걸리게 이름공간으로 다시 묶는다)
+$(document).off("keydown.jdPop").on("keydown.jdPop", function(e){
+   if (e.key === "Escape" && $("#jdPop").hasClass("on")) closeJoinDays();
+});
+function renderJoinDays(){
+   // [실증환자만] 체크(기본 켬) — 실증환자가 가입한 날만, 칸도 가입일·실증환자 둘만
+   var only1 = $("#jdOnly1").is(":checked");
+   var keys = Object.keys(gJoinDays).sort().reverse();   // 최근 날짜가 위, 가입일 없는 줄('')은 맨 아래
+   if (only1) {
+      keys = keys.filter(function(k){ return gJoinDays[k].g1 > 0; });
+      var h1 = '<table class="jd-table"><thead><tr><th>가입일</th><th>실증환자 가입인원</th></tr></thead><tbody>';
+      var s1 = 0;
+      if (!keys.length) h1 += '<tr><td colspan="2" class="jd-empty">해당 기간 실증환자 가입자가 없습니다.</td></tr>';
+      keys.forEach(function(k){
+         s1 += gJoinDays[k].g1;
+         h1 += '<tr><td>' + (k ? fmtDash(k) : '(가입일 없음)') + '</td><td class="n c1"><b>' + gJoinDays[k].g1 + '</b></td></tr>';
+      });
+      h1 += '</tbody>';
+      if (keys.length) h1 += '<tfoot><tr><td>합계 (' + keys.length + '일)</td><td class="n c1"><b>' + s1 + '</b></td></tr></tfoot>';
+      $("#joinDayBox").html(h1 + '</table>');
+      return;
+   }
+   var html = '<table class="jd-table"><thead><tr><th>가입일</th><th>가입인원</th><th>실증환자</th><th>테스트</th><th>미지정</th></tr></thead><tbody>';
+   var t = { n:0, g1:0, g2:0, etc:0 };
+   if (!keys.length) html += '<tr><td colspan="5" class="jd-empty">해당 기간 가입자가 없습니다.</td></tr>';
+   keys.forEach(function(k){
+      var d = gJoinDays[k];
+      t.n += d.n; t.g1 += d.g1; t.g2 += d.g2; t.etc += d.etc;
+      html += '<tr><td>' + (k ? fmtDash(k) : '(가입일 없음)') + '</td><td class="n"><b>' + d.n + '</b></td>'
+            + '<td class="n c1">' + (d.g1 || '') + '</td><td class="n">' + (d.g2 || '') + '</td><td class="n">' + (d.etc || '') + '</td></tr>';
+   });
+   html += '</tbody>';
+   if (keys.length) html += '<tfoot><tr><td>합계 (' + keys.length + '일)</td><td class="n"><b>' + t.n + '</b></td>'
+            + '<td class="n c1">' + t.g1 + '</td><td class="n">' + t.g2 + '</td><td class="n">' + t.etc + '</td></tr></tfoot>';
+   html += '</table>';
+   $("#joinDayBox").html(html);
+}
+
 function fnSearch() {
     // 가입일 칸 첫 기본값 = 2026-01-01 ~ 오늘 (한 번만 — ✕ 로 지운 뒤에는 다시 채우지 않는다)
     //   (화면은 메뉴를 누를 때마다 ajax 로 새로 들어오므로 표시는 window 가 아니라 칸 자체에 남긴다)
@@ -218,6 +295,7 @@ function fnSearch() {
          var list = [];
          var cnt = { all:0, g1:0, g2:0, etc:0 };   // 실증구분별 건수 — 실증구분 선택과 무관하게 센다
          var totAll = 0, totToday = 0;               // 전체 대상자 / 오늘(가입일=오늘) 대상자 — 가입일·실증구분 조건과 무관
+         var byDay = {};                             // 가입일(YYYYMMDD) → 인원
          var todayYmd = ymdOf(new Date());
          if(data.resultCnt > 0){
             for(var i=0 ; i < data.resultCnt; i++){
@@ -238,6 +316,11 @@ function fnSearch() {
                var rowGb = (row.userGb == null) ? "" : ("" + row.userGb);
                cnt.all++;
                if (rowGb === "1") cnt.g1++; else if (rowGb === "2") cnt.g2++; else cnt.etc++;
+               // 일자별 가입인원 — 같은 기준(실증구분 선택 전)으로 가입일마다 센다
+               var dk = (jd.length === 8) ? jd : "";
+               var dd = byDay[dk] || (byDay[dk] = { n:0, g1:0, g2:0, etc:0 });
+               dd.n++;
+               if (rowGb === "1") dd.g1++; else if (rowGb === "2") dd.g2++; else dd.etc++;
                if (userGbVal !== "") {
                   if (userGbVal === "0") {
                      if (rowGb === "1" || rowGb === "2") continue;
@@ -252,8 +335,12 @@ function fnSearch() {
                     + '<span class="sep">|</span>'
                     + ((joinFrom || joinTo) ? '가입일 ' + fmtDash(joinFrom) + ' ~ ' + fmtDash(joinTo) + ' ' : '')
                     + '조회 <b>' + cnt.all + '</b>명 — 실증환자 <b class="c1">' + cnt.g1 + '</b>명 · 테스트 <b>' + cnt.g2 + '</b>명'
-                    + (cnt.etc ? ' · 미지정 <b>' + cnt.etc + '</b>명' : '');
+                    + (cnt.etc ? ' · 미지정 <b>' + cnt.etc + '</b>명' : '')
+                    + ' <button type="button" class="btn-jd" onclick="openJoinDays()">📅 일자별 가입인원</button>';
          $("#gbCount").html(cntTxt);
+         gJoinDays = byDay;
+         gJoinSub = (joinFrom || joinTo) ? '가입일 ' + fmtDash(joinFrom) + ' ~ ' + fmtDash(joinTo) : '가입일 전체';
+         if ($("#jdPop").hasClass("on")) openJoinDays();   // 열린 채 조건을 바꾸면 바로 갱신
          gPatientList = list;
          gCurPage = 1;
          renderPage();
@@ -630,7 +717,7 @@ function modalClose(){
             <label for="searchUserGb" class="form-title ml-2">실증구분</label>
             <select id="searchUserGb" name="searchUserGb" class="form-select search-gb" onchange="fnSearch()">
               <option value="">전체</option>
-              <option value="1">실증환자</option>
+              <option value="1" selected>실증환자</option>
               <option value="2">테스트</option>
             </select>
             <label for="joinFrom" class="form-title ml-2">가입일</label>
@@ -687,6 +774,19 @@ function modalClose(){
         </section>
       </div>
      </div>
+  </div>
+  <!-- 일자별 가입인원 팝업 -->
+  <div id="jdPop" class="jd-pop" onclick="if(event.target===this)closeJoinDays();">
+    <div class="jd-card" role="dialog" aria-labelledby="jdTitle">
+      <div class="jd-hd">
+        <span id="jdTitle">📅 일자별 가입인원</span>
+        <span id="jdSub" class="jd-sub"></span>
+        <label class="jd-only"><input type="checkbox" id="jdOnly1" checked onchange="renderJoinDays()"> 실증환자만</label>
+        <button type="button" class="jd-x" onclick="closeJoinDays()" aria-label="닫기">✕</button>
+      </div>
+      <div id="joinDayBox" class="jd-box"></div>
+      <div class="jd-ft"><button type="button" class="jd-close" onclick="closeJoinDays()">닫기</button></div>
+    </div>
   </div>
   <!-- 모달 -->
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModallLabel" aria-hidden="true">
