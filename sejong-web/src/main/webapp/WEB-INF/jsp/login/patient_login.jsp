@@ -62,7 +62,6 @@ function hitEnter(e){ if (e.keyCode === 13) loginProc(); }
         </div>
         <button type="button" class="btn btn-primary btn-lg w-100 mt-2" onclick="loginProc();">로그인</button>
         <div class="set-btn-box w-100">
-          <button type="button" class="btn btn-outline-dark" onclick="goRegister();">회원가입</button>
           <button type="button" class="btn btn-outline-dark" onclick="location.href='/login.do';">의료진 로그인</button>
         </div>
       </div>

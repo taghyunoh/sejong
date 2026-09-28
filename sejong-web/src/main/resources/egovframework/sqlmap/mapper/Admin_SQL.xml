@@ -129,7 +129,7 @@
 		 ) A WHERE 1=1
 		 ]]>
 		  <if test='userCheck == "Y" '><![CDATA[
-	        AND (A.CGM_GAP >= 1 OR A.EAT_GAP >= 1 OR A.CGM_GAP = '' OR A.EAT_GAP = '')
+	        AND (A.CGM_GAP >= 1 OR A.CGM_GAP = '')
 	      ]]>
 	      </if>
 	 	  <if test='userCheck == "N" '><![CDATA[
@@ -296,6 +296,19 @@
 		   set EMAIL = #{email}
 		 where USER_UUID = #{userUuid}
 		]]>
+	</update>
+
+	<!-- 환자 목록 모달 저장 — 이메일/실증구분(USER_GB)만 수정. 그 외 컬럼은 절대 건드리지 않는다.
+	     실증구분을 고르지 않았으면(미지정) USER_GB 는 그대로 둔다. -->
+	<update id="updatePatientModal" parameterType="PatientDTO">
+		update T_USER_TRAN
+		<set>
+			EMAIL = #{email},
+			<if test="userGb != null and userGb != ''">
+			USER_GB = #{userGb},
+			</if>
+		</set>
+		where USER_UUID = #{userUuid}
 	</update>
 
 	<!-- 관리자(의사) -->

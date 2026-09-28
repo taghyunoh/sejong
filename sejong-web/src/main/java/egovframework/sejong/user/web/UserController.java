@@ -156,10 +156,13 @@ public class UserController {
 			return "redirect:/login.do";
 		}
 
-		/** 환자 회원가입 페이지 — raw 단독 JSP (tiles wrap 없음, InternalResourceViewResolver 처리) */
+		/**
+		 * 환자 회원가입 페이지 — 웹 회원가입 막음 (2026-09-28) : 로그인 화면으로 돌려보낸다.
+		 * 되살리려면 return ".raw/login/patient_register"; 로 되돌리고, patientRegisterAct 가 patientRegisterActDisabled(원래 가입 처리)를 부르게 한다.
+		 */
 		@RequestMapping(value = "/patient/register.do")
 		public String patientRegisterPage() {
-			return ".raw/login/patient_register";
+			return "redirect:/login.do";
 		}
 
 		/** 환자 로그인 처리 (전화번호 + 비밀번호) */
@@ -218,6 +221,12 @@ public class UserController {
 		@RequestMapping(value = "/patient/registerAct.do", method = RequestMethod.POST)
 		@ResponseBody
 		public ResponseObject patientRegisterAct(@RequestBody PatientDTO dto, HttpServletRequest request) throws Exception {
+			ResponseObject res = new ResponseObject();
+			// 웹 회원가입 막음 (2026-09-28) — 페이지만 막으면 이 주소로 직접 가입할 수 있어 여기서도 거절한다.
+			res.IsSucceed = false; res.Message = "웹 회원가입은 지원하지 않습니다."; return res;
+		}
+
+		private ResponseObject patientRegisterActDisabled(PatientDTO dto) throws Exception {
 			ResponseObject res = new ResponseObject();
 			try {
 				if (dto.getPhone() == null || dto.getPhone().trim().isEmpty()) {

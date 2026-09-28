@@ -1,0 +1,113 @@
+From 56ad5edbc669e3b7ca093d447f4e627864514849 Mon Sep 17 00:00:00 2001
+From: "hyun.otech" <hyun.otech@daum.net>
+Date: Mon, 28 Sep 2026 15:32:29 +0900
+Subject: [PATCH] =?UTF-8?q?=ED=99=98=EC=9E=90=EB=AA=A9=EB=A1=9D:=20?=
+ =?UTF-8?q?=EB=AA=A8=EB=8B=88=ED=84=B0=EB=A7=81=20=EC=9D=98=EB=AF=B8=20?=
+ =?UTF-8?q?=EC=84=A4=EB=AA=85,=20=EC=8B=A4=EC=A6=9D=EA=B5=AC=EB=B6=84=20?=
+ =?UTF-8?q?=EC=BB=AC=EB=9F=BC=20=EA=B3=A0=EC=A0=95/=EB=B0=B0=EC=A7=80,=20?=
+ =?UTF-8?q?=ED=99=94=EB=A9=B4=20=EC=9A=B0=EC=B8=A1=20=ED=99=95=EC=9E=A5?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- 공통 .content-wrap max-width(1200px) 해제로 그리드를 화면 폭 전체로 확장
+- 모니터링 체크박스를 라벨로 감싸 크게 표시하고, 조회 의미를 설명 줄/툴팁으로 표시
+- 실증구분 컬럼을 오른쪽 끝에 sticky 고정하고 실증환자/테스트/미지정 배지로 구분
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YV1EpWGt9HtAijhiPgvXtf
+---
+ .../WEB-INF/jsp/main/admin/admin_ptList.jsp   | 40 ++++++++++++++++---
+ 1 file changed, 35 insertions(+), 5 deletions(-)
+
+diff --git a/sejong-web/src/main/webapp/WEB-INF/jsp/main/admin/admin_ptList.jsp b/sejong-web/src/main/webapp/WEB-INF/jsp/main/admin/admin_ptList.jsp
+index 200644b..9e97f96 100644
+--- a/sejong-web/src/main/webapp/WEB-INF/jsp/main/admin/admin_ptList.jsp
++++ b/sejong-web/src/main/webapp/WEB-INF/jsp/main/admin/admin_ptList.jsp
+@@ -103,6 +103,30 @@
+   .reg-table .gb-wrap label.gb-on { color:var(--reg-teal-dark); font-weight:700; }
+   .reg-table .gb-now { margin-top:5px; font-size:12px; color:#555; }
+   .reg-table .gb-now b { color:var(--reg-teal-dark); }
++
++  /* ⑥ 우측 확장 — 공통 .content-wrap 의 max-width:1200px 를 풀어 화면 폭 전체를 쓴다 */
++  .tab-pane .content-body .content-wrap { max-width:none; }
++
++  /* ⑦ 모니터링 체크박스 — 눈에 띄게 + 의미 설명 줄 */
++  .search-box .mon-chk { display:inline-flex; align-items:center; gap:6px; margin:0 0 0 10px; cursor:pointer; white-space:nowrap; font-size:15px; font-weight:600; color:#333; }
++  .search-box .mon-chk input[type="checkbox"] { width:18px; height:18px; margin:0; flex:none; border:2px solid var(--reg-teal); cursor:pointer; }
++  .search-box .mon-chk input[type="checkbox"]:checked { background-color:var(--reg-teal); border-color:var(--reg-teal); }
++  .search-box .mon-chk.on { color:var(--reg-teal-dark); }
++  .top-pannel .mon-desc { width:100%; margin-top:-10px; font-size:13px; color:#666; }
++  .top-pannel .mon-desc b { color:var(--reg-teal-dark); }
++  .top-pannel .mon-desc.on { color:var(--reg-teal-dark); }
++
++  /* ⑧ 실증구분 컬럼 — 가로 스크롤해도 항상 오른쪽 끝에 고정 + 구분 배지 */
++  #infoTable th.col-gb, #infoTable td.col-gb { position:sticky; right:0; box-shadow:inset 1px 0 0 #bbb; }
++  #infoTable thead th.col-gb { z-index:3; }
++  #infoTable tbody td.col-gb { z-index:1; background-color:#fff; }
++  #infoTable tbody tr:nth-child(even) td.col-gb { background-color:#f2f2f2; }
++  #infoTable tbody tr:hover td.col-gb { background-color:#f2f2f2; }
++  #infoTable tbody tr.tr-primary td.col-gb { background-color:var(--color-primary-v2); }
++  .gb-badge { display:inline-block; min-width:64px; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600; line-height:1.6; text-align:center; }
++  .gb-badge.gb-1 { background:var(--reg-teal-bg); color:var(--reg-teal-dark); border:1px solid var(--reg-teal-border); }
++  .gb-badge.gb-2 { background:#eceff1; color:#546e7a; border:1px solid #cfd8dc; }
++  .gb-badge.gb-0 { background:#fff4e5; color:#b26a00; border:1px solid #ffd8a8; }
+ </style>
+ <script>
+ var totCnt ;
+@@ -148,6 +172,8 @@ function fnSearch() {
+    	}else{
+    		userCheckVal = "N";
+    	}
++    // 모니터링 체크 시 라벨/설명 줄을 청록으로 강조
++    $(".mon-chk, .mon-desc").toggleClass("on", userCheckVal === "Y");
+     // 실증구분 조회 필터 — "" 전체 / "1" 실증환자 / "2" 테스트 / "0" 미지정(1,2 외)
+     var userGbVal = $("#searchUserGb").val() || "";
+     $.ajax({
+@@ -203,7 +229,8 @@ function renderPage(){
+    for(var i = start; i < end; i++){
+       var d = gPatientList[i];
+       var genderText = (d.gender == "F") ? "여성" : ((d.gender == "M") ? "남성" : "");
+-      var userText   = (d.userGb == "2") ? "테스트" : ((d.userGb == "1") ? "실증환자" : "미지정");
++      var gbKey      = (d.userGb == "1" || d.userGb == "2") ? ("" + d.userGb) : "0";   // 0 = 미지정
++      var userText   = (gbKey == "2") ? "테스트" : ((gbKey == "1") ? "실증환자" : "미지정");
+       dataTxt += '<tr class="" ondblclick="javascript:fnDtlSearch(\''+d.userUuid+'\');" id="row_'+d.userUuid+'">';
+       dataTxt += "<td>" + (i+1) + "</td>";
+       dataTxt += "<td>" + d.userId + "</td>";
+@@ -219,7 +246,7 @@ function renderPage(){
+       dataTxt += "<td>" + d.cgmDtm + "</td>";
+       dataTxt += "<td>" + d.cgmGap + "</td>";
+       dataTxt += "<td>" + d.regDtm + "</td>";
+-      dataTxt += "<td>" + userText + "</td>";
++      dataTxt += "<td class='col-gb'><span class='gb-badge gb-" + gbKey + "'>" + userText + "</span></td>";
+       dataTxt += "</tr>";
+    }
+    $("#dataArea").append(dataTxt);
+@@ -557,10 +584,13 @@ function modalClose(){
+               <option value="2">테스트</option>
+               <option value="0">미지정</option>
+             </select>
+-            <input class="form-check-input" type="checkbox" name="user_gubun"  onchange="fnSearch()"
+-						id="user_gubun" value="Y"> <span class="ml-1">모니터링(미등록 1일이상 경과)</span>
++            <label class="mon-chk" for="user_gubun" title="테스트 계정·연락처 없는 환자를 빼고, 마지막 혈당(CGM) 등록 후 1일 이상 지났거나 한 번도 등록하지 않은 환자만 봅니다.">
++              <input class="form-check-input" type="checkbox" name="user_gubun" onchange="fnSearch()" id="user_gubun" value="Y">
++              모니터링(미등록 1일이상 경과)
++            </label>
+ 			<input type="hidden" name="userCheck" id="userCheck" />
+           </div>
++          <div class="mon-desc">※ <b>모니터링</b> : 혈당(CGM) 등록이 끊긴 환자를 찾는 조회입니다. 체크하면 <b>마지막 혈당 등록 후 1일 이상 지났거나(경과일 1 이상) 한 번도 등록하지 않은 환자</b>만 보여 줍니다. 테스트 계정과 연락처가 없는 환자는 제외됩니다.</div>
+         </section>
+ 
+         <section class="main-pannel">
+@@ -588,7 +618,7 @@ function modalClose(){
+                       <th>최종검사</th>
+                       <th>경과일</th>
+                       <th>가입접수일시</th>
+-                      <th>실증구분</th>
++                      <th class="col-gb">실증구분</th>
+                     </tr>
+                   </thead>
+                   <tbody id="dataArea">
+-- 
+2.52.0.windows.1
+

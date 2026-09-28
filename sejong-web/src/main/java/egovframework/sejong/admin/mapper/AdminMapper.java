@@ -22,6 +22,7 @@ public interface AdminMapper {
 	boolean insertPatient(PatientDTO dto) throws Exception;
 	boolean updatePatient(PatientDTO dto) throws Exception;
 	boolean updatePatientEmail(PatientDTO dto) throws Exception;   // 이메일만 수정
+	boolean updatePatientModal(PatientDTO dto) throws Exception;  // 모달 저장 — 이메일·실증구분만 수정
 	boolean deletePatient(PatientDTO dto) throws Exception;
 
 	// 환자 로그인 (T_USER_TRAN)

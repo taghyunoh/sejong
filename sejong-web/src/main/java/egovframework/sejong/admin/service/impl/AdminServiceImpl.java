@@ -74,6 +74,11 @@ public class AdminServiceImpl implements AdminService {
 		return mapper.updatePatientEmail(dto);
 	}
 	@Override
+	public boolean updatePatientModal(PatientDTO dto) throws Exception {
+		// 모달 저장 — 이메일·실증구분(USER_GB)만 수정, 그 외 컬럼은 건드리지 않는다
+		return mapper.updatePatientModal(dto);
+	}
+	@Override
 	public boolean deletePatient(PatientDTO dto) throws Exception {
 		// TODO Auto-generated method stub
 		return mapper.deletePatient(dto);
