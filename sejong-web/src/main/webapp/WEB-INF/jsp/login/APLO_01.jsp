@@ -58,35 +58,6 @@
     font-weight: 700;
     text-align: center;
   }
-  #login .login-wrap .login-visual { /* 회원가입 배너 (그림 + 링크) */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    margin-bottom: 16px;
-    padding: 10px 14px;
-    background: linear-gradient(135deg, #f2f8ff, #e4eefc);
-    border: 1px solid #cfe2ff;
-    border-radius: 8px;
-    text-decoration: none;
-    box-sizing: border-box;
-    transition: background .15s, border-color .15s;
-  }
-  #login .login-wrap .login-visual:hover {
-    background: #e2eefc;
-    border-color: #9fc6f5;
-  }
-  #login .login-wrap .login-visual .lv-art {
-    flex: 0 0 auto;
-    width: 150px;
-    height: auto;
-  }
-  #login .login-wrap .login-visual .lv-text {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1976d2;
-    line-height: 1;
-  }
   #login .login-wrap .id-box {
     margin-top: 4px;
   }
@@ -260,20 +231,6 @@ function fnPwdClear(){
     <div class="login-box">
       <div class="login-wrap">
         <h1>AI 기반 디지털 헬스케어 서비스 플랫폼 실증</h1>
-
-        <!-- 사용자 회원가입 배너 (그림 + 링크) -->
-        <a href="/patient/register.do" class="login-visual w-100">
-          <svg class="lv-art" viewBox="0 0 150 48" aria-hidden="true" focusable="false">
-            <polyline points="4,26 44,26 54,26 62,10 72,44 80,20 88,26 104,26"
-                      fill="none" stroke="#1976d2" stroke-width="2.4"
-                      stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="124" cy="24" r="18" fill="#dbe9fc"/>
-            <path d="M124 36 c-7-4.5-11.5-8.3-11.5-13.5 a6 6 0 0 1 11.5-3 a6 6 0 0 1 11.5 3 c0 5.2-4.5 9-11.5 13.5 z" fill="#1976d2"/>
-            <rect x="122.1" y="18.5" width="3.8" height="11"  rx="1" fill="#ffffff"/>
-            <rect x="118.5" y="22.1" width="11"  height="3.8" rx="1" fill="#ffffff"/>
-          </svg>
-          <span class="lv-text">사용자 회원가입</span>
-        </a>
 
         <div class="id-box w-100">
           <h2>로그인</h2>
