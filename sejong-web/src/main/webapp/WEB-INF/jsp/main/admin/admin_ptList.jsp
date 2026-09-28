@@ -79,8 +79,30 @@
   .reg-table input:read-only, .reg-table select:disabled { background:#f2f2f2; color:#555; }
   .reg-table input#email { background:#fff; color:#000; border-color:var(--reg-teal); }
   .reg-table .edit-hint { margin-top:5px; font-size:12px; color:#178074; }
-  .btn-email-save { background:var(--reg-teal); border:1px solid var(--reg-teal); color:#fff; font-weight:600; }
-  .btn-email-save:hover { background:var(--reg-teal-dark); border-color:var(--reg-teal-dark); color:#fff; }
+  .btn-modal-save { background:var(--reg-teal); border:1px solid var(--reg-teal); color:#fff; font-weight:600; }
+  .btn-modal-save:hover { background:var(--reg-teal-dark); border-color:var(--reg-teal-dark); color:#fff; }
+  /* ⑤ 실증구분 — 조회 필터 + 모달 수정 */
+  .search-box .search-gb { width:auto; display:inline-block; margin-left:10px; height:34px; font-size:14px; }
+  .reg-table td#userGb { border-color:var(--reg-teal); }
+  /* 라디오 체크 표시(가운데 점)가 그려지지 않는 문제 —
+     부트스트랩 기본 배경이미지가 이 화면에서 적용되지 않아 테두리 원만 보였다.
+     appearance 를 끄고 가운데 점을 직접 그린다(성별·실증구분 공통). */
+  .reg-table .radio-wrap label { display:inline-flex; align-items:center; }
+  .reg-table .radio-wrap input[type="radio"].form-check-input {
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; flex:none; margin:0 6px 0 0;
+    border:2px solid #9aa4a3; border-radius:50%;
+    background-color:#fff; background-image:none;
+  }
+  .reg-table .radio-wrap input[type="radio"].form-check-input:checked {
+    border-color:var(--reg-teal);
+    background-image:radial-gradient(circle at center, var(--reg-teal) 45%, #fff 47%);
+  }
+  /* 선택된 쪽 라벨은 청록 굵은 글씨 + 현재 값을 글자로도 표시 */
+  .reg-table .gb-wrap { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .reg-table .gb-wrap label.gb-on { color:var(--reg-teal-dark); font-weight:700; }
+  .reg-table .gb-now { margin-top:5px; font-size:12px; color:#555; }
+  .reg-table .gb-now b { color:var(--reg-teal-dark); }
 </style>
 <script>
 var totCnt ;
@@ -126,6 +148,8 @@ function fnSearch() {
    	}else{
    		userCheckVal = "N";
    	}
+    // 실증구분 조회 필터 — "" 전체 / "1" 실증환자 / "2" 테스트 / "0" 미지정(1,2 외)
+    var userGbVal = $("#searchUserGb").val() || "";
     $.ajax({
       url : CommonUtil.getContextPath() + '/admin/selectPatientList.do',
     type : 'post',
@@ -141,6 +165,14 @@ function fnSearch() {
                var row = data.resultLst[i];
                if (userCheckVal === 'Y' && (row.userGb === "2" || !row.phone)) {
                   continue;
+               }
+               if (userGbVal !== "") {
+                  var rowGb = (row.userGb == null) ? "" : ("" + row.userGb);
+                  if (userGbVal === "0") {
+                     if (rowGb === "1" || rowGb === "2") continue;
+                  } else if (rowGb !== userGbVal) {
+                     continue;
+                  }
                }
                list.push(row);
             }
@@ -171,7 +203,7 @@ function renderPage(){
    for(var i = start; i < end; i++){
       var d = gPatientList[i];
       var genderText = (d.gender == "F") ? "여성" : ((d.gender == "M") ? "남성" : "");
-      var userText   = (d.userGb == "2") ? "테스트" : ((d.userGb == "1") ? "실증환자" : "");
+      var userText   = (d.userGb == "2") ? "테스트" : ((d.userGb == "1") ? "실증환자" : "미지정");
       dataTxt += '<tr class="" ondblclick="javascript:fnDtlSearch(\''+d.userUuid+'\');" id="row_'+d.userUuid+'">';
       dataTxt += "<td>" + (i+1) + "</td>";
       dataTxt += "<td>" + d.userId + "</td>";
@@ -386,16 +418,16 @@ function fnSave(iud){
             $("#weight").val(data.result.weight);
             $("#joinYmd").val(fmtYmdDash(data.result.joinYmd));
             $("#blodGb").val(data.result.blodGb);
-            $("#userGb").val(data.result.userGb);
             if(data.result.gender == "F")
                $("#genderF").prop("checked","checked");
             else
                $("#genderM").prop("checked","checked");
 
-            if(data.result.userGb == "1")
-                $("#user_gb1").prop("checked","checked");
-            else
-                $("#user_gb2").prop("checked","checked");
+            // 실증구분 — 1/2 가 아니면(미지정) 둘 다 해제해서 잘못된 값이 선택된 것처럼 보이지 않게 한다
+            var ugb = (data.result.userGb == null) ? "" : ("" + data.result.userGb);
+            $("#user_gb1").prop("checked", ugb === "1");
+            $("#user_gb2").prop("checked", ugb === "2");
+            fnUserGbMark();
 
          }
       });
@@ -433,10 +465,19 @@ function fnSaveProc(){
    }
 }
 
-// 이메일만 수정 저장 (EMAIL 외 컬럼은 서버에서도 건드리지 않음)
-function fnEmailSave(){
+// 실증구분 선택 상태 표시 — 선택한 쪽 라벨을 강조하고 오른쪽에 현재 값을 글자로 보여준다
+function fnUserGbMark(){
+   var v = $("input[name='userGb']:checked").val() || "";
+   $("#user_gb1").closest("label").toggleClass("gb-on", v === "1");
+   $("#user_gb2").closest("label").toggleClass("gb-on", v === "2");
+   $("#userGbNow").text(v === "1" ? "실증환자" : (v === "2" ? "테스트" : "미지정"));
+}
+
+// 모달 저장 — 이메일·실증구분만 한 번에 저장 (그 외 컬럼은 서버에서도 건드리지 않음)
+function fnModalSave(){
    var userUuid = $("#userUuid").val();
    var email    = $.trim($("#email").val());
+   var userGb   = $("input[name='userGb']:checked").val() || "";
 
    if(!userUuid){
       alert("선택된 환자 정보가 없습니다.");
@@ -452,24 +493,26 @@ function fnEmailSave(){
       $("#email").focus();
       return;
    }
-   if(!confirm("이메일을 아래와 같이 수정하시겠습니까?\n\n" + email)) return;
+
+   var userGbNm = (userGb === "1") ? "실증환자" : ((userGb === "2") ? "테스트" : "미지정(변경 안 함)");
+   if(!confirm("아래 내용으로 수정하시겠습니까?\n\n이메일 : " + email + "\n실증구분 : " + userGbNm)) return;
 
    $.ajax({
       type : "post",
-      url  : CommonUtil.getContextPath() + "/admin/PatientEmailSaveAct.do",
-      data : { userUuid : userUuid, email : email },
+      url  : CommonUtil.getContextPath() + "/admin/PatientModalSaveAct.do",
+      data : { userUuid : userUuid, email : email, userGb : userGb },
       dataType : "json",
       success : function(data) {
          if(data.error_code != "0") {
-            alert(data.error_msg || "이메일 수정에 실패했습니다.");
+            alert(data.error_msg || "저장에 실패했습니다.");
             return;
          }
-         alert("이메일이 수정되었습니다.");
+         alert("저장되었습니다.");
          modalClose();   // 먼저 닫고
          fnSearch();     // 목록 갱신(폼 reset 포함)
       },
       error : function(){
-         alert("이메일 수정 요청 중 오류가 발생했습니다.");
+         alert("저장 요청 중 오류가 발생했습니다.");
       }
    });
 }
@@ -507,6 +550,13 @@ function modalClose(){
             <label for="search" class="form-title" onclick="">검색어 입력</label>
             <input type="text" name="searchText" id="searchText" class="form-control search" placeholder="환자명 또는 전화번호를 입력하세요." onkeypress="if( event.keyCode == 13 ){fnSearch();}">
             <button class="buttcon" onclick="javascript:fnSearch();"><span class="icon icon-search" ></span></button>
+            <label for="searchUserGb" class="form-title ml-2">실증구분</label>
+            <select id="searchUserGb" name="searchUserGb" class="form-select search-gb" onchange="fnSearch()">
+              <option value="">전체</option>
+              <option value="1">실증환자</option>
+              <option value="2">테스트</option>
+              <option value="0">미지정</option>
+            </select>
             <input class="form-check-input" type="checkbox" name="user_gubun"  onchange="fnSearch()"
 						id="user_gubun" value="Y"> <span class="ml-1">모니터링(미등록 1일이상 경과)</span>
 			<input type="hidden" name="userCheck" id="userCheck" />
@@ -538,7 +588,7 @@ function modalClose(){
                       <th>최종검사</th>
                       <th>경과일</th>
                       <th>가입접수일시</th>
-                      <th>실증환자</th>
+                      <th>실증구분</th>
                     </tr>
                   </thead>
                   <tbody id="dataArea">
@@ -651,12 +701,13 @@ function modalClose(){
                     <label><input class="form-check-input" type="radio" name="gender" id="genderM" value="M"> 남자</label>
                   </div>
                 </td>
-                <th>실증여부</th>
-                <td id="userGb" class="readonly">
-                  <div class="radio-wrap">
-                    <label><input class="form-check-input" type="radio" name="userGb" id="user_gb1" value="1"> 실증환자</label>
-                    <label><input class="form-check-input" type="radio" name="userGb" id="user_gb2" value="2"> 테스트</label>
+                <th>실증구분</th>
+                <td id="userGb">
+                  <div class="radio-wrap gb-wrap">
+                    <label><input class="form-check-input" type="radio" name="userGb" id="user_gb1" value="1" onclick="fnUserGbMark();"> 실증환자</label>
+                    <label><input class="form-check-input" type="radio" name="userGb" id="user_gb2" value="2" onclick="fnUserGbMark();"> 테스트</label>
                   </div>
+                  <div class="gb-now">현재 : <b id="userGbNow">미지정</b></div>
                 </td>
               </tr>
               <tr>
@@ -681,8 +732,8 @@ function modalClose(){
               <tr>
                 <th>이메일</th>
                 <td colspan="3">
-                  <input type="text" id="email" name="email" class="form-control full" value="" placeholder="이메일을 입력하세요." onkeypress="if(event.keyCode == 13){ fnEmailSave(); return false; }">
-                  <div class="edit-hint">※ 이메일만 수정할 수 있습니다. 수정 후 <b>이메일 저장</b> 버튼을 누르세요.</div>
+                  <input type="text" id="email" name="email" class="form-control full" value="" placeholder="이메일을 입력하세요." onkeypress="if(event.keyCode == 13){ fnModalSave(); return false; }">
+                  <div class="edit-hint">※ 이메일·실증구분만 수정할 수 있습니다. 수정 후 <b>저장</b> 버튼을 누르세요.</div>
                 </td>
               </tr>
             </tbody>
@@ -690,7 +741,7 @@ function modalClose(){
         </div>
         </form:form>
         <div class="modal-footer">
-          <button type="button" class="btn btn-sm btn-email-save" onclick="fnEmailSave();">이메일 저장</button>
+          <button type="button" class="btn btn-sm btn-modal-save" onclick="fnModalSave();">저장</button>
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal" onclick="modalClose();">목록</button>
         </div>
       </div>
