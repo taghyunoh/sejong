@@ -30,11 +30,41 @@
 	    margin: 0 10px; /* 구분자(|) 양쪽 간격 */
 	    color: gray; /* 구분자 색상 */
 	}
-  .table-responsive {
-    max-height: 600px; /* 적당한 높이 설정 (10개 행 기준으로 조정) */
-    overflow-y: auto; /* 수직 스크롤 활성화 */
-    border: 1px solid #ccc; /* 테두리 추가 */
+  /* [2026-09-29] 그리드를 「환자 목록(admin_ptList.jsp)」과 같은 방식으로 맞췄다.
+     종전 : <colgroup> 에 고정 px(합계 1,400px)이 박혀 있어 틀보다 넓어져 **늘 가로 스크롤**이 생겼다
+            (마지막 열 '가입접수일시·환자구분'이 잘려 보였다).
+     지금 : colgroup 을 없애고 내용 폭(table-layout:auto)으로 잡되 틀 전체(100%)를 채운다.
+            내용이 정말 넓을 때만 가로 스크롤이 생긴다. 조회조건(search-panel)은 그대로 둔다. */
+  /* [2026-09-29] 틀 폭 — 공통 teb_menu.css 의 .content-wrap{max-width:1200px} 때문에
+     표가 1200px 에서 멈춰 맨 끝 칸(가입접수일시·환자구분)이 가로 스크롤 뒤로 숨었다.
+     「환자 목록(admin_ptList.jsp)」과 똑같이 이 화면만 화면 오른쪽 끝까지 펼친다.
+     (.content-body 가 flex + align-items:flex-start 라 자식이 내용 폭으로 줄어드는 것도 함께 푼다) */
+  .tab-pane .content-body { align-items: stretch; }
+  .tab-pane .content-body .tab-content,
+  .tab-pane .content-body .content-wrap { width: 100%; }
+  .tab-pane .content-body .content-wrap {
+    box-sizing: border-box;
+    max-width: calc(100vw - 60px) !important;
+    min-width: 0 !important;
+    margin: 0 auto;
+    width: fit-content !important;
   }
+  .tab-pane .content-body .content-wrap .top-pannel,
+  .tab-pane .content-body .content-wrap .main-pannel { max-width: 100%; box-sizing: border-box; }
+  .main-pannel .main-left.w-100, .main-left.w-100 { width: 100% !important; }
+  .main-pannel .main-content, .main-content { width: 100%; }
+  .main-content .table-responsive { width: 100%; }
+  .main-content .table-responsive #infoTable { min-width: 100%; }
+  #infoTable { width: 100%; table-layout: auto; }
+  #infoTable th, #infoTable td { padding-left: 12px; padding-right: 12px; white-space: nowrap; }
+  .table-responsive {
+    max-height: 640px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #ccc;
+  }
+  #infoTable tbody tr { cursor: pointer; }
+  #infoTable tbody tr:hover { background-color: #f2f2f2; }
 
   #infoTable thead th {
     position: sticky;
@@ -87,6 +117,15 @@
     font-size:14px; font-weight:600; cursor:pointer; }
   .search-panel .sp-btn:hover { background:#333; }
   .search-panel .search-times { margin-left:auto; display:flex; gap:14px; font-size:13px; }
+  /* [2026-09-29] 검색조건도 그리드 폭에 맞춰 **오른쪽 끝까지** 채운다(사용자 요청).
+     공통 common.css 의 .content-body .top-pannel 이 flex(justify-content:space-between)라
+     자식 .search-panel 이 내용 폭만큼만 차지해 오른쪽이 늘 비어 있었다.
+       · .search-panel 을 틀 전체로 늘리고, 각 줄(.sp-row)도 전체 폭을 쓰게 한다
+       · 검색어 칸이 남는 폭을 모두 차지(flex) — 첫 줄의 '혈당지표'는 오른쪽 끝으로 붙인다 */
+  .top-pannel .search-panel { flex: 1 1 auto; width: 100%; box-sizing: border-box; }
+  .search-panel .sp-row { width: 100%; }
+  .search-panel .sp-kw { flex: 1 1 240px; }
+  .search-panel .sp-row:first-child .sp-lb2 { margin-left: auto; }
   /* 이름 클릭 = 상세(기획: 이름에 링크 표시) */
   #infoTable .nm-link { color:#1976d2; text-decoration:underline; cursor:pointer; }
 </style>
@@ -541,25 +580,6 @@ function formatTimeWithMilliseconds(date) { const hours = String(date.getHours()
               <!-- 테이블 샘플 -->
               <div class="table-responsive">
                 <table id="infoTable" class="table table-bordered">
-                  <colgroup>
-                  	<col style="width: 50px">
-                    <col style="width: 100px">
-                    <col style="width: 100px">
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                    <col style="width: 100px">
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                    <%-- 혈당지표 4열 추가(2026-07-31) --%>
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                    <col style="width: 70px">
-                    <col style="width: 180px">
-                    <col style="width: 80px">
-                    <col style="width: 80px">
-                  </colgroup>
                   <thead>
                     <tr>
                       <th>번호</th>
