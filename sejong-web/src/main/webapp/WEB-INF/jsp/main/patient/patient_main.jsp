@@ -20,6 +20,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js" defer></script>
+<%-- 모바일 접속 QR 생성용 (설정 모달에서만 사용 — defer 로 로드) --%>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script>
 
   // 자체완결 페이지(raw/*) 라 헤더 tiles 가 안 붙으므로 contextPath 를 여기서 세팅
@@ -106,13 +108,99 @@
   /* FAQ 아코디언 */
   #faqList .accordion-button:not(.collapsed) { background:#eef4ff; color:#0d6efd; box-shadow:none; }
   #faqList .accordion-button:focus { box-shadow:none; }
-  /* 세부혈당그래프 모달 — 표준 풀스크린(최상단에 딱 붙음) */
-  #detailGraphModal { padding:0 !important; }
-  #detailGraphModal .modal-dialog { margin:0 !important; max-width:none !important;
-    width:100vw !important; height:100vh !important; transform:none !important; }
-  #detailGraphModal .modal-content { height:100vh !important; max-height:none !important; top:auto !important;
-    transform:none !important; border:0 !important; border-radius:0 !important; }
-  #detailGraphModal .modal-body { padding:0; }
+  /* 뷰 전환용 — 이 파일에는 .hidden 정의가 원래 없었다(다른 JSP 클래스라 착각 주의) */
+  .hidden { display:none !important; }
+  /* AI 종합분석 화면 — 웹 비율 2단(좌=연속혈당 24시간 / 우=주간 분석), 980px 이하 세로 쌓기 */
+  /* 좌우 전체 폭 사용 + 각 컬럼 독립 스크롤 [2026-10-21 요청 「좌우 공간 채우고 좌우 별도 동작」] */
+  .ai-cols { display:flex; gap:24px; align-items:stretch; height:calc(100vh - 70px); width:100%; box-sizing:border-box; }
+  /* [2026-10-21 「영역은 유지하고 내용만 좌우 조금 축소」] 컬럼 안쪽에 스크롤바 자리(scrollbar-gutter)와
+     좌우 여백을 두어 차트 우측 라벨·버튼·단위 글자가 잘리지 않게. 카드 안쪽 여백도 한 단계 줄임 */
+  .ai-cols > .ai-col { flex:1 1 0; min-width:0; overflow-y:auto; overflow-x:hidden; scrollbar-gutter:stable; padding:2px 14px 24px 6px; }
+  .ai-cols .card-tile { padding:18px 20px; }
+  #viewAi { overflow-x:hidden; }
+  @media (max-width:980px){ .ai-cols { flex-direction:column; gap:12px; height:auto; } .ai-cols > .ai-col { overflow:visible; width:100%; } }
+  /* 앱 FAHR_00 하단 문장 블록 — 파란 테두리 박스 안에 문장·회색 설명박스 (⚠ .line 은 공통 CSS 와 충돌해 .tl 사용) */
+  .ai-trend { border:1.5px solid #4a6fb5; border-radius:10px; padding:12px 14px; margin-top:12px; background:#fff; }
+  .ai-trend .tl  { font-size:17px; color:#555; padding:10px 2px; border-bottom:1px solid #f1f3f4; }
+  .ai-trend .tl:last-child { border-bottom:0; }
+  .ai-trend .st  { font-size:19px; font-weight:800; color:#111; }
+  .ai-trend .box { background:#f5f5f5; border:1px solid #e0e0e0; border-radius:10px; padding:12px 18px; margin:8px 0 10px; font-size:17px; color:#000; line-height:1.45; }
+  /* 앱 Blood_Consult 하단: 범례·구간·TOP3 그리드 */
+  .ai-legend { display:flex; gap:14px; justify-content:center; font-size:12.5px; color:#444; margin-top:4px; }
+  .ai-legend i { display:inline-block; width:12px; height:12px; border-radius:2px; vertical-align:-1px; margin-right:3px; }
+  .ai-range4 { grid-template-columns:repeat(4,1fr); }
+  .ai-line { font-size:15px; font-weight:700; color:#2d303f; padding:6px 0; }
+  .ai-line span { font-weight:400; color:#666; }
+  .ai-cardhead { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .ai-grid4 { display:grid; grid-template-columns:0.8fr 2fr 1fr 1.2fr; gap:8px; padding:8px 2px; border-bottom:1px dashed #eee; font-size:14px; color:#333; }
+  .ai-grid4.head { font-weight:700; color:#345; border-bottom:1px solid #dde3ec; }
+  /* 앱과 동일한 기준·단위 라벨 줄 */
+  .ai-unit { display:flex; justify-content:space-between; font-size:12px; color:#8a98a8; margin:2px 2px 6px; }
+  /* 앱과 동일한 구간 버튼(3/6/12/24시간)·주간 이동(◀▶) */
+  .ai-range { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:4px 0 8px; }
+  .ai-range button { border:1px solid #bcd3f5; background:#fff; color:#5b8def; border-radius:8px;
+    padding:6px 0; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .ai-range button.on { background:#1f7aed; border-color:#1f7aed; color:#fff; }
+  .ai-weeknav { display:flex; align-items:center; justify-content:center; gap:12px; margin:2px 0 8px; }
+  .ai-weeknav button { border:1px solid #dbe3ec; background:#fff; border-radius:8px; padding:2px 10px;
+    cursor:pointer; color:#345; font-size:13px; }
+  .ai-weeknav span { font-weight:700; font-size:14.5px; color:#2d303f; }
+  .ai-daynav { display:flex; align-items:center; justify-content:center; gap:14px; margin:6px 0 2px; }
+  .ai-daynav button { border:0; background:none; cursor:pointer; color:#345; font-size:14px; padding:2px 8px; }
+  .ai-daynav span { font-weight:700; font-size:15px; color:#2d303f; }
+  /* 앱 연속혈당 상단 띠: 시작값 → 변화량 → 최근값 */
+  .ai24-head { display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center; text-align:center;
+    background:#e9f2fb; border-radius:10px; padding:10px 6px; margin:2px 0 6px; }
+  .ai24-head .v { font-size:34px; font-weight:800; color:#1f6f3a; line-height:1.1; }
+  .ai24-head .v.light { color:#4fae7a; }
+  .ai24-head .d { font-size:22px; font-weight:800; color:#2e7d32; }
+  .ai24-head .t { font-size:12.5px; color:#4a5568; margin-top:2px; }
+  /* [2026-10-21 요청] 모든 팝업 상단 바를 연한 하늘색으로 — 각 모달의 인라인 그라데이션을 공통으로 덮어쓴다 */
+  .modal .modal-header { background:linear-gradient(135deg,#cfe5fa 0%,#b3d4f3 100%) !important; border-bottom:1px solid #9fc4e8 !important; }
+  .modal .modal-header .modal-title { color:#1f3b63 !important; }
+  .modal .modal-header .text-white-50, .modal .modal-header p { color:#4a6b8f !important; }
+  .modal .modal-header .btn-close { filter:none !important; opacity:.6; }
+  /* 앱 login.jsp 약관동의 목록(.agreeList) 대응 */
+  .agree-list { border:1px solid #e5e8ec; border-radius:10px; overflow:hidden; }
+  .agree-item { display:flex; justify-content:space-between; align-items:center; padding:13px 14px; border-bottom:1px solid #eef0f2; font-size:15px; background:#fff; }
+  .agree-item:last-child { border-bottom:0; }
+  .agree-item.all { font-weight:800; color:#2b6fff; background:#f5f8ff; border-bottom:2px solid #dde3ec; }
+  .agree-item a { color:#2d303f; text-decoration:none; }
+  .agree-item a:hover { color:#0d6efd; }
+  .agree-item input[type=checkbox] { width:20px; height:20px; accent-color:#0d6efd; cursor:pointer; }
+  .agree-right { display:flex; align-items:center; gap:10px; }
+  /* 앱 가이드 머리띠 + 점선 박스 */
+  .ai-sechead { margin:0 0 10px; padding:6px 10px; background:#8ca6db; color:#fff; border-radius:6px; font-size:14px; font-weight:800; }
+  .ai-dashbox { border:1.5px dashed #4a6fb5; border-radius:8px; padding:10px 12px; background:#fff; }
+  .ai-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .ai-cell { text-align:center; background:#f8fafc; border:1px solid #eef2f7; border-radius:10px; padding:8px 4px; }
+  .ai-cell .lb { font-size:13px; color:#6b7280; }
+  .ai-cell .v  { font-size:28px; font-weight:800; }
+  .ai-cell .u  { font-size:11px; color:#9aa1ac; }
+  /* 좌측 메뉴 활성(현재 화면) 표시 — 세부혈당그래프는 모달이 아니라 메뉴 우측 본문 전환 뷰 */
+  .side-nav .sn-item.active { background:#eef4ff; color:#0d6efd; border-left-color:#0d6efd; font-weight:700; }
+  #viewDetail .dv-topbar { display:flex; align-items:center; gap:10px; padding:10px 16px;
+    background:#fff; border-bottom:1px solid #e3e6ea; position:sticky; top:0; z-index:5; }
+
+  /* ── 모바일 대응 (전화번호 로그인 개별 화면 전용 — 의사·관리자 화면과 무관) ──
+     980px 이하: 사이드바가 숨으므로 우측 평가·Q&A 패널을 본문 아래로 쌓고,
+     상단 버튼은 줄바꿈 허용. 케어센스 설정은 ⚙ 설정 모달로 모바일에서도 조작 가능. */
+  @media (max-width:980px){
+    .layout-cols { flex-direction:column !important; }
+    #rightPanel { width:100% !important; position:static !important; overflow:visible !important; }
+    .topbar-actions { flex-wrap:wrap; justify-content:flex-end; row-gap:6px; }
+    .blood-num { font-size:34px; }
+  }
+  @media (max-width:560px){
+    .row-grid { gap:8px; }
+    .card-tile { padding:12px; }
+    .container-fluid.py-4 { padding-top:12px !important; }
+    h3 { font-size:20px; }
+  }
+  /* 설정 모달 QR */
+  #settingsQr { display:flex; justify-content:center; padding:8px 0 4px; }
+  #settingsQr canvas { border:1px solid #e5e7eb; border-radius:8px; }
+  #settingsQrUrl { word-break:break-all; text-align:center; color:#0d6efd; font-size:12.5px; }
 </style>
 <script type="text/javaScript">
 var userUuid = "${sessionScope.userUuid}";
@@ -135,6 +223,7 @@ $(function(){
 		// ① DB에 있는 데이터로 화면 즉시 렌더 (i-Sens 외부 동기화를 기다리지 않음 → 빠르게 표시)
 		loadTodayBlood();
 		drawChart();
+		loadDayStatus();   // [앱 홈 카드 대응] 최근 24시간 양호/주의
 
 		// ② 토큰 있으면 i-Sens 동기화를 백그라운드로 실행 → 완료 시 내부에서 화면 재갱신
 		if (hasToken) {
@@ -180,13 +269,13 @@ function loadTokenStatus(cb){
 		success:function(r){
 			var hasToken = !!(r && r.IsSucceed);
 			if (hasToken) {
-				$("#tokenStatus").text("✓ i-Sens 연동됨").removeClass("text-danger").addClass("text-success");
-				$("#btnConnect").hide();
-				$("#btnSync").show();
+				$("#tokenStatus, #tokenStatus2").text("✓ i-Sens 연동됨").removeClass("text-danger").addClass("text-success");
+				$("#btnConnect, #btnConnect2").hide();
+				$("#btnSync, #btnSync2").show();
 			} else {
-				$("#tokenStatus").text("✗ i-Sens 미연동").removeClass("text-success").addClass("text-danger");
-				$("#btnConnect").show();
-				$("#btnSync").hide();
+				$("#tokenStatus, #tokenStatus2").text("✗ i-Sens 미연동").removeClass("text-success").addClass("text-danger");
+				$("#btnConnect, #btnConnect2").show();
+				$("#btnSync, #btnSync2").hide();
 			}
 			if (typeof cb === 'function') cb(hasToken);
 		},
@@ -250,12 +339,423 @@ function _doSyncMyBlood(silent){
 			// 성공/실패 무관하게 DB의 최신 상태로 화면 갱신
 			loadTodayBlood();
 			drawChart();
+			loadDayStatus();
 		},
 		error: function(){
 			$("#syncMsg").text("동기화 요청 오류").css("color","#dc3545");
 			loadTodayBlood();
 			drawChart();
 		}
+	});
+}
+
+/* ── [앱 홈 카드 대응] 최근 24시간 혈당지표 '양호/주의' 판정 ──
+   마지막 측정 시점부터 거꾸로 24시간 구간의 측정값으로 TIR(70~180 비율)·저혈당 비율을 계산.
+   양호 = TIR 70% 이상이면서 저혈당(<70) 4% 미만 — 대한당뇨병학회 권장 기준의 단순판(참고용).
+   마지막 측정이 오늘이 아니면 앱과 같은 문구로 '이후 측정값 없음'을 함께 보여준다. */
+function loadDayStatus(){
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/getLastBloodDay.do', type:'post', dataType:'json',
+		success:function(r){
+			var row = (r && r.IsSucceed && r.Data) ? r.Data : null;
+			var lastKey = row ? String(row.date2) : null;
+			if(!lastKey){
+				$('#dayStatusText').text('혈당 측정값이 아직 없습니다');
+				$('#dayStatusSub').text('혈당기(CGM)를 착용하면 측정값이 표시됩니다');
+				return;
+			}
+			var pd = new Date(lastKey); pd.setDate(pd.getDate()-1);
+			var prevKey = formatDay(pd);
+			$.when(
+				$.ajax({ url:CommonUtil.getContextPath()+'/getBloodChartData.do', type:'post',
+					data:JSON.stringify({ end:lastKey, userId:userUuid }), contentType:'application/json', dataType:'json' }),
+				$.ajax({ url:CommonUtil.getContextPath()+'/getBloodChartData.do', type:'post',
+					data:JSON.stringify({ end:prevKey, userId:userUuid }), contentType:'application/json', dataType:'json' })
+			).done(function(aRes, bRes){
+				var cur = Array.isArray(aRes[0]) ? aRes[0] : [];
+				var prv = Array.isArray(bRes[0]) ? bRes[0] : [];
+				var lastHM = cur.length ? (cur[cur.length-1].HM || toHM(cur[cur.length-1].DTM)) : '00:00';
+				var pts = [];
+				cur.forEach(function(x){ var v=parseInt(x.UPT,10); if(!isNaN(v)) pts.push(v); });
+				// 전일(前日)은 마지막 측정 시각 이후 구간만 포함 → 정확히 '마지막 측정 기준 24시간'
+				prv.forEach(function(x){
+					var hm = x.HM || toHM(x.DTM);
+					if(hm > lastHM){ var v=parseInt(x.UPT,10); if(!isNaN(v)) pts.push(v); }
+				});
+				if(!pts.length){
+					$('#dayStatusText').text('혈당 측정값이 아직 없습니다');
+					$('#dayStatusSub').text('혈당기(CGM)를 착용하면 측정값이 표시됩니다');
+					return;
+				}
+				var inR  = pts.filter(function(v){ return v>=70 && v<=180; }).length;
+				var low  = pts.filter(function(v){ return v<70; }).length;
+				var tir  = Math.round(inR*100/pts.length);
+				var good = tir>=70 && (low*100/pts.length)<4;
+				$('#dayStatusText').html('최근 24시간 혈당지표는 <span style="color:'
+					+(good?'#7CFC9A':'#ffd166')+';">&lsquo;'+(good?'양호':'주의')+'&rsquo;</span> 입니다');
+				var today = formatDay(new Date());
+				$('#dayStatusSub').html(lastKey < today
+					? lastKey+' 이후 발생한 혈당 측정값이 없습니다 (마지막 측정 24시간 기준 상태입니다)'
+					: '목표범위(70~180) 유지 '+tir+'% · 측정 '+pts.length+'건 기준');
+			}).fail(function(){
+				$('#dayStatusText').text('최근 24시간 지표를 불러오지 못했습니다');
+				$('#dayStatusSub').text('');
+			});
+		},
+		error:function(){
+			$('#dayStatusText').text('최근 24시간 지표를 불러오지 못했습니다');
+			$('#dayStatusSub').text('');
+		}
+	});
+}
+
+/* ── 🤖 AI 종합분석(주간) 전용 화면 ──
+   앱 홈 카드의 두 항목(혈당 지표 확인 + AI 종합분석·코칭)을 한 화면에 담는다.
+   (종전에는 세부그래프의 AI 분석 탭으로 보냈는데 세부혈당그래프 메뉴와 같은 화면이라 혼란 — 분리)
+   기간 = 마지막 측정일 기준 7일, 기준 = 연령별(만 65세↑ 고령 50/50/1, 그 외 표준 70/25/4) */
+function openAiAnalysis(){
+	_showView('ai');
+	_loadAiView();    // 우측: AI 종합분석(주간) + 가이드
+	_loadAi24();      // 좌측: 연속혈당 측정(현재시점 24시간 기준)
+}
+/* ★[2026-10-21] 지표는 화면 계산이 아니라 서버 calcBlood.do 로 — 앱(연속혈당 측정·AI 종합분석)과
+   같은 SQL 정의(공복=03~05시, 식후=끼니별 +2h 첫 측정, TIR 반올림)라서 수치가 앱과 1:1로 일치한다. */
+var _aiWeekEnd = null, _aiLatestEnd = null;   // 주간 창의 끝 날짜 — ◀▶ 로 7일씩 이동
+function _loadAiView(){
+	$('#aiMetricBox').html('<div class="text-center text-muted py-3">지표 계산 중…</div>');
+	$('#aiCoachBox').html('<div class="text-center text-muted py-3">분석 중…</div>');
+	$('#aiBasisNote').html('');
+	if (_aiWeekEnd){ _aiWeekRun(_aiWeekEnd); return; }
+	$.ajax({ url:CommonUtil.getContextPath()+'/getLastBloodDay.do', type:'post', dataType:'json',
+		success:function(lr){
+			var lrow = (lr && lr.IsSucceed && lr.Data) ? lr.Data : null;
+			_aiLatestEnd = lrow ? String(lrow.date2) : formatDay(new Date());
+			_aiWeekEnd = _aiLatestEnd;
+			_aiWeekRun(_aiWeekEnd);
+		},
+		error:function(){ _aiWeekRun(formatDay(new Date())); }
+	});
+}
+function _aiWeekMove(dir){
+	var d = new Date(_aiWeekEnd || formatDay(new Date()));
+	d.setDate(d.getDate() + dir*7);
+	var k = formatDay(d);
+	if (_aiLatestEnd && k > _aiLatestEnd) k = _aiLatestEnd;   // 최신 주 이후(미래)로는 못 감
+	if (k === _aiWeekEnd) return;
+	_aiWeekEnd = k;
+	_loadAiView();
+}
+function _aiWeekRun(endKey){
+	var endD = new Date(endKey), days = [];
+	for (var i=6; i>=0; i--) days.push(formatDay(new Date(endD.getTime()-i*864e5)));
+	$('#aiPeriod').text(days[0]+' ~ '+days[6]);
+	$('#aiPeriod2').text(days[0].replace(/-/g,'.')+' ~ '+days[6].replace(/-/g,'.'));
+	_aiBandRange(7);                    // 발생구간 차트(기본 7일, 버튼으로 당일/14/30일)
+	_loadAiInsight(days[0], days[6]);   // 고/저혈당 구간 · 음식 TOP3 · 운동 TOP3
+	$.when(
+		$.ajax({ url:CommonUtil.getContextPath()+'/calcBlood.do', type:'post',
+			data:JSON.stringify({ start:days[0], end:days[6], userId:userUuid }), contentType:'application/json', dataType:'json' }),
+		$.ajax({ url:CommonUtil.getContextPath()+'/patient/myInfo.do', type:'post', dataType:'json' })
+	).done(function(cRes, iRes){
+		var c = cRes[0] || {};
+		var avg = Math.round(c.AvgBlood || 0);
+		if (!avg){
+			$('#aiAvgW,#aiFastW,#aiMealW').text('-');
+			$('#aiMetricBox').html('<div class="text-center text-muted py-3">이 기간에는 측정 데이터가 없습니다.</div>');
+			$('#aiCoachBox').html('');
+			return;
+		}
+		var fast = Math.round(c.FASTING || 0) || avg;                          // 공복 — 03~05시 창, 없으면 기간 평균
+		var meal = Math.round((c.avgMeal && c.avgMeal.avgBlood) || 0) || avg;  // 식후 — 끼니 없으면 기간 평균(앱과 동일 폴백)
+		var gmi = c.GMI, tir = Math.round(c.TIR||0), tar = (c.TAR!=null?c.TAR:0), tbr = (c.TBR!=null?c.TBR:0), cv = (c.CV!=null?c.CV:0);
+		$('#aiAvgW').text(avg); $('#aiFastW').text(fast); $('#aiMealW').text(meal);
+		var info = iRes[0], birth = (info && info.IsSucceed && info.Data) ? String(info.Data.birth||'') : '';
+		var age = null;
+		if (/^[0-9]{8}$/.test(birth)){
+			var t=new Date(), by=+birth.substring(0,4), bm=+birth.substring(4,6), bd=+birth.substring(6,8);
+			age = t.getFullYear()-by - ((t.getMonth()+1<bm || (t.getMonth()+1===bm && t.getDate()<bd))?1:0);
+		}
+		var elderly = age!=null && age>=65;
+		var C = elderly ? { tir:50, tar:50, tbr:1, note:'고령 기준 적용 (TIR 50% 이상·TAR 50% 미만·TBR 1% 미만)' }
+		                : { tir:70, tar:25, tbr:4, note:'표준 기준 적용 (TIR 70% 이상·TAR 25% 미만·TBR 4% 미만)' };
+		var OK='#2e7d32', WARN='#e67e22';
+				var row = function(lb, hint, val, ok, plain){
+					return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 2px;border-bottom:1px solid #eef2f7;">'
+					 + '<div><b style="font-size:15px;">'+lb+'</b><div class="text-muted" style="font-size:12px;">'+hint+'</div></div>'
+					 + '<div style="font-size:20px;font-weight:800;color:'+(plain ? '#2d303f' : (ok ? OK : WARN))+';">'+val+'</div></div>';
+				};
+				$('#aiMetricBox').html(
+					  row('GMI지수(%)', '혈당 관리지표(참고사항)', (Number(gmi)||0).toFixed(1)+'%', true, true)
+					+ row('목표혈당 유지시간(TIR)', '권장: '+C.tir+'% 이상', tir+'%', tir>=C.tir)
+					+ row('고혈당 시간(TAR)', '권장: '+C.tar+'% 미만', (Number(tar)||0).toFixed(1)+'%', tar<C.tar)
+					+ row('저혈당 시간(TBR)', '권장: '+C.tbr+'% 미만', (Number(tbr)||0).toFixed(1)+'%', tbr<C.tbr)
+					+ row('혈당변동성(CV)', '권장: 36% 이하', (Number(cv)||0).toFixed(1)+'%', cv<=36)
+				);
+				var head='', tips=[];
+				if (tar>=C.tar){ head='지난 일주일 동안 고혈당 시간이 다소 길었습니다.'; tips=['식사량을 줄이세요.','탄수화물 비율을 줄이세요.','식후 20~30분 걷기를 실천해 보세요.']; }
+				else if (tbr>=C.tbr){ head='지난 일주일 동안 저혈당이 발생했습니다.'; tips=['공복 상태의 운동을 피하세요.','식사를 거르지 말고 규칙적으로 하세요.','저혈당 증상이 느껴지면 즉시 당분을 섭취하세요.']; }
+				else if (cv>36){ head='지난 일주일 동안 혈당 변동 폭이 큰 편이었습니다.'; tips=['식사 시간을 규칙적으로 유지하세요.','과식과 결식을 피하세요.','가벼운 활동을 꾸준히 이어가세요.']; }
+				else { head='지난 일주일 혈당이 안정적으로 관리되고 있습니다.'; tips=['현재 생활습관을 그대로 유지하세요.','꾸준한 측정과 기록을 계속해 주세요.']; }
+				$('#aiCoachBox').html(
+					'<div style="font-size:15px;line-height:1.9;">'
+					+ '최근 일주일 지표 분석입니다.'
+					+ '<br>• TIR(목표혈당 유지시간) <b>'+tir+'%</b> → '+(tir>=C.tir ? '충족&nbsp;👍' : '<b style="color:'+WARN+'">미달</b>')
+					+ '<br>• TAR(고혈당 시간) <b>'+tar+'%</b> → '+(tar<C.tar ? '충족' : '<b style="color:'+WARN+'">초과</b>')
+					+ '<br>• TBR(저혈당 시간) <b>'+tbr+'%</b> → '+(tbr<C.tbr ? '충족' : '<b style="color:'+WARN+'">초과</b>')
+					+ '<br><br><b>AI 코칭</b><br>' + head
+					+ '<ul style="margin:6px 0 0;padding-left:18px;">'+tips.map(function(s){ return '<li>'+s+'</li>'; }).join('')+'</ul>'
+					+ '</div>'
+				);
+				// 앱과 동일: 각주는 점선 박스 안 코칭 끝에 "※ 65세 · 당뇨병 전단계 — 고령 기준 적용 (…)" (별도 학회 문구 없음)
+				var gbMap = { '1':'1형 당뇨병', '2':'2형 당뇨병', '3':'당뇨병 전단계', '4':'임신성 당뇨병', '9':'기타' };
+				var gbNm = (info && info.Data) ? (gbMap[String(info.Data.blodGb||'')] || '') : '';
+				$('#aiCoachBox').append('<div style="font-size:13.5px;color:#555;margin-top:8px;line-height:1.55;">※ '
+					+ (age!=null ? age+'세' : '') + (gbNm ? ' · '+gbNm : '') + (age!=null||gbNm ? ' — ' : '') + C.note + '</div>');
+				$('#aiBasisNote').html('');
+	}).fail(function(){
+		$('#aiMetricBox').html('<div class="text-center text-danger py-3">지표 조회에 실패했습니다.</div>');
+		$('#aiCoachBox').html('');
+	});
+}
+
+/* 좌측 — 연속혈당 측정(앱 화면 대응): 최근 혈당 + 오늘 공복·식후 평균 + 마지막 측정 기준 24시간 지표 */
+var _ai24Day = null;   // 연속혈당 측정 기준일 — ◀▶ 로 하루씩 이동 (앱 FAHR_00 과 동일)
+function _loadAi24(){
+	if (_ai24Day){ _ai24Run(_ai24Day); return; }
+	$.ajax({ url:CommonUtil.getContextPath()+'/getLastBloodDay.do', type:'post', dataType:'json',
+		success:function(lr){
+			var lrow = (lr && lr.IsSucceed && lr.Data) ? lr.Data : null;
+			_ai24Day = lrow ? String(lrow.date2) : formatDay(new Date());   // 최종 측정일(없으면 오늘)
+			_ai24Run(_ai24Day);
+		},
+		error:function(){ _ai24Day = formatDay(new Date()); _ai24Run(_ai24Day); }
+	});
+}
+function _ai24Move(dir){
+	var d = new Date(_ai24Day || formatDay(new Date()));
+	d.setDate(d.getDate() + dir);
+	var k = formatDay(d), today = formatDay(new Date());
+	if (k > today) k = today;          // 오늘 이후로는 못 감
+	if (k === _ai24Day) return;
+	_ai24Day = k;
+	_ai24Run(k);
+}
+function _ai24Run(lastKey){
+	$('#aiMetricBox24').html('<div class="text-center text-muted py-3">지표 계산 중…</div>');
+	var pd = new Date(lastKey); pd.setDate(pd.getDate()-1);
+	var prevKey = formatDay(pd);
+	// 앱과 동일한 날짜 표기 "2026년 10월 7일 (화)" + 당일 측정 없음 안내
+	var kp = lastKey.split('-'), WD = ['일','월','화','수','목','금','토'];
+	$('#ai24DateTxt').text(parseInt(kp[0])+'년 '+parseInt(kp[1])+'월 '+parseInt(kp[2])+'일 ('+WD[new Date(lastKey).getDay()]+')');
+	$('#aiDateNote').text(lastKey < formatDay(new Date()) ? '당일 혈당 측정이 없어 최종 측정일을 표시합니다.' : '');
+	// 평균·공복·식후·지표는 calcBlood(기준일)에서 한 번에 — 앱과 같은 SQL 정의
+	$.when(
+				$.ajax({ url:CommonUtil.getContextPath()+'/getBloodChartData.do', type:'post',
+					data:JSON.stringify({ end:lastKey, userId:userUuid }), contentType:'application/json', dataType:'json' }),
+				$.ajax({ url:CommonUtil.getContextPath()+'/getBloodChartData.do', type:'post',
+					data:JSON.stringify({ end:prevKey, userId:userUuid }), contentType:'application/json', dataType:'json' }),
+				$.ajax({ url:CommonUtil.getContextPath()+'/calcBlood.do', type:'post',
+					data:JSON.stringify({ start:lastKey, end:lastKey, userId:userUuid }), contentType:'application/json', dataType:'json' }),
+				$.ajax({ url:CommonUtil.getContextPath()+'/patient/myInfo.do', type:'post', dataType:'json' })
+			).done(function(aRes, bRes, cRes, iRes){
+				var cur = Array.isArray(aRes[0]) ? aRes[0] : [], prv = Array.isArray(bRes[0]) ? bRes[0] : [];
+				var lastHM = cur.length ? (cur[cur.length-1].HM || toHM(cur[cur.length-1].DTM)) : '00:00';
+				// 24시간 창을 시간순으로: 전일(마지막 측정시각 이후) → 당일. m = 마지막 측정으로부터 몇 분 전인지
+				var hmMin = function(hm){ return (parseInt(hm.substring(0,2),10)||0)*60 + (parseInt(hm.substring(3,5),10)||0); };
+				var lastMin = hmMin(lastHM);
+				var cpts = [];
+				if (cur.length){   // 그날 측정이 없으면 전일 데이터로 창을 채우지 않는다(다른 날 자료로 오인 방지)
+					prv.forEach(function(x){ var hm=x.HM||toHM(x.DTM); if(hm>lastHM){ var v=parseInt(x.UPT,10); if(!isNaN(v)) cpts.push({hm:hm, v:v, m:(1440-hmMin(hm))+lastMin}); } });
+					cur.forEach(function(x){ var hm=x.HM||toHM(x.DTM); var v=parseInt(x.UPT,10); if(!isNaN(v)) cpts.push({hm:hm, v:v, m:lastMin-hmMin(hm)}); });
+				}
+				if (!cpts.length){
+					$('#ai24First,#ai24Last,#aiAvg24,#aiFast24,#aiMeal24,#ai24Status,#ai24GmiTxt,#ai24TirTxt').text('-');
+					$('#ai24StatusName').text('-');
+					$('#ai24FirstT,#ai24LastT').text('-'); $('#ai24Delta').html('&rarr; 0');
+					window._ai24pts = []; _renderAi24Chart(24);
+					$('#aiMetricBox24').html('<div class="text-center text-muted py-3">이 날은 측정 데이터가 없습니다.</div>');
+					return;
+				}
+				// 상단 헤더(앱과 동일): 창 시작값·시각 → 변화량(5분당) → 최근값·시각
+				var fmtKT = function(hm){ var h=parseInt(hm.substring(0,2),10), mm=hm.substring(3,5); return (h<12?'오전 ':'오후 ')+(h%12||12)+':'+mm; };
+				// 앱 showBloodData 와 동일: 좌측 = 직전 측정(prev), 우측 = 최근 측정(now), 가운데 = now-prev (5분당)
+				var l=cpts[cpts.length-1], p=cpts.length>1?cpts[cpts.length-2]:l, f=p;
+				// 앱 applyTrend30 과 동일: 최근값 vs 30분 전(±10분 근사) 변화로 '현재 혈당 변화' 상태·설명
+				(function(){
+					var past=null, best=11;
+					cpts.forEach(function(q){ var d=Math.abs(q.m-30); if(d<best){ best=d; past=q; } });
+					var st, nm, col;
+					if(!past){ st='알 수 없음'; nm='혈당값 변화의 속도와 방향을 계산할 수 없습니다'; col='#6c757d'; }
+					else {
+						var delta=l.v-past.v, a=Math.abs(delta), dir=delta>=0?'증가':'감소';
+						if(a<=30){ st='안정적'; nm='혈당이 지난 30분 동안 30 mg/dL 이하로 증가 또는 감소하고 있습니다'; }
+						else if(a<=60){ st='서서히 '+dir; nm='혈당이 지난 30분 동안 31~60 mg/dL '+dir+'하고 있습니다'; }
+						else if(a<=90){ st=dir; nm='혈당이 지난 30분 동안 61~90 mg/dL '+dir+'하고 있습니다'; }
+						else { st='빠르게 '+dir; nm='혈당이 지난 30분 동안 91 mg/dL 이상 '+dir+'하고 있습니다'; }
+						nm += ' (최근 30분 '+(delta>0?'+':'')+delta+' mg/dL)';
+						col = a<=30 ? '#2f9e63' : delta>0 ? '#dc3545' : '#0d6efd';
+					}
+					$('#ai24Status').text(st).css('color', col);
+					$('#ai24StatusName').text(nm);
+				})();
+				$('#ai24First').text(f.v); $('#ai24FirstT').text(fmtKT(f.hm));
+				$('#ai24Last').text(l.v);  $('#ai24LastT').text(fmtKT(l.hm));
+				var dv = l.v - p.v;
+				$('#ai24Delta').html((dv>0 ? '&#8599; +' : dv<0 ? '&#8600; ' : '&rarr; ') + dv);
+				// 그래프: 구간 버튼(3/6/12/24시간)으로 창 전환 — 앱과 동일
+				window._ai24pts = cpts;
+				_renderAi24Chart(24);
+				$('#aiRangeBtns button').removeClass('on').filter('[data-h="24"]').addClass('on');
+				$('#aiRangeBtns button').off('click.ai').on('click.ai', function(){
+					$('#aiRangeBtns button').removeClass('on'); $(this).addClass('on');
+					_renderAi24Chart(parseInt($(this).attr('data-h'), 10) || 24);
+				});
+				// 지표·평균: 서버 calcBlood(마지막 측정일 기준) — 앱 '연속혈당 측정'과 같은 수치
+				var c = cRes[0] || {};
+				var avg  = Math.round(c.AvgBlood || 0);
+				var fast = Math.round(c.FASTING || 0) || (avg || '-');
+				var meal = Math.round((c.avgMeal && c.avgMeal.avgBlood) || 0) || (avg || '-');
+				var gmi = c.GMI, tir = Math.round(c.TIR||0), tar = (c.TAR!=null?c.TAR:0), tbr = (c.TBR!=null?c.TBR:0), cv = (c.CV!=null?c.CV:0);
+				$('#aiAvg24').text(avg || '-');
+				$('#aiFast24').text(fast);
+				$('#aiMeal24').text(meal);
+				$('#ai24GmiTxt').text((Number(gmi)||0).toFixed(1)+' %');
+				$('#ai24TirTxt').text(tir+' %');
+				// 연령 기준 (주간 화면과 동일 규칙)
+				var info=iRes[0], birth=(info&&info.IsSucceed&&info.Data)?String(info.Data.birth||''):'';
+				var age=null;
+				if (/^[0-9]{8}$/.test(birth)){
+					var t=new Date(), by=+birth.substring(0,4), bm=+birth.substring(4,6), bd=+birth.substring(6,8);
+					age = t.getFullYear()-by - ((t.getMonth()+1<bm || (t.getMonth()+1===bm && t.getDate()<bd))?1:0);
+				}
+				var eld = age!=null && age>=65;
+				var C = eld ? {tir:50,tar:50,tbr:1} : {tir:70,tar:25,tbr:4};
+				var OK='#2e7d32', WARN='#e67e22';
+				var row = function(lb, hint, val, ok, plain){
+					return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 2px;border-bottom:1px solid #eef2f7;">'
+					 + '<div><b style="font-size:15px;">'+lb+'</b><div class="text-muted" style="font-size:12px;">'+hint+'</div></div>'
+					 + '<div style="font-size:20px;font-weight:800;color:'+(plain ? '#2d303f' : (ok ? OK : WARN))+';">'+val+'</div></div>';
+				};
+				$('#aiMetricBox24').html(
+					  row('GMI지수(%)', '혈당 관리지표(참고사항)', (Number(gmi)||0).toFixed(1)+'%', true, true)
+					+ row('목표혈당 유지시간(TIR)', '권장: '+C.tir+'% 이상', tir+'%', tir>=C.tir)
+					+ row('고혈당 시간(TAR)', '권장: '+C.tar+'% 미만', (Number(tar)||0).toFixed(1)+'%', tar<C.tar)
+					+ row('저혈당 시간(TBR)', '권장: '+C.tbr+'% 미만', (Number(tbr)||0).toFixed(1)+'%', tbr<C.tbr)
+					+ row('혈당변동성(CV)', '권장: 36% 이하', (Number(cv)||0).toFixed(1)+'%', cv<=36)
+				);
+	}).fail(function(){
+		$('#aiMetricBox24').html('<div class="text-center text-danger py-3">지표 조회에 실패했습니다.</div>');
+	});
+}
+
+/* 발생구간 기간 버튼(당일/7/14/30일) — 주간 창의 끝 날짜 기준으로 N일 */
+function _aiBandRange(daysN){
+	var endKey = _aiWeekEnd || formatDay(new Date());
+	var d = new Date(endKey); if (daysN > 0) d.setDate(d.getDate() - (daysN - 1));
+	$('#aiBandBtns button').removeClass('on').filter('[data-days="'+daysN+'"]').addClass('on');
+	_loadAiBand(formatDay(d), endKey);
+}
+$(document).on('click', '#aiBandBtns button', function(){ _aiBandRange(parseInt($(this).attr('data-days'), 10) || 0); });
+
+/* 고혈당/저혈당 구간 · 주의할음식 TOP3 · 추천운동 TOP3 — 앱 showBloodHighLow/foodBlood_max/exerBlood_max 그대로 */
+function _loadAiInsight(startKey, endKey){
+	$('#aiHighZone,#aiLowZone').text('…');
+	$('#aiFoodRows,#aiExerRows').html('<div class="ai-grid4" style="grid-template-columns:1fr;text-align:center;color:#999;">불러오는 중…</div>');
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/weekInsight.do', type:'post',
+		data:JSON.stringify({ start:startKey, end:endKey }), contentType:'application/json', dataType:'json',
+		success:function(r){
+			var d = (r && r.IsSucceed && r.Data) ? r.Data : {};
+			var hl = d.highLow || {};
+			$('#aiHighZone').text(hl.High_Value || '-');
+			$('#aiLowZone').text(hl.Low_Value || '-');
+			var safe = function(v){ return (v===null||v===undefined||v==='') ? '-' : String(v); };
+			var trunc = function(s,n){ s=safe(s); return s.length>n ? s.substring(0,n)+'…' : s; };
+			var num = function(x){ if(x===null||x===undefined||x==='') return null; var n=Number(x); return isFinite(n)?n:null; };
+			var bigger = function(a,b){ var p=num(a), q=num(b); if(p===null&&q===null) return safe(b); var m=Math.max(p===null?-Infinity:p, q===null?-Infinity:q); return isFinite(m)?String(m):'-'; };
+			var none = '<div class="ai-grid4" style="grid-template-columns:1fr;text-align:center;color:#999;">자료없음</div>';
+			var food = Array.isArray(d.food) ? d.food : [];
+			$('#aiFoodRows').html(food.length ? food.map(function(it){
+				return '<div class="ai-grid4"><span>'+safe(it.RN)+'</span><span title="'+safe(it.FOOD_NAME)+'">'+trunc(it.FOOD_NAME,8)+'</span><span>'+safe(it.FOOD_CNT)+'</span><span>'+bigger(it.PRE_VALUE, it.DELTA_2H)+'</span></div>';
+			}).join('') : none);
+			var exer = Array.isArray(d.exer) ? d.exer : [];
+			$('#aiExerRows').html(exer.length ? exer.map(function(it){
+				return '<div class="ai-grid4"><span>'+safe(it.RN)+'</span><span title="'+safe(it.EXER_NAME)+'">'+trunc(it.EXER_NAME,8)+'</span><span>'+safe(it.MINUTES_DIFF)+'</span><span>'+bigger(it.PRE_VALUE, it.DELTA_15M)+'</span></div>';
+			}).join('') : none);
+		},
+		error:function(){ $('#aiHighZone,#aiLowZone').text('-'); $('#aiFoodRows,#aiExerRows').html('<div class="ai-grid4" style="grid-template-columns:1fr;text-align:center;color:#c00;">조회 실패</div>'); }
+	});
+}
+
+/* 저혈당/고혈당 발생구간(3시간 단위) — 앱 Blood_Consult 하단 차트와 동일 데이터(avgBloodlowhight 포팅) */
+function _loadAiBand(startKey, endKey){
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/timeBand.do', type:'post',
+		data:JSON.stringify({ start:startKey, end:endKey }), contentType:'application/json', dataType:'json',
+		success:function(r){
+			var rows = (r && r.IsSucceed && r.Data) ? r.Data : [];
+			var ORDER = ['오전12','오전3','오전6','오전9','오후12','오후3','오후6','오후9'];
+			var by = {};
+			rows.forEach(function(x){ by[x.HOUR_LABEL] = x; });
+			var low=[], nor=[], hi=[];
+			ORDER.forEach(function(k){
+				var d = by[k] || {};
+				low.push(Number(d.LOW_PCT)||0); nor.push(Number(d.NORMAL_PCT)||0); hi.push(Number(d.HIGH_PCT)||0);
+			});
+			var dom = document.getElementById('aiBandChart');
+			if (!dom || typeof echarts === 'undefined') return;
+			var old = echarts.getInstanceByDom(dom); if (old) old.dispose();
+			if (!rows.length){ dom.innerHTML = '<div class="text-center text-muted py-4">이 기간에는 측정값이 없습니다.</div>'; return; }
+			dom.innerHTML = '';
+			var ch = echarts.init(dom);
+			ch.setOption({
+				tooltip:{ trigger:'axis', formatter:function(ps){
+					var t = ps[0].axisValue;
+					ps.forEach(function(p){ t += '<br>'+p.marker+p.seriesName+' '+p.value+'%'; });
+					return t;
+				}},
+				grid:{ left:40, right:20, top:18, bottom:24 },
+				xAxis:{ type:'category', data:ORDER, axisLabel:{ fontSize:11 } },
+				yAxis:{ type:'value', min:0, max:100, axisLabel:{ formatter:'{value}%' } },
+				series:[
+					{ name:'저', type:'bar', stack:'b', data:low, itemStyle:{ color:'#FF0000' }, barMaxWidth:36,
+					  label:{ show:true, position:'inside', fontSize:10, formatter:function(p){ return p.value>=6 ? p.value+'%' : ''; } } },
+					{ name:'정상', type:'bar', stack:'b', data:nor, itemStyle:{ color:'#6CC070' },
+					  label:{ show:true, position:'inside', fontSize:10, color:'#fff', fontWeight:700, formatter:function(p){ return p.value>=8 ? p.value+'%' : ''; } } },
+					{ name:'고', type:'bar', stack:'b', data:hi, itemStyle:{ color:'#F0B24B' },
+					  label:{ show:true, position:'top', fontSize:10, color:'#b8860b', formatter:function(p){ return p.value>0 ? p.value+'%' : ''; } } }
+				]
+			});
+		}
+	});
+}
+
+/* 24시간 차트 렌더 — hours(3/6/12/24) 구간만 표시. 데이터는 _loadAi24 가 채운 window._ai24pts */
+function _renderAi24Chart(hours){
+	var all = window._ai24pts || [];
+	var cpts = all.filter(function(p){ return p.m <= hours*60; });
+	var dom24 = document.getElementById('aiChart24');
+	if (!dom24 || typeof echarts === 'undefined') return;
+	var old24 = echarts.getInstanceByDom(dom24); if (old24) old24.dispose();
+	if (!cpts.length){ dom24.innerHTML = '<div class="text-center text-muted py-4">이 구간에는 측정값이 없습니다.</div>'; return; }
+	dom24.innerHTML = '';
+	var xs = cpts.map(function(p){ return p.hm; });
+	var maxV = Math.max.apply(null, cpts.map(function(p){ return p.v; }));
+	var ch24 = echarts.init(dom24);
+	ch24.setOption({
+		tooltip:{ trigger:'axis' },
+		grid:{ left:40, right:44, top:14, bottom:26 },   // right 44: 70/180 기준선 라벨이 잘리지 않게
+		xAxis:{ type:'category', data:xs, axisTick:{ alignWithLabel:true },
+			axisLabel:{ interval:function(i){ return i===0 || (xs[i]||'').substring(0,2)!==(xs[i-1]||'').substring(0,2); },
+			            formatter:function(v){ return String(v).substring(0,2)+'시'; } } },
+		// 앱 차트와 같은 축(54·70·100·140·180) — 값이 180 을 넘으면 그만큼 위로 확장
+		yAxis:{ type:'value', min:40, max:Math.max(200, maxV+10), interval:40 },
+		series:[{ name:'혈당', type:'line', data:cpts.map(function(p){ return p.v; }), smooth:true, symbol:'none',
+			areaStyle:{ opacity:0.15 },
+			markLine:{ silent:true, symbol:'none', label:{ position:'end', formatter:'{c}' },
+				data:[ { yAxis:180, lineStyle:{ type:'dashed', color:'#f0b429' } },
+				       { yAxis:70,  lineStyle:{ type:'dashed', color:'#e84c7d' } } ] }
+		}]
 	});
 }
 
@@ -664,6 +1164,132 @@ function toHM(v){
 }
 function formatTime(s){ return s ? s.replace('T',' ').substring(0,16) : ''; }
 
+/* ── ⚙ 설정 모달: 케어센스 연동 + 모바일 접속 QR ──
+   사이드바가 숨는 모바일에서도 상단 ⚙ 버튼으로 열 수 있다(= 모바일 설정 기능). */
+function openSettings(){
+	loadTokenStatus();          // 모달 안 상태(#tokenStatus2 등)도 같이 갱신됨
+	_renderLoginQr();
+	// ⚠ new bootstrap.Modal 로 매번 새로 만들면 인스턴스가 중복돼
+	//   두 번째 열기부터 백드롭만 남고 본체가 안 뜬다 — getOrCreateInstance 필수
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();
+}
+/* 모바일 앱(PWA) 설치 안내 페이지를 QR로 그려준다 — 인쇄 배포용 QR과 같은 주소.
+   휴대폰 카메라로 찍으면 allCare 설치 화면이 열린다. (토큰·개인정보는 담지 않는다) */
+function _renderLoginQr(){
+	var box = document.getElementById('settingsQr');
+	if (!box || box.getAttribute('data-done') === '1') return;
+	var url = 'https://allcare24.kr/app/install.html';
+	$('#settingsQrUrl').text(url);
+	if (typeof qrcode === 'undefined') {
+		box.innerHTML = '<div class="text-muted small">QR 라이브러리를 불러오지 못했습니다(네트워크 확인).</div>';
+		return;
+	}
+	try {
+		var qr = qrcode(0, 'M');   // typeNumber 0 = 자동
+		qr.addData(url); qr.make();
+		var count = qr.getModuleCount(), margin = 4;
+		var cell  = Math.max(1, Math.floor(190 / (count + margin*2)));
+		var px    = cell * (count + margin*2);
+		var cv = document.createElement('canvas'); cv.width = px; cv.height = px;
+		var ctx = cv.getContext('2d');
+		ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, px, px);
+		ctx.fillStyle = '#000';
+		for (var r = 0; r < count; r++) for (var c = 0; c < count; c++)
+			if (qr.isDark(r, c)) ctx.fillRect((c+margin)*cell, (r+margin)*cell, cell, cell);
+		box.innerHTML = ''; box.appendChild(cv);
+		box.setAttribute('data-done', '1');
+	} catch(e) {
+		box.innerHTML = '<div class="text-muted small">QR 생성 실패: ' + (e && e.message ? e.message : e) + '</div>';
+	}
+}
+
+/* 동의하기 — 앱 가입 검증과 동일(항목별 미체크 안내) 후 저장, 저장되면 내역을 다시 그린다 */
+function agreeAllTerms(){
+	var need = [ {gb:'3', msg:'서비스 이용약관에 동의해주세요.'}, {gb:'1', msg:'개인정보 수집 이용동의 항목에 동의해주세요.'}, {gb:'2', msg:'고유식별정보 처리동의 항목에 동의해주세요.'} ];
+	for (var i=0; i<need.length; i++){
+		var $c = $('.agChk[data-gb="'+need[i].gb+'"]');
+		if ($c.length && !$c.prop('checked')){ _alertBox(need[i].msg, { icon:'⚠️' }); return; }
+	}
+	_confirmBox({
+		icon:'📝', okText:'동의', okColor:'blue',
+		msg:'서비스 이용약관 · 개인정보 수집·이용 · 고유식별정보 처리에<br>모두 동의하시겠습니까?',
+		onOk:function(){
+			$.ajax({ url:CommonUtil.getContextPath()+'/patient/agreeAll.do', type:'post', dataType:'json',
+				success:function(r){
+					if (r && r.IsSucceed){ _toast(r.Message || '동의가 저장되었습니다.', 'ok'); openAgreeList(); }
+					else _toast((r && r.Message) || '저장 실패', 'err');
+				},
+				error:function(){ _toast('저장 요청 오류', 'err'); }
+			});
+		}
+	});
+}
+
+/* ── 📝 개인정보 약관 동의 내역 — T_PERSIGN_TRAN(본인) ── */
+function openAgreeList(){
+	$('#termsTitle').text('📝 약관동의');
+	$('#termsBody').html('<div class="text-center text-muted py-4">불러오는 중…</div>');
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('termsModal')).show();
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/myAgreeList.do', type:'post', dataType:'json',
+		success:function(r){
+			var rows = (r && r.IsSucceed && r.Data) ? r.Data : [];
+			/* 앱 login.jsp 「약관동의」 블록과 같은 구성: [전체 동의] + 서비스 이용약관 / 개인정보 수집·이용동의 / 고유식별정보 처리동의
+			   (항목명 클릭 = 내용 보기, 우측 체크박스). 이미 동의한 항목은 체크·잠금 + 동의 일시 표시. */
+			var TERMS = [ {gb:'3', nm:'서비스 이용약관'}, {gb:'1', nm:'개인정보 수집·이용동의'}, {gb:'2', nm:'고유식별정보 처리동의'} ];
+			var latest = {};
+			rows.forEach(function(d){ var g=String(d.termsGb||''); if(!latest[g]) latest[g]=d; });   // 최신순 → 첫 행이 최신
+			var agreedAll = TERMS.every(function(t){ var d=latest[t.gb]; return d && d.agreeYn==='Y'; });
+			var h = '<div class="agree-list">'
+			      + '<div class="agree-item all"><span>전체 동의</span><input type="checkbox" id="agChkAll" '+(agreedAll?'checked disabled':'')+'></div>';
+			TERMS.forEach(function(t){
+				var d = latest[t.gb], done = d && d.agreeYn==='Y';
+				h += '<div class="agree-item">'
+				   + '<a href="javascript:void(0)" onclick="openTerms('+t.gb+',\''+t.nm+'\');">'+t.nm+' <span class="text-muted">&rsaquo;</span></a>'
+				   + '<span class="agree-right">'+(done ? '<small class="text-muted">동의 '+(d.agreeDtm||'')+'</small>' : '')
+				   + '<input type="checkbox" class="agChk" data-gb="'+t.gb+'" '+(done?'checked disabled':'')+'></span>'
+				   + '</div>';
+			});
+			h += '</div>';
+			if (agreedAll){
+				h += '<div class="text-center" style="color:#2e7d32;font-weight:700;padding:14px 0 4px;">✅ 모든 약관에 동의하셨습니다.</div>';
+			} else {
+				h += '<div class="text-muted" style="font-size:12.5px;margin:10px 0;">항목명을 누르면 내용을 볼 수 있습니다. 모두 체크한 뒤 [동의하기]를 눌러 주세요.</div>'
+				   + '<div class="text-end"><button type="button" id="agSubmit" class="btn btn-primary btn-sm px-4" onclick="agreeAllTerms();">동의하기</button></div>';
+			}
+			$('#termsBody').html(h);
+			// [전체 동의] ↔ 개별 체크 동기화 (앱 toggleAllAgree / syncAgreeAll 과 동일)
+			$('#agChkAll').on('change', function(){ $('.agChk:not(:disabled)').prop('checked', this.checked); });
+			$('.agChk').on('change', function(){ $('#agChkAll').prop('checked', $('.agChk').length === $('.agChk:checked').length); });
+		},
+		error:function(){ $('#termsBody').html('<div class="text-center text-danger py-4">동의 내역을 불러오지 못했습니다.</div>'); }
+	});
+}
+
+/* ── 📜 약관 보기 — 앱 설정의 getSignList(3=이용약관/1=개인정보/2=민감정보)와 동일 ── */
+function openTerms(gb, title){
+	// 본문은 별도 모달(#termsViewModal)에 — 약관동의 목록(#termsModal) 위에 겹쳐 뜨고, 닫으면 목록으로 돌아온다
+	$('#termsViewTitle').text('📜 ' + title);
+	$('#termsViewBody').html('<div class="text-center text-muted py-4">불러오는 중…</div>');
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('termsViewModal')).show();
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/getSignList.do',
+		type:'post', data:JSON.stringify({ termsGb: gb }), contentType:'application/json', dataType:'json',
+		success:function(r){
+			var rows = (r && r.Data) ? r.Data : [];
+			if (!rows.length){
+				$('#termsViewBody').html('<div class="text-center text-muted py-4">등록된 약관 내용이 없습니다.</div>');
+				return;
+			}
+			// 약관 본문은 T_SIGN_MST 에 문단 단위 여러 행으로 저장돼 있다 — 순서대로 이어붙임
+			$('#termsViewBody').html(rows.map(function(d){
+				return '<p style="margin:0 0 8px;">' + _faqEsc(d.termsConts||'') + '</p>';
+			}).join(''));
+		},
+		error:function(){ $('#termsViewBody').html('<div class="text-center text-danger py-4">약관을 불러오지 못했습니다.</div>'); }
+	});
+}
+
 function logout(){
 	_confirmBox({
 		icon:'🔓', okText:'로그아웃', okColor:'blue',
@@ -957,6 +1583,88 @@ function _faqFilter(){
 }
 
 /* ══════════════════════════════════════
+   📢 공지사항 — /admin/noticeList.do (T_NOTICE) 재사용 (FAQ 와 같은 패턴)
+══════════════════════════════════════ */
+function openNotice(){
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('noticeModal')).show();
+	loadNoticeList();
+}
+function loadNoticeList(){
+	$('#noticeList').html('<div class="text-center text-muted py-4">불러오는 중…</div>');
+	$.ajax({
+		/* ⚠/admin/noticeList.do 는 날짜 파라미터 필수 + 관리자 조인이라 환자 화면에선 0건.
+		   앱(getNotiList)과 같은 조건의 전용 API 사용 [2026-10-21] */
+		url: CommonUtil.getContextPath()+'/patient/noticeList.do',
+		type:'post', dataType:'json',
+		success:function(r){
+			var rows = (r && r.IsSucceed && r.Data) ? r.Data : [];
+			if(!rows.length){ $('#noticeList').html('<div class="text-center text-muted py-4">등록된 공지사항이 없습니다.</div>'); return; }
+			var h='<div class="accordion" id="ntAcc">';
+			rows.forEach(function(d, i){
+				var dt = String(d.regDtm||'').replace('T',' ').substring(0,10);
+				h+='<div class="accordion-item border-0 mb-2 shadow-sm" style="border-radius:10px;overflow:hidden;">'
+				 +'<h2 class="accordion-header">'
+				 +'<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ntC'+i+'" style="font-size:14.5px;font-weight:600;">'
+				 +'<span class="text-muted me-2" style="font-size:12px;">'+dt+'</span>'+_faqEsc(d.title)
+				 +'</button></h2>'
+				 +'<div id="ntC'+i+'" class="accordion-collapse collapse" data-bs-parent="#ntAcc">'
+				 +'<div class="accordion-body" style="font-size:14px;line-height:1.7;color:#333;white-space:pre-wrap;">'+_faqEsc(d.expln)+'</div>'
+				 +'</div></div>';
+			});
+			h+='</div>';
+			$('#noticeList').html(h);
+		},
+		error:function(){ $('#noticeList').html('<div class="text-center text-danger py-4">공지사항을 불러오지 못했습니다.</div>'); }
+	});
+}
+
+/* ══════════════════════════════════════
+   👤 개인정보 변경 — /patient/myInfo.do · myInfoSave.do (이메일·키·몸무게만 수정)
+══════════════════════════════════════ */
+function openMyInfo(){
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('myInfoModal')).show();
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/myInfo.do', type:'post', dataType:'json',
+		success:function(r){
+			var d = (r && r.IsSucceed && r.Data) ? r.Data : {};
+			$('#miNm').val(d.userNm||'');
+			$('#miPhone').val(d.phone||'');
+			var b = String(d.birth||'');
+			$('#miBirth').val(b.length===8 ? b.substring(0,4)+'-'+b.substring(4,6)+'-'+b.substring(6,8) : b);
+			$('#miGender').val(d.gender==='F' ? '여성' : d.gender==='M' ? '남성' : '');
+			$('#miEmail').val(d.email||'');
+			$('#miHeight').val(d.height||'');
+			$('#miWeight').val(d.weight||'');
+			$('#miBlodGb').val(String(d.blodGb||0));
+		},
+		error:function(){ _toast('내 정보를 불러오지 못했습니다.', 'err'); }
+	});
+}
+function saveMyInfo(){
+	var email = $.trim($('#miEmail').val());
+	if (email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)){
+		_toast('이메일 형식이 올바르지 않습니다.', 'warn'); $('#miEmail').focus(); return;
+	}
+	var dto = {
+		email:  email,
+		height: parseInt($('#miHeight').val(), 10) || 0,
+		weight: parseInt($('#miWeight').val(), 10) || 0,
+		blodGb: parseInt($('#miBlodGb').val(), 10) || 0
+	};
+	$.ajax({
+		url: CommonUtil.getContextPath()+'/patient/myInfoSave.do',
+		type:'post', data:JSON.stringify(dto), contentType:'application/json', dataType:'json',
+		success:function(r){
+			if(r && r.IsSucceed){
+				_toast('저장했어요', 'ok');
+				bootstrap.Modal.getOrCreateInstance(document.getElementById('myInfoModal')).hide();
+			} else _toast((r && r.Message) || '저장 실패', 'err');
+		},
+		error:function(){ _toast('저장 요청 오류', 'err'); }
+	});
+}
+
+/* ══════════════════════════════════════
    세부혈당그래프 — 의사용 APME_01A_2(개요/AGP/혈당그래프/통계) 재사용
    · /tab/tabInfo.do 로 본인 정보를 세션(t_*)에 세팅 → /tab/tab.do 새 창
 ══════════════════════════════════════ */
@@ -978,27 +1686,42 @@ function _dgHideHeader(frame){
 		if (++tries < 20) setTimeout(inject, 100);
 	})();
 }
+/* [2026-10-21] 풀스크린 모달 → 메뉴 우측 본문 전환 뷰로 변경.
+   개인(환자) 화면에서는 모달 오버레이가 어색하다는 지적 — 좌측 메뉴를 그대로 두고
+   본문만 홈 ↔ 세부그래프로 바뀌는 일반 페이지처럼 동작한다. */
 function openDetailGraph(){
-	// 1) 본인 정보를 세션(t_*)에 세팅 → 2) iframe 으로 APME_01A_2(/tab/tab.do) 로드 → 3) 모달 표시
+	// 1) 본인 정보를 세션(t_*)에 세팅 → 2) 본문 iframe 으로 APME_01A_2(/tab/tab.do) 로드 → 3) 뷰 전환
 	$.ajax({
 		url: CommonUtil.getContextPath()+'/tab/tabInfo.do',
 		type:'post', data:{ userUuid: userUuid }, dataType:'json',
 		success:function(){
 			// 래핑 버전(데이터 정상) + embed=1(서버측 헤더 미렌더). 클라이언트측에서도 헤더 숨김 주입(이중 보장)
 			// 깜빡임 방지: 헤더 제거 전까지 iframe 을 숨겨두고, load 시점에 헤더 제거 후 표시
-			var $f = $('#detailGraphFrame');
-			$f.css('visibility','hidden');
-			$f.off('load.dg').on('load.dg', function(){
-				_dgHideHeader(this);              // load 시점 = DOM 완성 → 즉시 헤더 숨김
-				$(this).css('visibility','visible');
-			});
-			$f.attr('src', CommonUtil.getContextPath()+'/tab/tab.do?embed=1');
-			new bootstrap.Modal(document.getElementById('detailGraphModal')).show();
+			var $f = $('#detailInlineFrame');
+			if (!$f.attr('src') || $f.attr('src') === 'about:blank') {
+				$f.css('visibility','hidden');
+				$f.off('load.dg').on('load.dg', function(){
+					_dgHideHeader(this);              // load 시점 = DOM 완성 → 즉시 헤더 숨김
+					$(this).css('visibility','visible');
+				});
+				$f.attr('src', CommonUtil.getContextPath()+'/tab/tab.do?embed=1');
+			}
+			_showView('detail');
 		},
 		error:function(){
 			_alertBox('세부 혈당 그래프를 여는 중 오류가 발생했습니다.', { icon:'⚠️', okColor:'red' });
 		}
 	});
+}
+function showHomeView(){ _showView('home'); }
+function _showView(v){
+	$('#viewHome').toggleClass('hidden', v !== 'home');
+	$('#viewDetail').toggleClass('hidden', v !== 'detail');
+	$('#viewAi').toggleClass('hidden', v !== 'ai');
+	$('#snHome').toggleClass('active', v === 'home');
+	$('#snDetail').toggleClass('active', v === 'detail');
+	$('#snAi').toggleClass('active', v === 'ai');
+	try{ window.scrollTo(0, 0); }catch(e){}
 }
 
 /* ══════════════════════════════════════
@@ -1160,7 +1883,8 @@ function _clearChat(){
 		okText:'삭제',
 		onOk:function(){
 			$('#chatMessages').empty();
-			_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.<br>차트를 선택하면 우측 평가가 표시됩니다.', false, 'chat-intro');
+			_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
+			_chatIntroAnalysis();   // 주간 지표 분석 다시 게시(캐시 재사용)
 		}
 	});
 }
@@ -1392,9 +2116,78 @@ function _chatCtxText(){
 	var pct=Math.round(vals.filter(function(v){return v>=70&&v<=180;}).length/vals.length*100);
 	return (ctx.label||'선택한 날')+' 평균 '+avg+' / 최고 '+max+' / 최저 '+min+' mg/dL, 목표범위(70~180) '+pct+'%';
 }
+/* ── [앱 챗봇과 동일] 인사 아래 '최근 일주일 지표 분석' + AI 코칭 1회 게시 ──
+   앱(Blood_Consult) 첫 인사 분석과 같은 내용·표기. 기준은 나이로 단순화:
+   만 65세 이상 = 고령 기준(TIR 50%↑·TAR 50%↓·TBR 1%↓), 그 외 표준(70/25/4). */
+var _chatIntroDone = false;
+function _chatIntroAnalysis(){
+	if (window._chatIntroMsg){ _addMsg(window._chatIntroMsg, false); return; }
+	if (_chatIntroDone) return;
+	_chatIntroDone = true;
+	// 앱(adjustToLastDataDate)과 동일 — 기간은 '마지막 측정일 기준 7일' (오늘 기준이면 공백 기간에 분석이 사라짐)
+	$.ajax({ url:CommonUtil.getContextPath()+'/getLastBloodDay.do', type:'post', dataType:'json',
+		success:function(lr){
+			var lrow = (lr && lr.IsSucceed && lr.Data) ? lr.Data : null;
+			var endKey = lrow ? String(lrow.date2) : formatDay(new Date());
+			_chatIntroAnalysisRun(endKey);
+		},
+		error:function(){ _chatIntroAnalysisRun(formatDay(new Date())); }
+	});
+}
+function _chatIntroAnalysisRun(endKey){
+	var endD = new Date(endKey);
+	var days = [];
+	for (var i=6; i>=0; i--) days.push(formatDay(new Date(endD.getTime()-i*864e5)));
+	var reqs = days.map(function(k){
+		return $.ajax({ url:CommonUtil.getContextPath()+'/getBloodChartData.do', type:'post',
+			data:JSON.stringify({ end:k, userId:userUuid }), contentType:'application/json', dataType:'json' });
+	});
+	reqs.push($.ajax({ url:CommonUtil.getContextPath()+'/patient/myInfo.do', type:'post', dataType:'json' }));
+	$.when.apply($, reqs).done(function(){
+		var args = arguments, pts = [];
+		for (var d=0; d<days.length; d++){
+			var rows = Array.isArray(args[d][0]) ? args[d][0] : [];
+			rows.forEach(function(r){ var v=parseInt(r.UPT,10); if(!isNaN(v)) pts.push(v); });
+		}
+		if (!pts.length) return;   // 주간 데이터 없으면 분석 생략(인사만)
+		var info  = args[days.length][0];
+		var birth = (info && info.IsSucceed && info.Data) ? String(info.Data.birth||'') : '';
+		var age = null;
+		if (/^[0-9]{8}$/.test(birth)){
+			var t=new Date(), by=+birth.substring(0,4), bm=+birth.substring(4,6), bd=+birth.substring(6,8);
+			age = t.getFullYear()-by - ((t.getMonth()+1<bm || (t.getMonth()+1===bm && t.getDate()<bd))?1:0);
+		}
+		var elderly = age!=null && age>=65;
+		var C = elderly ? { tir:50, tar:50, tbr:1, note:'고령 기준 적용 (TIR 50% 이상·TAR 50% 미만·TBR 1% 미만)' }
+		                : { tir:70, tar:25, tbr:4, note:'표준 기준 적용 (TIR 70% 이상·TAR 25% 미만·TBR 4% 미만)' };
+		var n = pts.length;
+		var tir = Math.round(pts.filter(function(v){ return v>=70&&v<=180; }).length*1000/n)/10;
+		var tar = Math.round(pts.filter(function(v){ return v>180; }).length*1000/n)/10;
+		var tbr = Math.round(pts.filter(function(v){ return v<70; }).length*1000/n)/10;
+		var ln = function(s){ return '<span style="display:block; word-break:keep-all;">'+s+'</span>'; };
+		var ok = function(b,g){ return b ? ('충족'+(g?'&nbsp;👍':'')) : '<b style="color:#e67e22">'+(g?'미달':'초과')+'</b>'; };
+		var L = [ln('최근 일주일 지표 분석입니다.')];
+		L.push(ln('• TIR(목표혈당 유지시간) <b>'+tir+'%</b> → '+ok(tir>=C.tir, true)));
+		L.push(ln('• TAR(고혈당 시간) <b>'+tar+'%</b> → '+ok(tar<C.tar, false)));
+		L.push(ln('• TBR(저혈당 시간) <b>'+tbr+'%</b> → '+ok(tbr<C.tbr, false)));
+		var head='', tips=[];
+		if (tar>=C.tar){ head='지난 일주일 동안 고혈당 시간이 다소 길었습니다.'; tips=['식사량을 줄이세요.','탄수화물 비율을 줄이세요.','식후 20~30분 걷기를 실천해 보세요.']; }
+		else if (tbr>=C.tbr){ head='지난 일주일 동안 저혈당이 발생했습니다.'; tips=['공복 상태의 운동을 피하세요.','식사를 거르지 말고 규칙적으로 하세요.','저혈당 증상이 느껴지면 즉시 당분을 섭취하세요.']; }
+		else { head='지난 일주일 혈당이 안정적으로 관리되고 있습니다.'; tips=['현재 생활습관을 그대로 유지하세요.','꾸준한 측정과 기록을 계속해 주세요.']; }
+		L.push(ln('<br><b>AI 코칭</b>'));
+		L.push(ln(head));
+		tips.forEach(function(s){ L.push(ln(s)); });
+		var note = (age!=null ? '※ 만 '+age+'세 — ' : '※ ') + C.note;
+		var msg = L.join('') + '<small>'+note+'<br>※ 대한당뇨병학회 관리지표 기준</small>';
+		window._chatIntroMsg = msg;
+		_addMsg(msg, false);
+	});
+}
+
 $(function(){
-	// 초기 인사 메시지
-	_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.<br>차트를 선택하면 우측 평가가 표시됩니다.', false, 'chat-intro');
+	// 초기 인사 메시지 + 주간 지표 분석(앱 챗봇과 동일)
+	_addMsg('안녕하세요! 혈당 관련 궁금한 점을 질문해 주세요.', false, 'chat-intro');
+	_chatIntroAnalysis();
 });
 
 /* ── 마커 팝업 바깥 클릭 시 닫기 ── */
@@ -1414,38 +2207,7 @@ $(document).on('show.bs.modal', '.modal', function(){
 $(document).on('hidden.bs.modal', '.modal', function(){
 	if ($('.modal.show').length) $('body').addClass('modal-open');
 });
-/* 세부혈당그래프 모달: body 직계 보장 + 다이얼로그/콘텐츠를 인라인으로 최상단 풀스크린 강제
-   (CSS 배포 여부와 무관하게 동작하도록 shown 시점에 직접 스타일 지정) */
-$(document).on('shown.bs.modal', '#detailGraphModal', function(){
-	if (this.parentNode !== document.body) document.body.appendChild(this);
-	this.style.setProperty('top', '0', 'important');
-	this.style.setProperty('left', '0', 'important');
-	this.style.setProperty('padding', '0', 'important');
-	var dlg = this.querySelector('.modal-dialog');
-	if (dlg) {
-		// 다이얼로그를 뷰포트 좌상단에 직접 고정 — 부모 레이아웃/여백과 무관하게 최상단 보장
-		dlg.style.setProperty('position', 'fixed', 'important');
-		dlg.style.setProperty('top', '0', 'important');
-		dlg.style.setProperty('left', '0', 'important');
-		dlg.style.setProperty('right', '0', 'important');
-		dlg.style.setProperty('bottom', '0', 'important');
-		dlg.style.setProperty('margin', '0', 'important');
-		dlg.style.setProperty('max-width', 'none', 'important');
-		dlg.style.setProperty('width', '100vw', 'important');
-		dlg.style.setProperty('height', '100vh', 'important');
-		dlg.style.setProperty('transform', 'none', 'important');
-	}
-	var c = this.querySelector('.modal-content');
-	if (c) {
-		// 공통 modal.css 의 max-height:94vh / top:50% / translateY(-50%) 무력화(상단 띠 원인)
-		c.style.setProperty('height', '100vh', 'important');
-		c.style.setProperty('max-height', 'none', 'important');
-		c.style.setProperty('top', 'auto', 'important');
-		c.style.setProperty('transform', 'none', 'important');
-		c.style.setProperty('border', '0', 'important');
-		c.style.setProperty('border-radius', '0', 'important');
-	}
-});
+/* (세부혈당그래프 풀스크린 모달 보정 핸들러는 본문 전환 뷰 #viewDetail 로 대체되며 제거됨) */
 
 /* ── 우측 패널 높이: 좌측 컬럼 하단 기준으로 맞춤 (다변 스크롤) ── */
 function _syncRightPanel(){
@@ -1479,35 +2241,74 @@ function showIsensGuide(onConfirm){
 ══════════════════════════════════════════════ -->
 <nav class="side-nav">
 	<div class="sn-brand">🩸 혈당 관리</div>
+	<%-- 주 기능(홈·그래프·설정)을 위에, 보조 기능(FAQ·문의)은 하단으로 분리 [2026-10-21 요청] --%>
+	<button type="button" class="sn-item active" id="snHome" onclick="showHomeView();">
+		<span class="sn-ico">🏠</span><span>내 혈당 홈</span>
+	</button>
+	<button type="button" class="sn-item" id="snDetail" onclick="openDetailGraph();">
+		<span class="sn-ico">📈</span><span>세부혈당그래프</span>
+	</button>
+	<%-- 앱 홈 카드의 두 항목(혈당 지표 확인 + AI 종합분석)을 담은 별도 화면 --%>
+	<button type="button" class="sn-item" id="snAi" onclick="openAiAnalysis();">
+		<span class="sn-ico">🤖</span><span>AI 종합분석</span>
+	</button>
+	<%-- 모바일 앱 하단 탭(식사등록·운동등록)과 동일 구성 — 이미 있는 기록 모달을 메뉴에서도 연다 --%>
+	<button type="button" class="sn-item" onclick="goFood();">
+		<span class="sn-ico">🍚</span><span>식사 기록</span>
+	</button>
+	<button type="button" class="sn-item" onclick="goExer();">
+		<span class="sn-ico">🚴</span><span>운동 기록</span>
+	</button>
+	<%-- 앱 바로가기(개인정보 변경·설정) 대응 --%>
+	<button type="button" class="sn-item" onclick="openMyInfo();">
+		<span class="sn-ico">👤</span><span>개인정보 변경</span>
+	</button>
+	<button type="button" class="sn-item" onclick="openAgreeList();">
+		<span class="sn-ico">📝</span><span>개인정보 약관 동의</span>
+	</button>
+	<button type="button" class="sn-item" onclick="openSettings();">
+		<span class="sn-ico">⚙️</span><span>설정 · 모바일 QR</span>
+	</button>
+	<div class="sn-sep" style="margin-top:auto;"></div>
+	<%-- 앱 바로가기(공지사항·FAQ·문의) 대응 --%>
+	<button type="button" class="sn-item" onclick="openNotice();">
+		<span class="sn-ico">📢</span><span>공지사항</span>
+	</button>
 	<button type="button" class="sn-item" onclick="openFaq();">
 		<span class="sn-ico">❓</span><span>자주하는 질문</span>
 	</button>
 	<button type="button" class="sn-item" onclick="openAsq();">
 		<span class="sn-ico">💬</span><span>질의응답관리</span>
 	</button>
-	<button type="button" class="sn-item" onclick="openDetailGraph();">
-		<span class="sn-ico">📈</span><span>세부혈당그래프</span>
-	</button>
 	<!-- 추가 기능 메뉴는 여기에 -->
 </nav>
 
-<div class="container-fluid py-4" style="max-width:1820px;margin:0 auto;padding-left:16px;padding-right:16px;">
+<div id="viewHome" class="container-fluid py-4" style="max-width:1820px;margin:0 auto;padding-left:16px;padding-right:16px;">
 	<div class="d-flex justify-content-between align-items-center mb-3">
 		<h3>${sessionScope.userNm}님 환영합니다</h3>
-		<div class="d-flex align-items-center gap-2">
+		<div class="d-flex align-items-center gap-2 topbar-actions">
 			<span id="tokenStatus" class="me-1">…</span>
 			<button id="btnConnect" class="btn btn-primary btn-sm" onclick="connectISens();" style="display:none;">i-Sens 연동</button>
 			<button id="btnSync"    class="btn btn-success btn-sm" onclick="syncMyBlood(false);" style="display:none;">혈당 가져오기</button>
 			<button class="btn btn-outline-primary btn-sm" onclick="goFood();">🍚 식사 기록</button>
 			<button class="btn btn-outline-primary btn-sm" onclick="goExer();">🚴 운동 기록</button>
+			<%-- 모바일(사이드바 숨김)에서도 케어센스 설정·QR 에 닿도록 상단에 ⚙ 버튼 --%>
+			<button class="btn btn-outline-secondary btn-sm" onclick="openSettings();">⚙ 설정·QR</button>
 			<button class="btn btn-outline-secondary btn-sm" onclick="logout();">로그아웃</button>
 		</div>
 	</div>
 	<div id="syncMsg" class="text-muted small mb-2" style="display:none;"></div>
 
-	<div class="d-flex gap-3 align-items-start">
+	<div class="d-flex gap-3 align-items-start layout-cols">
 		<!-- 좌측: 차트/카드 -->
 		<div style="flex:1;min-width:0;">
+			<!-- [앱 홈 카드 대응] 최근 24시간 혈당지표 '양호/주의' + 바로가기.
+			     AI 종합분석은 세부그래프 AI 분석 탭으로 연결(중복 구현 없음). 챗봇은 우측 Q&A가 이미 있어 제외 -->
+			<%-- 기능 진입은 좌측 메뉴(세부혈당그래프·AI 종합분석)로 분리 — 카드는 상태 요약만 --%>
+			<div class="card-tile" id="dayStatusCard" style="background:linear-gradient(135deg,#0d3b66 0%,#1d5fa8 100%);color:#fff;">
+				<div id="dayStatusText" style="font-size:17px;font-weight:700;">최근 24시간 혈당지표를 계산 중입니다…</div>
+				<div id="dayStatusSub" class="mt-1" style="font-size:13px;color:#cfe2ff;"></div>
+			</div>
 			<div class="row-grid">
 				<div class="card-tile">
 					<h5>최근 혈당</h5>
@@ -1572,17 +2373,315 @@ function showIsensGuide(onConfirm){
 					<button class="btn btn-primary btn-sm px-3" onclick="sendChat();">전송</button>
 				</div>
 				<div class="d-flex flex-wrap gap-1" style="flex-shrink:0;">
-					<button class="qbtn" onclick="_quickQ('오늘 혈당이 높은가요?')">높은가요?</button>
-					<button class="qbtn" onclick="_quickQ('혈당 정상범위는?')">정상범위</button>
-					<button class="qbtn" onclick="_quickQ('언제 제일 높았나요?')">최고시간</button>
-					<button class="qbtn" onclick="_quickQ('식후혈당이란?')">식후혈당</button>
-					<button class="qbtn" onclick="_quickQ('공복혈당이란?')">공복혈당</button>
-					<button class="qbtn" onclick="_quickQ('운동이 혈당에 미치는 영향은?')">운동 효과</button>
-					<button class="qbtn" onclick="_quickQ('오늘 혈당 추이는?')">오늘 추이</button>
+					<%-- 앱 챗봇과 동일한 질문 버튼 6종 [2026-10-21] --%>
+					<button class="qbtn" onclick="_quickQ('주간 평균혈당 어때요?')">주간평균혈당</button>
+					<button class="qbtn" onclick="_quickQ('공복 평균혈당 어때요?')">공복평균혈당</button>
+					<button class="qbtn" onclick="_quickQ('주간 최고혈당 알려줘')">주간 최고혈당</button>
+					<button class="qbtn" onclick="_quickQ('주간 최저혈당 알려줘')">주간 최저혈당</button>
+					<button class="qbtn" onclick="_quickQ('음식 추천해줘')">음식추천</button>
+					<button class="qbtn" onclick="_quickQ('운동 추천해줘')">운동추천</button>
 				</div>
 			</div>
 		</div>
 	</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     세부 혈당 그래프 — 메뉴 우측 본문 전환 뷰 (APME_01A_2 를 iframe 으로 로드)
+     풀스크린 모달이 개인 화면에서 어색하다는 지적으로 일반 페이지 전환처럼 구성
+══════════════════════════════════════════════ -->
+<div id="viewDetail" class="hidden">
+	<div class="dv-topbar">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="showHomeView();">← 내 혈당 홈</button>
+		<b style="font-size:15px;color:#0d6efd;">📈 세부 혈당 그래프</b>
+	</div>
+	<iframe id="detailInlineFrame" src="about:blank" title="세부 혈당 그래프"
+	        style="display:block;width:100%;height:calc(100vh - 55px);border:0;background:#fff;"></iframe>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     🤖 AI 종합분석(주간) — 앱 홈 카드의 '혈당 지표 확인' + 'AI 종합분석' 두 내용을 담은 별도 화면
+══════════════════════════════════════════════ -->
+<div id="viewAi" class="hidden">
+	<div class="dv-topbar">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="showHomeView();">← 내 혈당 홈</button>
+		<b style="font-size:15px;color:#0d6efd;">🤖 AI 종합분석</b>
+		<span id="aiPeriod" class="text-muted" style="font-size:12.5px;"></span>
+	</div>
+	<%-- 웹 화면 비율 2단: 좌=연속혈당 측정(24시간) / 우=AI 종합분석(주간)+생활습관 가이드 --%>
+	<div style="padding:12px 16px 0;">
+		<div class="ai-cols">
+			<!-- 좌: 앱 '연속혈당 측정' 화면 대응 — 현재시점 24시간 기준 -->
+			<div class="ai-col">
+			<div class="card-tile" style="margin-bottom:0;">
+				<h5>🩸 연속혈당 측정 <span class="text-muted" style="font-size:12.5px;font-weight:400;">· 현재시점 24시간 기준</span></h5>
+				<%-- 앱 상단과 동일: [시작값·시각] → [변화량 mg/dL/5분] [최근값·시각] --%>
+				<div class="ai24-head">
+					<div class="c"><div class="v light" id="ai24First">-</div><div class="t" id="ai24FirstT">-</div></div>
+					<div class="c"><div class="d" id="ai24Delta">&rarr; 0</div><div class="t">mg/dL/5분</div></div>
+					<div class="c"><div class="v" id="ai24Last">-</div><div class="t" id="ai24LastT">-</div></div>
+				</div>
+				<%-- 앱과 동일한 일 단위 이동 ◀ 2026년 10월 7일 (화) ▶ --%>
+				<div class="ai-daynav">
+					<button type="button" onclick="_ai24Move(-1);" aria-label="이전 날">&#9664;</button>
+					<span id="ai24DateTxt">-</span>
+					<button type="button" onclick="_ai24Move(1);" aria-label="다음 날">&#9654;</button>
+				</div>
+				<div id="aiDateNote" style="font-size:12.5px;color:#1f5fbf;text-align:center;font-weight:600;min-height:18px;"></div>
+				<%-- 앱과 동일한 구간 버튼 + 24시간 혈당 그래프 --%>
+				<div class="ai-range" id="aiRangeBtns">
+					<button type="button" data-h="3">3시간</button>
+					<button type="button" data-h="6">6시간</button>
+					<button type="button" data-h="12">12시간</button>
+					<button type="button" data-h="24" class="on">24시간</button>
+				</div>
+				<div id="aiChart24" style="height:230px;margin-bottom:8px;"></div>
+				<div class="ai-unit"><span>현재시점 24시간 기준</span><span>단위: mg/dL</span></div>
+				<div class="ai-grid3">
+					<div class="ai-cell"><div class="lb">평균 혈당</div><div class="v" id="aiAvg24" style="color:#2e7d32;">-</div><div class="u">mg/dL</div></div>
+					<div class="ai-cell"><div class="lb">공복 평균</div><div class="v" id="aiFast24" style="color:#7b2d8e;">-</div><div class="u">mg/dL</div></div>
+					<div class="ai-cell"><div class="lb">식후 평균</div><div class="v" id="aiMeal24" style="color:#e07b00;">-</div><div class="u">mg/dL</div></div>
+				</div>
+				<div id="aiMetricBox24"></div>
+				<%-- 앱 FAHR_00 하단 문장 블록(현재 혈당 변화 · 설명 · GMI · TIR)과 동일 --%>
+				<div class="ai-trend">
+					<div class="tl">현재 혈당 변화가 <b id="ai24Status" class="st">-</b> 입니다</div>
+					<div class="box" id="ai24StatusName">-</div>
+					<div class="tl">• GMI수치(혈당관리지표)는 <b id="ai24GmiTxt">-</b> 입니다</div>
+					<div class="tl">• TIR(목표범위 내 머문 비율)은 (일반적으로 70~180 mg/dl) <b id="ai24TirTxt">-</b> 입니다</div>
+				</div>
+			</div>
+			</div>
+			<!-- 우: 앱 'AI 종합분석(주간)' 화면 대응 -->
+			<div class="ai-col">
+				<div class="card-tile" style="margin-bottom:8px;">
+					<h5>🤖 AI 종합분석(주간)</h5>
+					<%-- 앱과 동일한 기간 이동 ◀ 2026.10.01 ~ 2026.10.07 ▶ --%>
+					<div class="ai-weeknav">
+						<button type="button" onclick="_aiWeekMove(-1);" aria-label="이전 일주일">&#9664;</button>
+						<span id="aiPeriod2"></span>
+						<button type="button" onclick="_aiWeekMove(1);" aria-label="다음 일주일">&#9654;</button>
+					</div>
+					<div class="ai-unit"><span>현재일 기준 이전 일주일</span><span>단위: mg/dL</span></div>
+					<div class="ai-grid3">
+						<div class="ai-cell"><div class="lb">평균 혈당</div><div class="v" id="aiAvgW" style="color:#2e7d32;">-</div><div class="u">mg/dL</div></div>
+						<div class="ai-cell"><div class="lb">공복 평균</div><div class="v" id="aiFastW" style="color:#7b2d8e;">-</div><div class="u">mg/dL</div></div>
+						<div class="ai-cell"><div class="lb">식후 평균</div><div class="v" id="aiMealW" style="color:#e07b00;">-</div><div class="u">mg/dL</div></div>
+					</div>
+					<div id="aiMetricBox"></div>
+				</div>
+				<div class="card-tile" style="margin-bottom:8px;">
+					<%-- 앱과 동일: 파란 머리띠 + 점선 박스 --%>
+					<div class="ai-sechead">* 혈당지표 분석 기반 생활습관 가이드</div>
+					<div id="aiCoachBox" class="ai-dashbox"></div>
+				</div>
+				<%-- 앱 AI 종합분석 하단과 동일: 저혈당/고혈당 발생구간(3시간 단위) --%>
+				<div class="card-tile" style="margin-bottom:8px;">
+					<h5>* 저혈당/고혈당 발생구간(시간)</h5>
+					<%-- 앱과 동일: 당일/7일/14일/30일 (기본 7일) --%>
+					<div class="ai-range ai-range4" id="aiBandBtns">
+						<button type="button" data-days="0">당일</button>
+						<button type="button" data-days="7" class="on">7일</button>
+						<button type="button" data-days="14">14일</button>
+						<button type="button" data-days="30">30일</button>
+					</div>
+					<div id="aiBandChart" style="height:220px;"></div>
+					<div class="ai-legend">
+						<span><i style="background:#6CC070"></i>정상 (70~180)</span>
+						<span><i style="background:#F0B24B"></i>고 (180이상)</span>
+						<span><i style="background:#FF0000"></i>저 (70미만)</span>
+					</div>
+				</div>
+				<%-- 앱과 동일: 고혈당/저혈당 구간 · 주의할음식 TOP3 · 추천운동 TOP3 --%>
+				<div class="card-tile" style="margin-bottom:8px;">
+					<div class="ai-line">* 고혈당 구간: <span id="aiHighZone">-</span></div>
+					<div class="ai-line">* 저혈당 구간: <span id="aiLowZone">-</span></div>
+				</div>
+				<div class="card-tile" style="margin-bottom:8px;">
+					<div class="ai-cardhead"><h5 style="margin:0;">* 주의할음식 TOP3(주간)</h5><span class="text-muted" style="font-size:12px;">단위 : mg/dL</span></div>
+					<div class="ai-grid4 head"><span>순위</span><span>음식종류</span><span>식사량</span><span>혈당변동폭</span></div>
+					<div id="aiFoodRows"></div>
+				</div>
+				<div class="card-tile" style="margin-bottom:8px;">
+					<div class="ai-cardhead"><h5 style="margin:0;">* 추천운동 TOP3(주간)</h5><span class="text-muted" style="font-size:12px;">단위 : mg/dL</span></div>
+					<div class="ai-grid4 head"><span>순위</span><span>운동종류</span><span>운동(분)</span><span>혈당변동폭</span></div>
+					<div id="aiExerRows"></div>
+				</div>
+				<%-- 앱 하단 [참조링크] 카드와 동일 (헤더 클릭으로 접기/펼치기) --%>
+				<div class="card-tile" style="margin-bottom:8px;padding:12px 24px;">
+					<div class="ai-cardhead" style="cursor:pointer;margin:0;" onclick="$('#aiRefBody').toggle(); $('#aiRefCaret').text($('#aiRefBody').is(':visible')?'▾':'▸');">
+						<b style="color:#1f4fbf;font-size:15px;">[참조링크]</b><span id="aiRefCaret" class="text-muted">▾</span>
+					</div>
+					<div id="aiRefBody" style="padding-top:6px;line-height:2;font-size:14.5px;">
+						💡 <a href="https://www.diabetes.or.kr/" target="_blank" rel="noopener" style="color:#1f4fbf;">대한당뇨병학회 바로가기</a><br>
+						💡 <a href="https://www.youtube.com/channel/UCsVB1GWF-NH-RTxJax8XA_Q/featured?view_as=subscriber" target="_blank" rel="noopener" style="color:#1f4fbf;">당뇨병의정석 (YouTube)</a>
+					</div>
+				</div>
+				<div id="aiBasisNote" class="hidden"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     ⚙ 설정 모달 — 케어센스(i-Sens) 연동 + 모바일 접속 QR
+     (모바일에서는 사이드바가 숨으므로 상단 ⚙ 버튼으로 연다)
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+  <%-- 세로로 긴 모달이라 가운데 정렬(-centered)이면 낮은 해상도에서 아래(QR)가 잘린다
+       → 위쪽 붙임 + 넘치면 모달 안에서 스크롤(-scrollable) --%>
+  <div class="modal-dialog modal-dialog-scrollable" style="max-width:420px;margin-top:14px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);">
+        <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.1rem;">⚙ 설정</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4" style="background:#f8f9fc;">
+        <!-- 케어센스 연동 -->
+        <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+          <div class="card-body p-3">
+            <h6 class="fw-semibold mb-2">🩸 케어센스(i-Sens) 연동</h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span id="tokenStatus2" class="small">…</span>
+              <button id="btnConnect2" class="btn btn-primary btn-sm" onclick="connectISens();" style="display:none;">연동하기</button>
+              <button id="btnSync2"    class="btn btn-success btn-sm" onclick="syncMyBlood(false);" style="display:none;">혈당 가져오기</button>
+            </div>
+            <div class="text-muted mt-2" style="font-size:12.5px;">
+              연동하면 케어센스 혈당이 자동으로 들어옵니다. 토큰이 만료되면 다시 연동해 주세요.
+            </div>
+          </div>
+        </div>
+        <!-- 모바일 접속 QR -->
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+          <div class="card-body p-3">
+            <h6 class="fw-semibold mb-1">📱 모바일 앱 설치</h6>
+            <div class="text-muted mb-1" style="font-size:12.5px;">
+              휴대폰 카메라로 아래 QR을 찍으면 <b>allCare 앱 설치 화면</b>이 열립니다.<br>
+              홈 화면에 아이콘을 만들면 다음부터는 QR 없이 아이콘으로 바로 열려요.
+            </div>
+            <div id="settingsQr"></div>
+            <div id="settingsQrUrl"></div>
+          </div>
+        </div>
+        <!-- 약관 (앱 설정 화면과 동일 구성 — T_SIGN_MST, /getSignList.do 재사용) -->
+        <div class="card border-0 shadow-sm mt-3" style="border-radius:12px;">
+          <div class="card-body p-3">
+            <h6 class="fw-semibold mb-2">📜 약관</h6>
+            <div class="list-group list-group-flush">
+              <button type="button" class="list-group-item list-group-item-action px-1 py-2" onclick="openTerms(3,'서비스 이용약관');">서비스 이용약관 &rsaquo;</button>
+              <button type="button" class="list-group-item list-group-item-action px-1 py-2" onclick="openTerms(1,'개인정보 취급방침');">개인정보 취급방침 &rsaquo;</button>
+              <button type="button" class="list-group-item list-group-item-action px-1 py-2" onclick="openTerms(2,'민감정보 취급방침');">민감정보 취급방침 &rsaquo;</button>
+              <button type="button" class="list-group-item list-group-item-action px-1 py-2" onclick="openAgreeList();">개인정보 약관 동의 내역 &rsaquo;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     📜 약관 본문 모달 — 약관동의 목록·설정 모달 위에 겹쳐 뜸(modal-stack z-index). 닫으면 아래 목록으로 복귀.
+     높이를 줄이고(최대 72vh) 본문은 안에서 스크롤 [2026-10-21 요청]
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="termsViewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg" style="margin-top:40px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;max-height:72vh;display:flex;flex-direction:column;">
+      <div class="modal-header border-0 px-4 pt-3 pb-2" style="background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);flex:0 0 auto;">
+        <h5 class="modal-title fw-bold text-white mb-0" id="termsViewTitle" style="font-size:1.05rem;">약관</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-3" style="background:#fff;overflow-y:auto;flex:1 1 auto;min-height:0;">
+        <div id="termsViewBody" style="font-size:13.5px;line-height:1.65;color:#333;white-space:pre-wrap;"></div>
+      </div>
+      <div class="modal-footer border-0 py-2 px-4" style="flex:0 0 auto;">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     📝 약관동의 / 동의내역 모달 (설정 모달 위에 겹쳐 뜸 — modal-stack 핸들러가 z-index 처리)
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:14px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);">
+        <h5 class="modal-title fw-bold text-white mb-0" id="termsTitle" style="font-size:1.1rem;">약관</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4" style="background:#fff;">
+        <div id="termsBody" style="font-size:14px;line-height:1.75;color:#333;white-space:pre-wrap;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     📢 공지사항 모달
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="noticeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:14px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);">
+        <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.1rem;">📢 공지사항</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4" style="background:#f8f9fc;">
+        <div id="noticeList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     👤 개인정보 변경 모달 — 이메일·키·몸무게만 수정 가능
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="myInfoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable" style="max-width:420px;margin-top:14px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);">
+        <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.1rem;">👤 개인정보 변경</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4" style="background:#f8f9fc;">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+          <div class="card-body p-3">
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small text-muted mb-1">이름</label>
+                <input type="text" id="miNm" class="form-control form-control-sm" readonly></div>
+              <div class="col-6"><label class="form-label small text-muted mb-1">전화번호</label>
+                <input type="text" id="miPhone" class="form-control form-control-sm" readonly></div>
+              <div class="col-6"><label class="form-label small text-muted mb-1">생년월일</label>
+                <input type="text" id="miBirth" class="form-control form-control-sm" readonly></div>
+              <div class="col-6"><label class="form-label small text-muted mb-1">성별</label>
+                <input type="text" id="miGender" class="form-control form-control-sm" readonly></div>
+              <div class="col-12"><label class="form-label small mb-1">이메일</label>
+                <input type="email" id="miEmail" class="form-control form-control-sm" placeholder="example@mail.com"></div>
+              <div class="col-6"><label class="form-label small mb-1">키(cm)</label>
+                <input type="number" id="miHeight" class="form-control form-control-sm" min="0" max="250"></div>
+              <div class="col-6"><label class="form-label small mb-1">몸무게(kg)</label>
+                <input type="number" id="miWeight" class="form-control form-control-sm" min="0" max="300"></div>
+              <div class="col-12"><label class="form-label small mb-1">당뇨 유형</label>
+                <select id="miBlodGb" class="form-select form-select-sm">
+                  <option value="0">미지정</option>
+                  <option value="1">1형 당뇨병</option>
+                  <option value="2">2형 당뇨병</option>
+                  <option value="3">당뇨병 전단계</option>
+                  <option value="4">임신성 당뇨병</option>
+                  <option value="9">기타</option>
+                </select></div>
+            </div>
+            <div class="text-muted mt-2" style="font-size:12px;">이름·전화번호·생년월일·성별 변경은 병원에 문의해 주세요.</div>
+            <div class="text-end mt-3">
+              <button type="button" class="btn btn-primary btn-sm px-4" onclick="saveMyInfo();">저장</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════
@@ -1809,23 +2908,7 @@ function showIsensGuide(onConfirm){
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     세부 혈당 그래프 모달 (APME_01A_2.jsp 를 iframe 으로 로드)
-══════════════════════════════════════════════ -->
-<div class="modal fade" id="detailGraphModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-fullscreen">
-    <div class="modal-content">
-      <div class="modal-header py-2 px-3" style="background:linear-gradient(135deg,#0d6efd 0%,#0aa2c0 100%);">
-        <h5 class="modal-title fw-bold text-white mb-0" style="font-size:1.05rem;">📈 세부 혈당 그래프</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-0" style="display:flex;overflow:hidden;">
-        <iframe id="detailGraphFrame" src="about:blank" title="세부 혈당 그래프"
-                style="flex:1;width:100%;height:100%;border:0;"></iframe>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- (세부 혈당 그래프 풀스크린 모달은 2026-10-21 본문 전환 뷰 #viewDetail 로 대체·제거) -->
 
 <!-- 식사/운동 마커 클릭 팝업 -->
 <!-- markerPopup 제거 (axis 툴팁에 통합) -->

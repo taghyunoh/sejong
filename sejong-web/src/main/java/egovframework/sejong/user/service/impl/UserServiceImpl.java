@@ -63,6 +63,30 @@ public class UserServiceImpl implements UserService {
 	public int insertPersign(PersignDTO dto) throws Exception {
 		return mapper.insertPersign(dto);
 	}
+	@Override
+	public java.util.List<PersignDTO> myAgreeList(String userUuid) throws Exception {
+		return mapper.myAgreeList(userUuid);
+	}
+	@Override
+	public java.util.List<?> patientNoticeList() throws Exception {
+		return mapper.patientNoticeList();
+	}
+	@Override
+	public java.util.List<?> avgBloodLowHigh(java.util.Map<String, Object> map) throws Exception {
+		return mapper.avgBloodLowHigh(map);
+	}
+	@Override
+	public java.util.Map<String, Object> showBloodHighLow(java.util.Map<String, Object> map) throws Exception {
+		return mapper.showBloodHighLow(map);
+	}
+	@Override
+	public java.util.List<?> foodBlood_max(java.util.Map<String, Object> map) throws Exception {
+		return mapper.foodBlood_max(map);
+	}
+	@Override
+	public java.util.List<?> exerBlood_max(java.util.Map<String, Object> map) throws Exception {
+		return mapper.exerBlood_max(map);
+	}
 
 	@Override
 	public int saveAllPatientAgreements(String userUuid, String regId) throws Exception {

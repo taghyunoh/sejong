@@ -97,6 +97,14 @@ public class AdminServiceImpl implements AdminService {
 	public int patientExistsByPhone(PatientDTO dto) throws Exception {
 		return mapper.patientExistsByPhone(dto);
 	}
+	@Override
+	public boolean updatePatientPw(PatientDTO dto) throws Exception {
+		return mapper.updatePatientPw(dto);
+	}
+	@Override
+	public boolean updatePatientSelf(PatientDTO dto) throws Exception {
+		return mapper.updatePatientSelf(dto);
+	}
 
 	//사용자(의사)
 	@Override

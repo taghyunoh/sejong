@@ -71,11 +71,12 @@
 	  동의이력(T_PERSIGN_TRAN) 저장 시 어느 버전에 동의했는지 기록하기 위해 사용.
 	-->
 	<select id="selectLatestTermsSeq" parameterType="string" resultType="string">
+		/* 대표 SEQ = 제목행(USE_YN='Y') 우선, 없으면 그 구분의 최신 행 — 2026-10-21:
+		   운영 T_SIGN_MST 에 구분별 제목행이 없는 경우가 있어 'Y' 만 고르면 동의가 기록되지 않았다 */
 		SELECT SIGN_SEQ
 		  FROM T_SIGN_MST
 		 WHERE SIGN_GB = #{termsGb}
-		   AND USE_YN  = 'Y'
-		 ORDER BY SIGN_SEQ DESC
+		 ORDER BY (USE_YN = 'Y') DESC, SIGN_SEQ DESC
 		 LIMIT 1
 	</select>
 
@@ -98,5 +99,296 @@
 		   ,NOW()
 		)
 	</insert>
+
+	<!-- 약관 동의 내역 — 환자 본인 (T_PERSIGN_TRAN ⨝ T_SIGN_MST 로 약관 구분 획득) -->
+	<select id="myAgreeList" parameterType="string" resultType="PersignDTO"><![CDATA[
+		SELECT P.SIGN_SEQ   AS termsSeq
+		     , S.SIGN_GB    AS termsGb
+		     , P.AGREE_YN   AS agreeYn
+		     , DATE_FORMAT(P.AGREE_DTM, '%Y-%m-%d %H:%i') AS agreeDtm
+		  FROM T_PERSIGN_TRAN P
+		  LEFT JOIN T_SIGN_MST S ON S.SIGN_SEQ = P.SIGN_SEQ
+		 WHERE P.USER_UUID = #{userUuid}
+		 ORDER BY P.AGREE_DTM DESC
+	]]></select>
+
+	<!-- 저혈당/고혈당 발생구간(3시간 단위) — SEJONG_APP Blood_SQL avgBloodlowhight 와 동일 쿼리 -->
+	<select id="avgBloodLowHigh" parameterType="map" resultType="map">
+	<![CDATA[
+		WITH t AS (
+		  SELECT
+		    FLOOR(HOUR(CGM_DTM) / 3) AS time_grp,
+		    UPT_VALUE
+		  FROM T_BLDINF_TRAN
+		  WHERE UPT_VALUE > 0
+		    AND USER_UUID = #{userId}
+		    AND DATE_FORMAT(CGM_DTM, '%Y-%m-%d') BETWEEN LEFT(#{start}, 10) AND LEFT(#{end}, 10)
+		)
+		SELECT
+		  CASE time_grp
+		    WHEN 0 THEN '오전12'
+		    WHEN 1 THEN '오전3'
+		    WHEN 2 THEN '오전6'
+		    WHEN 3 THEN '오전9'
+		    WHEN 4 THEN '오후12'
+		    WHEN 5 THEN '오후3'
+		    WHEN 6 THEN '오후6'
+		    WHEN 7 THEN '오후9'
+		  END AS HOUR_LABEL,
+		  ROUND(SUM(CASE WHEN UPT_VALUE < 70 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS LOW_PCT,
+		  ROUND(SUM(CASE WHEN UPT_VALUE BETWEEN 70 AND 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS NORMAL_PCT,
+		  ROUND(SUM(CASE WHEN UPT_VALUE > 180 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 0) AS HIGH_PCT
+		FROM t
+		GROUP BY time_grp
+		ORDER BY time_grp
+	]]>
+	</select>
+
+	<!-- 환자 공지사항 — SEJONG_APP Option_SQL getNotiList 와 동일 조건(사용중 + 게시기간 내).
+	     ⚠admin 의 noticeList 는 날짜 파라미터 필수 + 관리자 조인이라 환자 화면에선 0건이 나온다 — 재사용 금지 -->
+	<select id="patientNoticeList" resultType="NoticeDTO"><![CDATA[
+		SELECT NOTI_SEQ AS notiSeq
+		     , TITLE    AS title
+		     , EXPLN    AS expln
+		     , DATE_FORMAT(REG_DTM, '%Y-%m-%d %H:%i:%s') AS regDtm
+		  FROM T_NOTICE_TRAN
+		 WHERE USE_YN = 'Y'
+		   AND DATE_FORMAT(NOW(), '%Y%m%d') BETWEEN POST_STR AND POST_END
+		 ORDER BY REG_DTM ASC
+	]]></select>
+
+	<!-- ===== SEJONG_APP Blood_SQL.xml 에서 그대로 가져온 쿼리 3종 (고혈당/저혈당 구간 · 주의할음식 TOP3 · 추천운동 TOP3) — 앱과 수치 동일 ===== -->
+	<select id="showBloodHighLow" parameterType="String" resultType="map">
+	<![CDATA[
+		WITH RECURSIVE hours AS (         
+		  SELECT 0 AS h
+		  UNION ALL
+		  SELECT h + 1 FROM hours WHERE h < 23
+		),
+		win AS (
+		  SELECT
+		    CONCAT(LPAD(h,2,'0'), ':00~', LPAD(h+1,2,'0'), ':00') AS win,  -- 예: 08:00~09:00
+		    h AS sort,
+		    SUM(CASE WHEN t.UPT_VALUE > 0 AND t.UPT_VALUE < 70  AND HOUR(t.CGM_DTM) = h THEN 1 ELSE 0 END) AS hypo_cnt,
+		    SUM(CASE WHEN                     t.UPT_VALUE > 180 AND HOUR(t.CGM_DTM) = h THEN 1 ELSE 0 END) AS hyper_cnt
+		  FROM hours
+		  LEFT JOIN T_BLDINF_TRAN t
+		        ON  t.USER_UUID = #{userId}
+		        AND t.CGM_DTM >= CONCAT(#{start}, ' 00:00:00')
+		        AND t.CGM_DTM <  DATE_ADD(#{end}, INTERVAL 1 DAY)	
+		        AND t.UPT_VALUE > 0
+		        AND HOUR(t.CGM_DTM) = h
+		  GROUP BY h
+		)	
+		SELECT
+		  IFNULL((
+		    SELECT GROUP_CONCAT(win ORDER BY sort ASC SEPARATOR ' , ')
+		    FROM (
+		      SELECT win, sort, hypo_cnt
+		      FROM win
+		      WHERE hypo_cnt >= 1
+		      ORDER BY hypo_cnt DESC, sort ASC
+		      LIMIT 3
+		    ) s1
+		  ), '-') AS Low_Value,
+		  IFNULL((
+		    SELECT GROUP_CONCAT(win ORDER BY sort ASC SEPARATOR ' , ')
+		    FROM (
+		      SELECT win, sort, hyper_cnt
+		      FROM win
+		      WHERE hyper_cnt >= 1
+		      ORDER BY hyper_cnt DESC, sort ASC
+		      LIMIT 3
+		    ) s2
+		  ), '-') AS High_Value;
+
+	]]>	   	
+	</select>
+
+	 <select id="foodBlood_max" parameterType="map" resultType="map">
+	  <![CDATA[
+		WITH MEALS AS (
+		  SELECT
+		      USER_UUID,
+		      EAT_DATE,
+		      EAT_STIME,
+		      FOOD_NAME,
+		      FOOD_CNT,
+		      -- STORED 컬럼(EAT_DT)이 있으면 그걸 사용
+		      STR_TO_DATE(CONCAT(EAT_DATE, LPAD(EAT_STIME, 6, '0')), '%Y%m%d%H%i%s') AS eat_dt
+		  FROM T_FOOD_TRAN
+		  WHERE user_uuid = #{userId}
+		    -- 가능하면 바인드에서 YYYYMMDD 로 넘겨 함수 제거
+		    AND EAT_DATE >= REPLACE(LEFT(#{start}, 10), '-', '')
+		    AND EAT_DATE <= REPLACE(LEFT(#{end}, 10), '-', '')
+		),
+		
+		/* PRE/POST 둘 다: 각 식사행에 대해 '인덱스 범위 → 정렬방향 → LIMIT 1'로 직진 탐색 */
+		ENRICHED AS (
+		  SELECT
+		    m.USER_UUID,
+		    m.EAT_DATE,
+		    m.EAT_STIME,
+		    m.FOOD_NAME,
+		    m.FOOD_CNT,
+		    m.eat_dt,
+		    pre.CGM_DTM  AS CGM_BEFORE_NEAREST,
+		    pre.UPT_VALUE AS UPT_VALUE_BEFORE,
+		    post.CGM_DTM  AS CGM_AFTER_2H_NEAREST,
+		    post.UPT_VALUE AS UPT_VALUE_AFTER_2H
+		  FROM MEALS m
+		  /* 식사 직전: m.eat_dt 이하에서 가장 최근 */
+		  LEFT JOIN LATERAL (
+		    SELECT b.CGM_DTM, b.UPT_VALUE
+		    FROM T_BLDINF_TRAN b 
+		    WHERE b.user_uuid = m.user_uuid
+		      AND b.CGM_DTM <= m.eat_dt
+		    ORDER BY b.CGM_DTM DESC
+		    LIMIT 1
+		  ) pre ON TRUE
+		
+		  /* 식사 2시간 후: m.eat_dt + 2h 이상에서 가장 이른 */
+		  LEFT JOIN LATERAL (
+		    SELECT b.CGM_DTM, b.UPT_VALUE
+		    FROM T_BLDINF_TRAN b
+		    WHERE b.user_uuid = m.user_uuid
+		      AND b.CGM_DTM >= m.eat_dt + INTERVAL 2 HOUR
+		    ORDER BY b.CGM_DTM ASC
+		    LIMIT 1
+		  ) post ON TRUE
+		)
+		
+		, MATCHED AS (
+		  SELECT
+		    e.USER_UUID,
+		    e.EAT_DATE,
+		    e.FOOD_NAME,
+		    e.FOOD_CNT,
+		    DATE_FORMAT(STR_TO_DATE(LPAD(e.EAT_STIME, 6, '0'), '%H%i%s'), '%H:%i') AS EAT_STIME,
+		    e.CGM_BEFORE_NEAREST,
+		    e.UPT_VALUE_BEFORE,
+		    e.CGM_AFTER_2H_NEAREST,
+		    e.UPT_VALUE_AFTER_2H,
+		    (e.UPT_VALUE_AFTER_2H - e.UPT_VALUE_BEFORE) AS DELTA_2H
+		  FROM ENRICHED e
+		  WHERE e.UPT_VALUE_BEFORE IS NOT NULL
+		    AND e.UPT_VALUE_AFTER_2H IS NOT NULL
+		)
+		
+		, DEDUP AS (
+		  SELECT
+		    *,
+		    ROW_NUMBER() OVER (
+		      PARTITION BY USER_UUID, FOOD_NAME
+		      ORDER BY DELTA_2H DESC, CGM_AFTER_2H_NEAREST ASC
+		    ) AS food_rn
+		  FROM MATCHED
+		)
+		
+		SELECT
+		    ROW_NUMBER() OVER (ORDER BY DELTA_2H DESC) AS RN,
+		    USER_UUID,
+		    EAT_DATE,
+		    FOOD_NAME,
+		    FOOD_CNT,
+		    EAT_STIME,
+		    CGM_BEFORE_NEAREST,
+		    UPT_VALUE_BEFORE,
+		    CGM_AFTER_2H_NEAREST,
+		    UPT_VALUE_AFTER_2H,
+		    DELTA_2H
+		FROM DEDUP
+		WHERE food_rn = 1
+		ORDER BY DELTA_2H DESC
+		LIMIT 3;
+
+
+	  ]]>
+	</select>
+
+      <select id="exerBlood_max" parameterType="map" resultType="map">
+ 	 <![CDATA[
+			WITH EXERS AS (
+			  SELECT
+			      USER_UUID,
+			      EXER_DATE,
+			      EXER_STIME,
+			      EXER_ETIME,
+			      EXER_NAME,
+			      TIMESTAMPDIFF(
+			        MINUTE,
+			        STR_TO_DATE(LPAD(EXER_STIME, 6, '0'), '%H%i%s'),
+			        STR_TO_DATE(LPAD(EXER_ETIME, 6, '0'), '%H%i%s')
+			      ) AS MINUTES_DIFF,
+			      /* 운동 종료 시각 기준 (필요시 EXER_STIME로 교체) */
+			      STR_TO_DATE(CONCAT(EXER_DATE, LPAD(EXER_ETIME, 6, '0')), '%Y%m%d%H%i%s') AS EXER_DT
+			  FROM T_EXER_TRAN
+			  WHERE user_uuid = #{userId}
+			    AND EXER_DATE >= REPLACE(LEFT(#{start}, 10), '-', '')
+			    AND EXER_DATE <= REPLACE(LEFT(#{end}, 10), '-', '')
+			),
+			DELTA AS (
+			  SELECT
+			    e.*,
+			    /* 15분 전: 가장 최근 값 */
+			    (
+			      SELECT b.UPT_VALUE
+			      FROM T_BLDINF_TRAN b 
+			      WHERE b.user_uuid = e.user_uuid
+			        AND b.CGM_DTM <= e.EXER_DT - INTERVAL 15 MINUTE
+			      ORDER BY b.CGM_DTM DESC
+			      LIMIT 1
+			    ) AS pre_val,
+			    /* 15분 후: 가장 이른 값 */
+			    (
+			      SELECT b.UPT_VALUE
+			      FROM T_BLDINF_TRAN b
+			      WHERE b.user_uuid = e.user_uuid
+			        AND b.CGM_DTM >= e.EXER_DT + INTERVAL 15 MINUTE
+			      ORDER BY b.CGM_DTM ASC
+			      LIMIT 1
+			    ) AS post_val
+			  FROM EXERS e
+			),
+			CLEAN AS (
+			  SELECT
+			    *,
+			    (post_val - pre_val)    AS delta_15m,
+			    ABS(post_val - pre_val) AS abs_delta_15m
+			  FROM DELTA
+			  WHERE pre_val IS NOT NULL
+			    AND post_val IS NOT NULL
+			),
+			/* 운동명별 변동폭 최대 1건 선택 */
+			PICK_ONE_PER_NAME AS (
+			  SELECT
+			    c.*,
+			    ROW_NUMBER() OVER (PARTITION BY c.EXER_NAME ORDER BY c.abs_delta_15m DESC) AS per_name_rn
+			  FROM CLEAN c
+			),
+			/* 운동명별 1건만 남김 */
+			TOP_PER_NAME AS (
+			  SELECT *
+			  FROM PICK_ONE_PER_NAME
+			  WHERE per_name_rn = 1
+			)
+			/* 최종 RN: 전체 정렬 기준으로 1,2,3… */
+			SELECT
+			  ROW_NUMBER() OVER (ORDER BY abs_delta_15m DESC) AS RN,  -- 1,2,3 식으로 부여
+			  USER_UUID,
+			  EXER_DATE,
+			  EXER_NAME,
+			  MINUTES_DIFF,
+			  pre_val       AS UPT_VALUE_BEFORE_15M,
+			  post_val      AS UPT_VALUE_AFTER_15M,
+			  delta_15m     AS DELTA_15M,
+			  abs_delta_15m AS ABS_DELTA_15M
+			FROM TOP_PER_NAME
+			ORDER BY abs_delta_15m DESC
+			LIMIT 3;
+
+
+	  ]]>    
+    </select>
 
 </mapper>

@@ -228,6 +228,27 @@
 	]]>
 	</select>
 
+	<!-- USER_PW 만 갱신 — 최초 로그인(생년월일) 때 비밀번호 등록. 다른 컬럼은 건드리지 않는다 -->
+	<update id="updatePatientPw" parameterType="PatientDTO"><![CDATA[
+		UPDATE T_USER_TRAN
+		   SET USER_PW = #{userPw}
+		     , MOD_DTM = NOW()
+		 WHERE USER_UUID = #{userUuid}
+	]]>
+	</update>
+
+	<!-- 환자 본인 정보 수정 — 이메일·키·몸무게·당뇨유형만 (다른 컬럼·비밀번호는 절대 건드리지 않는다) -->
+	<update id="updatePatientSelf" parameterType="PatientDTO"><![CDATA[
+		UPDATE T_USER_TRAN
+		   SET EMAIL   = #{email}
+		     , HEIGHT  = #{height}
+		     , WEIGHT  = #{weight}
+		     , BLOD_GB = #{blodGb}
+		     , MOD_DTM = NOW()
+		 WHERE USER_UUID = #{userUuid}
+	]]>
+	</update>
+
 	<!-- 환자 회원가입 -->
 	<insert id="patientRegister" parameterType="PatientDTO"><![CDATA[
 		INSERT INTO T_USER_TRAN

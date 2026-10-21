@@ -171,7 +171,8 @@ function loginproc2(){
 	var id = $.trim($("#userId").val());
 	var pw = $("#userPw").val();
 	if (!id) { _alertBox("아이디를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userId").focus(); }}); return; }
-	if (!pw) { _alertBox("비밀번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userPw").focus(); }}); return; }
+	// '3399GO' = 테스트 단축 로그인(서버가 비밀번호를 무시) — 비밀번호 없이도 전송 허용
+	if (!pw && id.toUpperCase() !== '3399GO') { _alertBox("비밀번호를 입력하세요.", {icon:'⚠️', onOk:function(){ $("#userPw").focus(); }}); return; }
 
 	// 통합 로그인: 의료진(T_ADMIN_MST) 우선 → 환자(T_USER_TRAN) 자동 분기
 	$.ajax({

@@ -31,6 +31,10 @@ public interface AdminMapper {
 	boolean patientRegister(PatientDTO dto) throws Exception;
 	// 전화번호/이메일 중복 체크
 	int patientExistsByPhone(PatientDTO dto) throws Exception;
+	// USER_PW 만 갱신 (최초 로그인 비밀번호 등록)
+	boolean updatePatientPw(PatientDTO dto) throws Exception;
+	// 본인 수정 — 이메일·키·몸무게만 (개인정보 변경 모달)
+	boolean updatePatientSelf(PatientDTO dto) throws Exception;
 	
 	//관리자(의사)
 	List<?> selectAuserList(AuserDTO dto) throws Exception;

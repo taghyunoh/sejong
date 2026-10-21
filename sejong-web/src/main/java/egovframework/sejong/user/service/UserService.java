@@ -24,6 +24,12 @@ public interface UserService {
 
 	/** 동의이력 1건 저장 (T_PERSIGN_TRAN) */
 	int insertPersign(PersignDTO dto) throws Exception;
+	java.util.List<PersignDTO> myAgreeList(String userUuid) throws Exception;
+	java.util.List<?> patientNoticeList() throws Exception;
+	java.util.List<?> avgBloodLowHigh(java.util.Map<String, Object> map) throws Exception;
+	java.util.Map<String, Object> showBloodHighLow(java.util.Map<String, Object> map) throws Exception;
+	java.util.List<?> foodBlood_max(java.util.Map<String, Object> map) throws Exception;
+	java.util.List<?> exerBlood_max(java.util.Map<String, Object> map) throws Exception;
 
 	/**
 	 * 가입 시 termsGb 1/2/3 에 대해 각각 최신 termsSeq 를 lookup 하여 T_PERSIGN_TRAN 에 INSERT.

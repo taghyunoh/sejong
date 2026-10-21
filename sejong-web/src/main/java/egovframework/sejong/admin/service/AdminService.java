@@ -29,6 +29,8 @@ public interface AdminService {
 	PatientDTO patientLoginCheck(PatientDTO dto) throws Exception;
 	boolean    patientRegister(PatientDTO dto) throws Exception;
 	int        patientExistsByPhone(PatientDTO dto) throws Exception;
+	boolean    updatePatientPw(PatientDTO dto) throws Exception;   // USER_PW 만 갱신 (최초 로그인 비밀번호 등록)
+	boolean    updatePatientSelf(PatientDTO dto) throws Exception; // 본인 수정 — 이메일·키·몸무게만
 		
 	//관리자(의사)
 	List<?> selectAuserList(AuserDTO dto) throws Exception;
