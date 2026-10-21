@@ -224,6 +224,7 @@ $(function(){
 		loadTodayBlood();
 		drawChart();
 		loadDayStatus();   // [앱 홈 카드 대응] 최근 24시간 양호/주의
+		_ensureDayChart(); // [2026-10-21 안전망] 최초 로그인 시 하단 시간대별 차트가 비면 최종 측정일로 강제 렌더
 
 		// ② 토큰 있으면 i-Sens 동기화를 백그라운드로 실행 → 완료 시 내부에서 화면 재갱신
 		if (hasToken) {
@@ -260,6 +261,21 @@ $(function(){
 		}
 	});
 });
+
+/* [안전망] 초기 로드 2.5초 뒤에도 하단 시간대별 차트(#lineChart)에 캔버스가 없으면
+   (주간 차트 → 폴백 → 일 차트로 이어지는 체인이 어디선가 끊긴 경우) 최종 측정일 차트를 직접 그린다.
+   "혈당 가져오기를 눌러야 하단이 보인다"는 지적 대응 — 동기화 완료와 무관하게 처음부터 보이게. */
+function _ensureDayChart(){
+	setTimeout(function(){
+		var l = document.getElementById('lineChart');
+		if (!l || l.querySelector('canvas') || /조회 실패|데이터 없음/.test(l.textContent || '')) return;
+		$.ajax({ url:CommonUtil.getContextPath()+'/getLastBloodDay.do', type:'post', dataType:'json',
+			success:function(r){
+				var row = (r && r.IsSucceed && r.Data) ? r.Data : null;
+				if (row && row.date2) loadDayChart(String(row.date2), _dayLabel(String(row.date2)));
+			}});
+	}, 2500);
+}
 
 function loadTokenStatus(cb){
 	$.ajax({
@@ -2305,9 +2321,10 @@ function showIsensGuide(onConfirm){
 			<!-- [앱 홈 카드 대응] 최근 24시간 혈당지표 '양호/주의' + 바로가기.
 			     AI 종합분석은 세부그래프 AI 분석 탭으로 연결(중복 구현 없음). 챗봇은 우측 Q&A가 이미 있어 제외 -->
 			<%-- 기능 진입은 좌측 메뉴(세부혈당그래프·AI 종합분석)로 분리 — 카드는 상태 요약만 --%>
-			<div class="card-tile" id="dayStatusCard" style="background:linear-gradient(135deg,#0d3b66 0%,#1d5fa8 100%);color:#fff;">
-				<div id="dayStatusText" style="font-size:17px;font-weight:700;">최근 24시간 혈당지표를 계산 중입니다…</div>
-				<div id="dayStatusSub" class="mt-1" style="font-size:13px;color:#cfe2ff;"></div>
+			<%-- [2026-10-21 요청] 한 줄·축소: 상태 문구와 안내문을 같은 줄에, 여백 축소 --%>
+			<div class="card-tile" id="dayStatusCard" style="background:linear-gradient(135deg,#0d3b66 0%,#1d5fa8 100%);color:#fff;padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+				<div id="dayStatusText" style="font-size:15.5px;font-weight:700;white-space:nowrap;">최근 24시간 혈당지표를 계산 중입니다…</div>
+				<div id="dayStatusSub" style="font-size:12.5px;color:#cfe2ff;"></div>
 			</div>
 			<div class="row-grid">
 				<div class="card-tile">
