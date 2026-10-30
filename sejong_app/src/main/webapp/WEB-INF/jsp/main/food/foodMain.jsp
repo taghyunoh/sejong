@@ -227,6 +227,32 @@ td.food-name {
   background: #e9e9e9;
 }
 
+/* ── 📷 사진으로 등록 (2026-10-30) ── */
+#foodForm .photo-row { display:flex; gap:8px; align-items:center; margin:8px 0 2px; }
+#foodForm .btn-photo { flex:0 0 auto; white-space:nowrap; width:auto; height:36px; padding:0 12px; font-size:14px; border-radius:8px; border:1px solid #2b6fff; background:#eef3ff; color:#2b6fff; font-weight:600; cursor:pointer; }
+#foodForm .btn-photo:disabled { opacity:.55; cursor:default; }
+#aiFoodHint { flex:1 1 0; min-width:0; font-size:12px; color:#6b7a89; }
+#aiFoodProg { display:none; flex:1 1 0; min-width:0; padding:4px 8px; border:1px solid #cfe0da; border-radius:8px; background:#f7fbf9; }
+#aiFoodProg .pg-txt { display:flex; justify-content:space-between; font-size:12px; color:#137a6c; font-weight:600; margin-bottom:4px; }
+#aiFoodProg .pg-bar { position:relative; height:6px; border-radius:4px; background:#dfe9e5; overflow:hidden; }
+#aiFoodProg .pg-bar i { position:absolute; top:0; left:-40%; width:40%; height:100%; border-radius:4px; background:linear-gradient(90deg,#2b6fff,#6fa0ff); animation:aiPgSlide 1.1s linear infinite; }
+@keyframes aiPgSlide { from { left:-40%; } to { left:100%; } }
+#aiFoodBox { display:none; margin:8px 0 10px; border:1px solid #cfe0da; border-radius:10px; background:#f7fbf9; padding:8px; }
+#aiFoodBox .ai-head { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#137a6c; margin-bottom:6px; }
+#aiFoodBox .ai-head .x { margin-left:auto; width:auto; border:0; background:none; font-size:16px; color:#6b7a89; cursor:pointer; }
+#aiFoodBox img.ai-thumb { width:100%; max-height:160px; object-fit:contain; border-radius:8px; background:#fff; margin-bottom:6px; }
+#aiFoodBox table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; }
+#aiFoodBox th, #aiFoodBox td { border-bottom:1px solid #e3e9f2; padding:4px 4px; text-align:center; }
+#aiFoodBox td input[type="text"] { width:100%; height:30px; font-size:16px; padding:2px 6px; border:1px solid #dbe2ea; border-radius:6px; box-sizing:border-box; }
+#aiFoodBox td.nm input { text-align:left; }
+#aiFoodBox td.ac input { width:52px; text-align:center; }
+#aiFoodBox td .mst { display:block; font-size:11px; color:#137a6c; }
+#aiFoodBox td .nomst { display:block; font-size:11px; color:#9aa7b3; }
+/* 안내글은 한 줄로 위에, 단추는 아래 전체 폭 — 공통 CSS 가 form 단추를 width:100% 로 두어 flex 한 줄에 놓으면 안내글이 세로로 눌린다(모바일 실측) */
+#aiFoodBox .ai-foot { display:block; margin-top:8px; }
+#aiFoodBox .ai-foot small { display:block; color:#6b7a89; font-size:11px; line-height:1.4; margin-bottom:6px; }
+#aiFoodBox .btn-save { display:block; width:100%; height:38px; border-radius:8px; border:0; background:#2b6fff; color:#fff; font-weight:700; font-size:15px; cursor:pointer; }
+#aiFoodBox .ai-empty { padding:10px; text-align:center; color:#9aa7b3; font-size:13px; }
 </style>
 </head>
 <body>
@@ -292,7 +318,27 @@ td.food-name {
 		  </div>
 		</div>
 
-        <button type="button" onclick="saveFood()">입력</button>
+        <%-- ★[2026-10-30] 사진으로 등록 — 찍은(또는 고른) 사진을 Gemini 가 읽어 음식명·섭취량·열량을 채운다.
+             결과는 아래 표에 먼저 보이고, 확인·고친 뒤 [입력] 을 눌러야 저장된다(자동 저장 안 함 — 사용자 확정 2026-10-30)(종전 updateFood.do 와 같은 포맷).
+             capture="environment" = 휴대폰은 바로 카메라, PC 는 파일 고르기. 사진은 서버에 남기지 않는다. --%>
+        <div class="photo-row">
+          <input type="file" id="foodPhoto" accept="image/*" capture="environment" style="display:none"
+                 onchange="aiFoodPick(this)">
+          <button type="button" class="btn-photo" id="btnFoodPhoto" onclick="document.getElementById('foodPhoto').click()">📷 사진등록</button>
+          <span id="aiFoodHint">음식이나 포장 식품을 찍으면 음식마다 한 줄씩 채워집니다 — 확인하고 [입력]을 누르면 저장</span>
+          <div id="aiFoodProg"><div class="pg-txt"><span id="aiFoodProgTxt">사진을 읽는 중…</span><span id="aiFoodProgSec"></span></div><div class="pg-bar"><i></i></div></div>
+        </div>
+        <div id="aiFoodBox">
+          <div class="ai-head"><span id="aiFoodTtl">🤖 사진에서 찾은 음식</span> <span id="aiFoodCnt"></span><button type="button" class="x" onclick="aiFoodClose()" title="닫기">✕</button></div>
+          <img id="aiFoodThumb" class="ai-thumb" alt="" style="display:none">
+          <div id="aiFoodBody"></div>
+          <div class="ai-foot">
+            <small id="aiFoodFootMsg">음식명·양을 고친 뒤 등록하세요. 식사일자·시간은 위 칸을 씁니다. ✔ 마스터 = 열량이 자동 집계되는 음식</small>
+            <button type="button" class="btn-save" id="aiFoodSaveBtn" onclick="aiFoodSave()">입력</button>
+          </div>
+        </div>
+
+        <button type="button" id="btnFoodManual" onclick="saveFood()">입력</button>
       </form>
 	      <table class="food-table">
 	        <thead><tr><th>식사일자</th><th>식사시간</th><th>식사종류</th><th>식사량</th><th></th></tr></thead>
@@ -422,6 +468,153 @@ function showTab(event, tabId) {
     getFoodList("1");
     renderFoodList([], "1");
   }
+}
+
+/* ========== 📷 사진으로 등록 (2026-10-30) ==========
+   흐름 : 사진 고름 → 캔버스로 긴 변 1024px JPEG 로 줄임(휴대폰 원본 3~8MB → 수백 KB)
+         → /analyzeFoodImage.do (base64) → 서버가 Gemini 에 묻고 T_FOOD_MST 와 맞춰 준다
+         → 표에 보여 주고 사람이 확인·고침 → [입력] = updateFood.do 에 FoodDTO 배열(saveFood 와 같은 포맷).
+   ⚠키 미설정이면 서버가 IsSucceed=false "LLM 미설정" — 화면은 안내만(챗봇과 같은 규칙). */
+var AI_FOOD = [];            // 서버가 돌려준 인식 결과(행마다 foodName/foodAcnt/foodDanwi/kcal/foodMseq/mstName/mstKcal)
+function aiFoodClose(){ document.getElementById('aiFoodBox').style.display='none'; AI_FOOD=[]; AI_SAVED=false; aiManualBtn(true); }
+// 사진 결과를 확인하는 동안(수정 모드)은 수동 [입력]을 감춘다 — 두 [입력]이 위아래로 붙어 어느 것을 누를지 헷갈린다(폰 실측 2026-10-30)
+function aiManualBtn(show){ var b = document.getElementById('btnFoodManual'); if(b) b.style.display = show ? '' : 'none'; }
+function aiFoodShrink(file, maxSide, quality){
+  return new Promise(function(resolve, reject){
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      try{
+        var w = img.naturalWidth, h = img.naturalHeight, r = Math.min(1, maxSide / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * r)), ch = Math.max(1, Math.round(h * r));
+        var c = document.createElement('canvas'); c.width = cw; c.height = ch;
+        c.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', quality));
+      }catch(e){ URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('이미지를 읽지 못했습니다.')); };
+    img.src = url;
+  });
+}
+async function aiFoodPick(inp){
+  var file = inp.files && inp.files[0];
+  inp.value = '';                                   // 같은 사진을 다시 골라도 change 가 뜨게
+  if(!file) return;
+  if(!/^image\//.test(file.type||'')){ alert('사진 파일만 올릴 수 있습니다.'); return; }
+  var btn = document.getElementById('btnFoodPhoto'), hint = document.getElementById('aiFoodHint');
+  btn.disabled = true; hint.textContent = '사진을 읽는 중… (몇 초 걸립니다)';
+  aiProg('사진 줄이는 중…');
+  try{
+    var dataUrl = await aiFoodShrink(file, 1024, 0.85);
+    aiProg('AI 가 음식을 찾는 중… (보통 5~10초)');
+    var thumb = document.getElementById('aiFoodThumb'); thumb.src = dataUrl; thumb.style.display = 'block';
+    var res = await fetch(CTX + '/analyzeFoodImage.do', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image: dataUrl, mime: 'image/jpeg' })
+    });
+    if(res.status === 401){ alert('로그인이 만료되었습니다. 다시 로그인해 주세요.'); return; }
+    var p = await res.json();
+    if(!p || !p.IsSucceed){
+      var m = (p && p.Message) || '';
+      alert(m === 'LLM 미설정' ? '사진 인식 기능이 아직 설정되지 않았습니다(관리자 문의). 음식명을 직접 입력해 주세요.' : (m || '사진 인식에 실패했습니다.'));
+      return;
+    }
+    AI_FOOD = Array.isArray(p.Data) ? p.Data : []; AI_SAVED = false;
+    aiFoodRender();                                        // 저장은 사람이 확인하고 [입력]을 눌렀을 때만(사용자 확정 2026-10-30 — 자동 저장 안 함)
+    if(!AI_FOOD.length) hint.textContent = '음식을 찾지 못했습니다 — 다른 각도로 다시 찍어 보세요';
+  }catch(e){
+    alert('사진 인식 중 오류: ' + (e && e.message ? e.message : e));
+  }finally{
+    aiProg(false); btn.disabled = false;
+    if(AI_FOOD.length) hint.textContent = '찾은 음식 ' + AI_FOOD.length + '개를 확인하고 [입력]을 누르세요 (음식마다 한 줄씩 저장)';
+  }
+}
+// 진행 표시 — 글자를 주면 띠를 보이고 초를 센다, false 면 감춘다
+var AI_PG_T0 = 0, AI_PG_TM = null;
+function aiProg(txt){
+  var box = document.getElementById('aiFoodProg'), t = document.getElementById('aiFoodProgTxt'), sec = document.getElementById('aiFoodProgSec'), hint = document.getElementById('aiFoodHint');
+  if(!box) return;
+  if(txt === false){ box.style.display = 'none'; if(hint) hint.style.display = ''; if(AI_PG_TM){ clearInterval(AI_PG_TM); AI_PG_TM = null; } return; }
+  if(hint) hint.style.display = 'none';
+  t.textContent = txt;
+  if(box.style.display !== 'block'){
+    box.style.display = 'block'; AI_PG_T0 = Date.now(); sec.textContent = '0초';
+    AI_PG_TM = setInterval(function(){ sec.textContent = Math.round((Date.now() - AI_PG_T0) / 1000) + '초'; }, 500);
+  }
+}
+function aiEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+var AI_SAVED = false;   // [입력]으로 저장이 끝났으면 true — 표는 확인용(읽기 전용), [입력] 숨김
+function aiFoodRender(){
+  var box = document.getElementById('aiFoodBox'), body = document.getElementById('aiFoodBody');
+  document.getElementById('aiFoodCnt').textContent = AI_FOOD.length ? '(' + AI_FOOD.length + '개)' : '';
+  document.getElementById('aiFoodTtl').textContent = AI_SAVED ? '✅ 식사 이력에 저장한 음식' : '🤖 사진에서 찾은 음식';
+  document.getElementById('aiFoodSaveBtn').style.display = AI_SAVED ? 'none' : '';
+  document.getElementById('aiFoodSaveBtn').textContent = '찾은 음식 ' + AI_FOOD.length + '개 입력';
+  aiManualBtn(AI_SAVED || !AI_FOOD.length);
+  document.getElementById('aiFoodFootMsg').textContent = AI_SAVED
+    ? '음식마다 한 줄씩 저장했습니다. 잘못 들어간 음식은 아래 식사 이력에서 삭제하고, 양·이름은 식사 이력에서 고치세요.'
+    : '음식명·양을 고친 뒤 등록하세요. 식사일자·시간은 위 칸을 씁니다. ✔ 마스터 = 열량이 자동 집계되는 음식';
+  if(!AI_FOOD.length){ body.innerHTML = '<div class="ai-empty">사진에서 음식을 찾지 못했습니다.</div>'; box.style.display='block'; return; }
+  if(AI_SAVED){
+    var hs = '<table><thead><tr><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th></tr></thead><tbody>';
+    AI_FOOD.forEach(function(r){
+      var k = r.mstKcal || r.kcal || '';
+      hs += '<tr><td class="nm" style="text-align:left">' + aiEsc(r.foodName) + (r.foodMseq ? '<span class="mst">✔ ' + aiEsc(r.mstName) + '</span>' : '<span class="nomst">직접입력</span>') + '</td>'
+          + '<td>' + aiEsc(r.foodAcnt || '1') + '</td><td>' + aiEsc(r.foodDanwi || '인분') + '</td><td>' + (k ? aiEsc(k) + 'kcal' : '-') + '</td></tr>';
+    });
+    body.innerHTML = hs + '</tbody></table>'; box.style.display = 'block'; box.scrollIntoView({ behavior:'smooth', block:'nearest' }); return;
+  }
+  var h = '<table><thead><tr><th style="width:28px"><input type="checkbox" id="aiAll" checked onchange="aiFoodAll(this.checked)"></th><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th></tr></thead><tbody>';
+  AI_FOOD.forEach(function(r, i){
+    var kcal = r.mstKcal || r.kcal || '';
+    var mst = r.foodMseq ? '<span class="mst">✔ ' + aiEsc(r.mstName) + '</span>' : '<span class="nomst">마스터 없음(직접입력)</span>';
+    h += '<tr data-i="' + i + '">'
+       + '<td><input type="checkbox" class="ai-ck" checked></td>'
+       + '<td class="nm"><input type="text" class="ai-nm" value="' + aiEsc(r.foodName) + '">' + mst + '</td>'
+       + '<td class="ac"><input type="text" class="ai-ac" value="' + aiEsc(r.foodAcnt || '1') + '"></td>'
+       + '<td>' + aiEsc(r.foodDanwi || '인분') + '</td>'
+       + '<td>' + (kcal ? aiEsc(kcal) + 'kcal' : '-') + '</td>'
+       + '</tr>';
+  });
+  body.innerHTML = h + '</tbody></table>';
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function aiFoodAll(on){ document.querySelectorAll('#aiFoodBody .ai-ck').forEach(function(c){ c.checked = on; }); }
+function aiFoodSave(){
+  var eatDate = document.getElementById('eatDate').value, eatStime = pickHHMM('eatStime');
+  if(!eatDate){ alert('식사일자를 입력하세요.'); return; }
+  var rows = [], saved = [];
+  document.querySelectorAll('#aiFoodBody tr[data-i]').forEach(function(tr){
+    if(!tr.querySelector('.ai-ck').checked) return;
+    var i = +tr.getAttribute('data-i'), r = AI_FOOD[i] || {};
+    var name = (tr.querySelector('.ai-nm').value || '').trim(), ac = (tr.querySelector('.ai-ac').value || '').trim() || '1';
+    if(!name) return;
+    // 이름을 고쳤으면 마스터 연결은 버린다(다른 음식의 열량이 붙으면 안 된다)
+    var mseq = (r.foodMseq && name === (r.foodName||'')) ? String(r.foodMseq) : '1';
+    saved.push({ foodName:name, foodAcnt:ac, foodDanwi:r.foodDanwi || '인분', foodMseq:(mseq === '1' ? '' : mseq), mstName:r.mstName, mstKcal:(mseq === '1' ? '' : r.mstKcal), kcal:r.kcal });
+    rows.push({
+      userUuid : document.getElementById('userUuid').value,
+      eatDate  : eatDate,
+      eatStime : eatStime,
+      eatEtime : (document.getElementById('eatEtime') ? pickHHMM('eatEtime') : eatStime),
+      foodName : name,
+      foodDanwi: r.foodDanwi || '인분',
+      foodCnt  : '1',
+      foodAcnt : ac,
+      foodMseq : mseq
+    });
+  });
+  if(!rows.length){ alert('등록할 음식을 체크하세요.'); return; }
+  if(!confirm(rows.length + '개 음식을 식사기록에 입력하시겠습니까?')) return;    // 사용자 확인 뒤 실행(saveFood 의 「입력하시겠습니까?」와 같은 결)
+  var btn = document.getElementById('aiFoodSaveBtn'); btn.disabled = true;
+  $.ajax({
+    url: CTX + '/updateFood.do', type:'POST', contentType:'application/json', data: JSON.stringify(rows),
+    success: function(){ AI_SAVED = true; AI_FOOD = saved; aiFoodRender(); document.getElementById('aiFoodHint').textContent = rows.length + '개를 식사 이력에 저장했습니다 — 아래 목록에서 확인하세요'; getFoodList('2'); },
+    error: function(xhr){ alert(ajaxFailMsg(xhr, '식사기록을 저장')); },
+    complete: function(){ btn.disabled = false; }
+  });
 }
 
 function getFoodList(gubun) {
