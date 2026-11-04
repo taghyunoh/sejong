@@ -312,7 +312,7 @@ td.food-name {
         <input type="hidden" id="foodCnt"  value="1">  
         <%-- ★[2026-11-04] 등록 방식 좌우 단추 — 사진등록 = 일자·시간(기본 오늘·지금, 고칠 수 있음) + 사진 → 찾은 음식 표 → [입력] / 수동입력 = 종전 폼 --%>
         <div class="fm-seg">
-          <button type="button" id="fmBtnPhoto" class="on" onclick="fmMode('photo', true)">📷 사진등록</button>
+          <button type="button" id="fmBtnPhoto" class="on" onclick="fmMode('photo')">📷 사진등록</button>
           <button type="button" id="fmBtnManual" onclick="fmMode('manual')">✎ 수동입력</button>
         </div>
         <div class="input-group">
@@ -563,7 +563,7 @@ async function aiFoodPick(inp){
     if(AI_FOOD.length) hint.textContent = '찾은 음식 ' + AI_FOOD.length + '개를 확인하고 [입력]을 누르세요 (음식마다 한 줄씩 저장)';
   }
 }
-// 등록 방식 — 'photo' | 'manual'. 사진등록으로 들어갈 때 일자·시간이 비어 있으면 오늘·지금으로 채운다(적힌 값은 안 덮는다). shoot=true 면 바로 카메라.
+// 등록 방식 — 'photo' | 'manual'. 사진등록으로 들어갈 때 일자·시간이 비어 있으면 오늘·지금으로 채운다(적힌 값은 안 덮는다). 카메라는 [📷 사진 찍기]만 연다(사용자 지시 2026-11-04 — 모드 단추는 전환만). shoot 인자는 남겨 둠.
 function fmMode(m, shoot){
   var form = document.getElementById('foodForm'); if(!form) return;
   form.classList.toggle('m-photo', m === 'photo'); form.classList.toggle('m-manual', m !== 'photo');
