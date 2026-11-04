@@ -97,6 +97,19 @@
   padding: 6px;
   font-size: 14px;
 }
+/* 2026-11-04 열량·탄수 열이 늘어 7칸 — 공통 CSS 의 nowrap + 자동 폭이면 폰에서 오른쪽(삭제)이 잘린다(실측).
+   표를 고정 배치로 두고 칸마다 폭을 못 박아 전체가 화면 폭 안에 들어가게 한다. 음식 이름 칸만 남은 폭을 쓰고 넘치면 … */
+#foodList, #todayfoodList { }
+.food-table { table-layout: fixed; width: 100%; }
+.food-table th, .food-table td { padding: 8px 3px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.food-table th:nth-child(1), .food-table td:nth-child(1) { width: 72px; font-size: 12px; }
+.food-table th:nth-child(2), .food-table td:nth-child(2) { width: 40px; }
+.food-table th:nth-child(4), .food-table td:nth-child(4) { width: 30px; }
+.food-table th:nth-child(5), .food-table td:nth-child(5) { width: 40px; }
+.food-table th:nth-child(6), .food-table td:nth-child(6) { width: 38px; }
+.food-table th:nth-child(7), .food-table td:nth-child(7) { width: 26px; padding-left: 0; padding-right: 2px; }
+#foodList td.food-name, #todayfoodList td.food-name { padding-left: 4px; }
+@media (max-width: 400px) { .food-table th, .food-table td { padding: 8px 2px; font-size: 12px; } .food-table th:nth-child(1), .food-table td:nth-child(1) { width: 66px; font-size: 11px; } }
 /* 기간 필터 날짜칸. 폭·여백·정렬은 comm_style.css 의 `.date-range input[type="date"]`
    가 flex 로 관리한다(안드로이드에서 끝이 잘리던 문제) — 여기서 고정 width 를
    다시 주지 말 것. 글자 크기만 16px 로 못박는다(12px 이면 iOS 가 화면을 확대한다). */
@@ -227,9 +240,16 @@ td.food-name {
   background: #e9e9e9;
 }
 
+/* ── 등록 방식 좌우 단추 (2026-11-04 사용자 「사진등록·수동입력 좌우 버튼」) — 폼에 m-photo / m-manual 클래스로 가른다 ── */
+#foodForm .fm-seg { display:flex; gap:8px; margin:4px 0 12px; }
+#foodForm .fm-seg button[type="button"] { flex:1 1 0; width:auto; height:42px; padding:0; font-size:15px; font-weight:700; border-radius:10px; border:1.5px solid #2b6fff; background:#eef3ff; color:#2b6fff; cursor:pointer; }
+#foodForm .fm-seg button[type="button"].on { background:#2b6fff; color:#fff; }
+#foodForm.m-photo .fm-manual { display:none; }
+#foodForm.m-manual .fm-photo { display:none; }
+#foodForm .fm-note { font-size:12px; color:#6b7a89; margin:-4px 0 8px; }
 /* ── 📷 사진으로 등록 (2026-10-30) ── */
 #foodForm .photo-row { display:flex; gap:8px; align-items:center; margin:8px 0 2px; }
-#foodForm .btn-photo { flex:0 0 auto; white-space:nowrap; width:auto; height:36px; padding:0 12px; font-size:14px; border-radius:8px; border:1px solid #2b6fff; background:#eef3ff; color:#2b6fff; font-weight:600; cursor:pointer; }
+#foodForm .btn-photo { flex:0 0 auto; white-space:nowrap; width:auto; height:40px; padding:0 14px; font-size:15px; border-radius:8px; border:1px solid #2b6fff; background:#eef3ff; color:#2b6fff; font-weight:600; cursor:pointer; }
 #foodForm .btn-photo:disabled { opacity:.55; cursor:default; }
 #aiFoodHint { flex:1 1 0; min-width:0; font-size:12px; color:#6b7a89; }
 #aiFoodProg { display:none; flex:1 1 0; min-width:0; padding:4px 8px; border:1px solid #cfe0da; border-radius:8px; background:#f7fbf9; }
@@ -246,6 +266,9 @@ td.food-name {
 #aiFoodBox td input[type="text"] { width:100%; height:30px; font-size:16px; padding:2px 6px; border:1px solid #dbe2ea; border-radius:6px; box-sizing:border-box; }
 #aiFoodBox td.nm input { text-align:left; }
 #aiFoodBox td.ac input { width:52px; text-align:center; }
+#aiFoodBox td.kc input, #aiFoodBox td.cb input { width:56px; text-align:right; padding-right:4px; }
+#aiFoodBox td.kc, #aiFoodBox td.cb { white-space:nowrap; font-size:11px; color:#6b7a89; }
+#aiFoodBox .ai-calc { font-size:11px; color:#137a6c; margin:4px 2px 0; }
 #aiFoodBox td .mst { display:block; font-size:11px; color:#137a6c; }
 #aiFoodBox td .nomst { display:block; font-size:11px; color:#9aa7b3; }
 /* 안내글은 한 줄로 위에, 단추는 아래 전체 폭 — 공통 CSS 가 form 단추를 width:100% 로 두어 flex 한 줄에 놓으면 안내글이 세로로 눌린다(모바일 실측) */
@@ -276,17 +299,22 @@ td.food-name {
 	   </div>     
 	    <div class="food-table-wrap">
 	      <table class="food-table">
-	        <thead><tr><th>식사일자</th><th>식사시간</th><th>식사종류</th><th>식사량</th><th></th></tr></thead>
+	        <thead><tr><th>일자</th><th>시간</th><th>식사종류</th><th>양</th><th>열량</th><th>탄수</th><th></th></tr></thead>
 	        <tbody id="foodList"></tbody>
 	      </table>
 	     </div>  
     </section>
 
     <section id="inputTab" class="tab-content">
-      <form id="foodForm">
+      <form id="foodForm" class="m-photo">
         <input type="hidden" id="userUuid" value="${sessionScope.userUuid}">  
         <input type="hidden" id="foodMseq" value="">  
         <input type="hidden" id="foodCnt"  value="1">  
+        <%-- ★[2026-11-04] 등록 방식 좌우 단추 — 사진등록 = 일자·시간(기본 오늘·지금, 고칠 수 있음) + 사진 → 찾은 음식 표 → [입력] / 수동입력 = 종전 폼 --%>
+        <div class="fm-seg">
+          <button type="button" id="fmBtnPhoto" class="on" onclick="fmMode('photo', true)">📷 사진등록</button>
+          <button type="button" id="fmBtnManual" onclick="fmMode('manual')">✎ 수동입력</button>
+        </div>
         <div class="input-group">
           <label for="eatDate">식사일자</label>
           <input type="date" id="eatDate" name="eatDate" value="<%= todayDate %>" required>
@@ -295,6 +323,7 @@ td.food-name {
           <label for="eatStime">시작시간</label>
           <input type="time" id="eatStime" name="eatStime" value="<%= nowTimeStr %>" required>
         </div>
+        <div class="fm-manual">
         <div class="input-group" style="position:relative;">
 		  <label for="foodName">식사종류</label>
 		  <input type="text" id="foodName" name="foodName" placeholder="음식명 입력" required autocomplete="off">
@@ -317,14 +346,18 @@ td.food-name {
 		    </div>
 		  </div>
 		</div>
+        <button type="button" id="btnFoodManual" onclick="saveFood()">입력</button>
+        </div><%-- /fm-manual --%>
 
         <%-- ★[2026-10-30] 사진으로 등록 — 찍은(또는 고른) 사진을 Gemini 가 읽어 음식명·섭취량·열량을 채운다.
              결과는 아래 표에 먼저 보이고, 확인·고친 뒤 [입력] 을 눌러야 저장된다(자동 저장 안 함 — 사용자 확정 2026-10-30)(종전 updateFood.do 와 같은 포맷).
              capture="environment" = 휴대폰은 바로 카메라, PC 는 파일 고르기. 사진은 서버에 남기지 않는다. --%>
+        <div class="fm-photo">
+        <div class="fm-note">식사일자·시작시간은 지금으로 채워져 있습니다 — 다른 때 먹은 것이면 위에서 고친 뒤 [입력]을 누르세요.</div>
         <div class="photo-row">
           <input type="file" id="foodPhoto" accept="image/*" capture="environment" style="display:none"
                  onchange="aiFoodPick(this)">
-          <button type="button" class="btn-photo" id="btnFoodPhoto" onclick="document.getElementById('foodPhoto').click()">📷 사진등록</button>
+          <button type="button" class="btn-photo" id="btnFoodPhoto" onclick="document.getElementById('foodPhoto').click()">📷 사진 찍기</button>
           <span id="aiFoodHint">음식이나 포장 식품을 찍으면 음식마다 한 줄씩 채워집니다 — 확인하고 [입력]을 누르면 저장</span>
           <div id="aiFoodProg"><div class="pg-txt"><span id="aiFoodProgTxt">사진을 읽는 중…</span><span id="aiFoodProgSec"></span></div><div class="pg-bar"><i></i></div></div>
         </div>
@@ -337,11 +370,11 @@ td.food-name {
             <button type="button" class="btn-save" id="aiFoodSaveBtn" onclick="aiFoodSave()">입력</button>
           </div>
         </div>
+        </div><%-- /fm-photo --%>
 
-        <button type="button" id="btnFoodManual" onclick="saveFood()">입력</button>
       </form>
 	      <table class="food-table">
-	        <thead><tr><th>식사일자</th><th>식사시간</th><th>식사종류</th><th>식사량</th><th></th></tr></thead>
+	        <thead><tr><th>일자</th><th>시간</th><th>식사종류</th><th>양</th><th>열량</th><th>탄수</th><th></th></tr></thead>
 	        <tbody id="todayfoodList"></tbody>
 	      </table>
     </section> 
@@ -530,6 +563,20 @@ async function aiFoodPick(inp){
     if(AI_FOOD.length) hint.textContent = '찾은 음식 ' + AI_FOOD.length + '개를 확인하고 [입력]을 누르세요 (음식마다 한 줄씩 저장)';
   }
 }
+// 등록 방식 — 'photo' | 'manual'. 사진등록으로 들어갈 때 일자·시간이 비어 있으면 오늘·지금으로 채운다(적힌 값은 안 덮는다). shoot=true 면 바로 카메라.
+function fmMode(m, shoot){
+  var form = document.getElementById('foodForm'); if(!form) return;
+  form.classList.toggle('m-photo', m === 'photo'); form.classList.toggle('m-manual', m !== 'photo');
+  var bp = document.getElementById('fmBtnPhoto'), bm = document.getElementById('fmBtnManual');
+  if(bp) bp.classList.toggle('on', m === 'photo'); if(bm) bm.classList.toggle('on', m !== 'photo');
+  if(m === 'photo'){
+    var d = document.getElementById('eatDate'), t = document.getElementById('eatStime'), now = new Date();
+    function p2(v){ return (v < 10 ? '0' : '') + v; }
+    if(d && !d.value) d.value = now.getFullYear() + '-' + p2(now.getMonth() + 1) + '-' + p2(now.getDate());
+    if(t && !t.value) t.value = p2(now.getHours()) + ':' + p2(now.getMinutes());
+    if(shoot){ var inp = document.getElementById('foodPhoto'); if(inp) inp.click(); }
+  }
+}
 // 진행 표시 — 글자를 주면 띠를 보이고 초를 센다, false 면 감춘다
 var AI_PG_T0 = 0, AI_PG_TM = null;
 function aiProg(txt){
@@ -557,30 +604,51 @@ function aiFoodRender(){
     : '음식명·양을 고친 뒤 등록하세요. 식사일자·시간은 위 칸을 씁니다. ✔ 마스터 = 열량이 자동 집계되는 음식';
   if(!AI_FOOD.length){ body.innerHTML = '<div class="ai-empty">사진에서 음식을 찾지 못했습니다.</div>'; box.style.display='block'; return; }
   if(AI_SAVED){
-    var hs = '<table><thead><tr><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th></tr></thead><tbody>';
+    var hs = '<table><thead><tr><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th><th style="width:52px">탄수</th></tr></thead><tbody>';
     AI_FOOD.forEach(function(r){
       var k = r.mstKcal || r.kcal || '';
       hs += '<tr><td class="nm" style="text-align:left">' + aiEsc(r.foodName) + (r.foodMseq ? '<span class="mst">✔ ' + aiEsc(r.mstName) + '</span>' : '<span class="nomst">직접입력</span>') + '</td>'
-          + '<td>' + aiEsc(r.foodAcnt || '1') + '</td><td>' + aiEsc(r.foodDanwi || '인분') + '</td><td>' + (k ? aiEsc(k) + 'kcal' : '-') + '</td></tr>';
+          + '<td>' + aiEsc(r.foodAcnt || '1') + '</td><td>' + aiEsc(r.foodDanwi || '인분') + '</td><td>' + (k ? aiEsc(k) + 'kcal' : '-') + '</td><td>' + (r.carb ? aiEsc(r.carb) + 'g' : '-') + '</td></tr>';
     });
     body.innerHTML = hs + '</tbody></table>'; box.style.display = 'block'; box.scrollIntoView({ behavior:'smooth', block:'nearest' }); return;
   }
-  var h = '<table><thead><tr><th style="width:28px"><input type="checkbox" id="aiAll" checked onchange="aiFoodAll(this.checked)"></th><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th></tr></thead><tbody>';
+  var h = '<table><thead><tr><th style="width:28px"><input type="checkbox" id="aiAll" checked onchange="aiFoodAll(this.checked)"></th><th>음식명</th><th style="width:60px">양</th><th style="width:46px">단위</th><th style="width:58px">열량</th><th style="width:52px">탄수</th></tr></thead><tbody>';
   AI_FOOD.forEach(function(r, i){
     var kcal = r.mstKcal || r.kcal || '';
+    var base = aiNum(r.foodAcnt || '1') || 1, uk = kcal ? aiNum(kcal) / base : '', uc = r.carb ? aiNum(r.carb) / base : '';   // 1단위당 열량·탄수화물
     var mst = r.foodMseq ? '<span class="mst">✔ ' + aiEsc(r.mstName) + '</span>' : '<span class="nomst">마스터 없음(직접입력)</span>';
-    h += '<tr data-i="' + i + '">'
+    h += '<tr data-i="' + i + '" data-uk="' + (uk === '' ? '' : uk) + '" data-uc="' + (uc === '' ? '' : uc) + '">'
        + '<td><input type="checkbox" class="ai-ck" checked></td>'
        + '<td class="nm"><input type="text" class="ai-nm" value="' + aiEsc(r.foodName) + '">' + mst + '</td>'
        + '<td class="ac"><input type="text" class="ai-ac" value="' + aiEsc(r.foodAcnt || '1') + '"></td>'
        + '<td>' + aiEsc(r.foodDanwi || '인분') + '</td>'
-       + '<td>' + (kcal ? aiEsc(kcal) + 'kcal' : '-') + '</td>'
+       + '<td class="kc"><input type="text" class="ai-kc" inputmode="numeric" value="' + (kcal ? Math.round(aiNum(kcal)) : '') + '">kcal</td>'
+       + '<td class="cb"><input type="text" class="ai-cb" inputmode="numeric" value="' + (r.carb ? Math.round(aiNum(r.carb)) : '') + '">g</td>'
        + '</tr>';
   });
-  body.innerHTML = h + '</tbody></table>';
+  body.innerHTML = h + '</tbody></table><div class="ai-calc">양을 바꾸면 열량·탄수화물이 자동 계산됩니다(직접 고쳐도 됩니다).</div>';
   box.style.display = 'block';
   box.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
+// 「1」「2」「1/2」「0.5」「150」 → 숫자 (양·열량·탄수 칸 공용)
+function aiNum(v){
+  v = String(v == null ? '' : v).trim().replace(/,/g, '');
+  var m = v.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if(m) return +m[2] ? (+m[1] / +m[2]) : 0;
+  var x = parseFloat(v.replace(/[^0-9.]/g, '')); return isNaN(x) ? 0 : x;
+}
+// 양(.ai-ac)을 바꾸면 그 줄의 1단위 기준값(data-uk/uc)으로 열량·탄수화물을 다시 센다(사용자 「음식인식에서 자동계산」 2026-11-04)
+function aiFoodRecalc(tr){
+  if(!tr) return;
+  var amt = aiNum(tr.querySelector('.ai-ac') ? tr.querySelector('.ai-ac').value : '1'), uk = tr.getAttribute('data-uk'), uc = tr.getAttribute('data-uc');
+  var kc = tr.querySelector('.ai-kc'), cb = tr.querySelector('.ai-cb');
+  if(kc && uk !== '' && uk != null) kc.value = Math.round(+uk * amt);
+  if(cb && uc !== '' && uc != null) cb.value = Math.round(+uc * amt);
+}
+(function(){
+  var body = document.getElementById('aiFoodBody');
+  if(body && !body.__aiCalc){ body.__aiCalc = true; body.addEventListener('input', function(e){ if(e.target && e.target.classList && e.target.classList.contains('ai-ac')) aiFoodRecalc(e.target.closest('tr')); }); }
+})();
 function aiFoodAll(on){ document.querySelectorAll('#aiFoodBody .ai-ck').forEach(function(c){ c.checked = on; }); }
 function aiFoodSave(){
   var eatDate = document.getElementById('eatDate').value, eatStime = pickHHMM('eatStime');
@@ -593,7 +661,10 @@ function aiFoodSave(){
     if(!name) return;
     // 이름을 고쳤으면 마스터 연결은 버린다(다른 음식의 열량이 붙으면 안 된다)
     var mseq = (r.foodMseq && name === (r.foodName||'')) ? String(r.foodMseq) : '1';
-    saved.push({ foodName:name, foodAcnt:ac, foodDanwi:r.foodDanwi || '인분', foodMseq:(mseq === '1' ? '' : mseq), mstName:r.mstName, mstKcal:(mseq === '1' ? '' : r.mstKcal), kcal:r.kcal });
+    var kcEl = tr.querySelector('.ai-kc'), cbEl = tr.querySelector('.ai-cb');
+    var kcalV = kcEl ? String(kcEl.value || '').trim() : ((mseq !== '1' && r.mstKcal) ? String(r.mstKcal) : String(r.kcal || '')), carbV = cbEl ? String(cbEl.value || '').trim() : String(r.carb || '');
+    if(kcalV && !aiNum(kcalV) && kcalV !== '0') kcalV = ''; if(carbV && !aiNum(carbV) && carbV !== '0') carbV = '';
+    saved.push({ foodName:name, foodAcnt:ac, foodDanwi:r.foodDanwi || '인분', foodMseq:(mseq === '1' ? '' : mseq), mstName:r.mstName, mstKcal:'', kcal:kcalV, carb:carbV });   // 저장 뒤 표에는 실제 저장한 값을 보인다
     rows.push({
       userUuid : document.getElementById('userUuid').value,
       eatDate  : eatDate,
@@ -603,7 +674,9 @@ function aiFoodSave(){
       foodDanwi: r.foodDanwi || '인분',
       foodCnt  : '1',
       foodAcnt : ac,
-      foodMseq : mseq
+      foodMseq : mseq,
+      foodKcal : kcalV,       // 2026-11-04 기록 열량·탄수화물(T_FOOD_TRAN.FOOD_KCAL/FOOD_CARB)
+      foodCarb : carbV
     });
   });
   if(!rows.length){ alert('등록할 음식을 체크하세요.'); return; }
@@ -688,8 +761,8 @@ function renderFoodList(data, gubun) {
 	    const tdType = document.createElement('td');
 	    tdType.classList.add('food-name');
 	    const name = item.foodName || '';
-	    if (name.length > 5) {
-	      tdType.textContent = name.substring(0, 5) + '…';
+	    if (name.length > 14) {   // 2026-11-04 5→14 : 칸 폭은 CSS 말줄임이 맞춘다
+	      tdType.textContent = name.substring(0, 14) + '…';
 	      tdType.setAttribute('data-tooltip', name);
 	      tdType.classList.add('has-tooltip');
 	    } else {
@@ -699,6 +772,12 @@ function renderFoodList(data, gubun) {
 	    // 식사량
 	    const tdCnt = document.createElement('td');
 	    tdCnt.textContent = item.foodAcnt;
+
+	    // 열량·탄수화물(2026-11-04) — 기록값(사진 등록) 우선, 없으면 마스터 열량(서버 COALESCE), 둘 다 없으면 '-'
+	    const tdKcal = document.createElement('td');
+	    tdKcal.textContent = (item.foodKcal != null && item.foodKcal !== '') ? Math.round(Number(item.foodKcal)) : '-';
+	    const tdCarb = document.createElement('td');
+	    tdCarb.textContent = (item.foodCarb != null && item.foodCarb !== '') ? Math.round(Number(item.foodCarb)) + 'g' : '-';
 
 	    // 삭제
 	    const tdDelete = document.createElement('td');
@@ -716,6 +795,8 @@ function renderFoodList(data, gubun) {
 	    tr.appendChild(tdTime);
 	    tr.appendChild(tdType);
 	    tr.appendChild(tdCnt);
+	    tr.appendChild(tdKcal);
+	    tr.appendChild(tdCarb);
 	    tr.appendChild(tdDelete);
 	    list.appendChild(tr);
 	  });

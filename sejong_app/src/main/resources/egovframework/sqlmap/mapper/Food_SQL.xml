@@ -268,10 +268,10 @@
 	</select>
 
 	<select id="getTodaysumFood" parameterType="String" resultType="map">
-		SELECT SUM(B.FOOD_KCAL) kCal
-  		  FROM T_FOOD_TRAN A , T_FOOD_MST B 
-		 WHERE A.FOOD_MSEQ = B.FOOD_SEQ 
-		   AND A.USER_UUID = #{userUuid}
+		/* 2026-11-04 기록의 FOOD_KCAL(사진 등록) 우선, 없으면 마스터 — 종전엔 마스터 있는 음식만 셌다 */
+		SELECT SUM(COALESCE(A.FOOD_KCAL, B.FOOD_KCAL)) kCal
+  		  FROM T_FOOD_TRAN A LEFT JOIN T_FOOD_MST B ON A.FOOD_MSEQ = B.FOOD_SEQ
+		 WHERE A.USER_UUID = #{userUuid}
 		   AND A.EAT_DATE  = #{start}
 	</select>
 		
@@ -286,6 +286,8 @@
 	       , FOOD_CNT
 	       , FOOD_ACNT
 	       , FOOD_MSEQ
+	       , FOOD_KCAL
+	       , FOOD_CARB
 	       , REG_DTTM
 	       , MOD_DTTM
 	      )
@@ -300,6 +302,8 @@
 	          1,
 	          #{foodAcnt},
 	          #{foodMseq},
+	          NULLIF(#{foodKcal}, ''),
+	          NULLIF(#{foodCarb}, ''),
 	          NOW(),
 	          NOW()
 	        )
@@ -313,6 +317,8 @@
 	        FOOD_CNT    = 1,
 	        FOOD_ACNT   = #{foodAcnt},
 	        FOOD_MSEQ   = #{foodMseq},
+	        FOOD_KCAL   = NULLIF(#{foodKcal}, ''),
+	        FOOD_CARB   = NULLIF(#{foodCarb}, ''),
 	        MOD_DTTM    = NOW()
 	</insert>
 	
@@ -333,10 +339,12 @@
 		    FOOD_NAME , 
 		    FOOD_CNT , 
 		    CASE WHEN FOOD_ACNT = '' THEN FOOD_CNT ELSE FOOD_ACNT END FOOD_ACNT ,
+		    COALESCE(T.FOOD_KCAL, (SELECT M.FOOD_KCAL FROM T_FOOD_MST M WHERE M.FOOD_SEQ = T.FOOD_MSEQ)) AS FOOD_KCAL ,   -- 2026-11-04 기록 열량 우선, 없으면 마스터
+		    T.FOOD_CARB ,
 		    REG_DTTM  ,
 		    MOD_DTTM  ,
 		    ROW_NUMBER() OVER (PARTITION BY EAT_DATE ORDER BY EAT_DATE , EAT_ETIME DESC) AS RN 
-		FROM  T_FOOD_TRAN 
+		FROM  T_FOOD_TRAN T
 		WHERE   STR_TO_DATE(EAT_DATE, '%Y%m%d') BETWEEN 
                 STR_TO_DATE(REPLACE(#{startDt}, '-', ''), '%Y%m%d') 
             AND STR_TO_DATE(REPLACE(#{endDt}, '-', ''), '%Y%m%d')
@@ -348,7 +356,9 @@
 	     EAT_STIME ,
 	     FOOD_NAME ,
 	     FOOD_CNT  ,
-	     FOOD_ACNT
+	     FOOD_ACNT ,
+	     FOOD_KCAL ,
+	     FOOD_CARB
 	FROM  RANKED
 	ORDER BY EAT_DATE DESC , EAT_STIME DESC    
  </select>		

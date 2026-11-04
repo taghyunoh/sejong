@@ -16,6 +16,13 @@ public class FoodDTO {
 	private String regDttm;
 	private String modDttm;
 	private String kCal;
+	private String foodKcal;   // 2026-11-04 이 기록의 열량(kcal) — 사진 등록이 채운다, 수동 입력은 비움
+	private String foodCarb;   // 2026-11-04 이 기록의 탄수화물(g)
+
+	public String getFoodKcal() { return foodKcal; }
+	public void setFoodKcal(String foodKcal) { this.foodKcal = foodKcal; }
+	public String getFoodCarb() { return foodCarb; }
+	public void setFoodCarb(String foodCarb) { this.foodCarb = foodCarb; }
 
 	public String getkCal() {
 		return kCal;

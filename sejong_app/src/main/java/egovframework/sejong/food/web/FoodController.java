@@ -257,9 +257,9 @@ public class FoodController {
 				+ "각 항목: {\"foodName\": 한국어 음식명·제품명(짧게), "
 				+ "\"foodAcnt\": 섭취량 숫자(1인분·1개 기준, 예: 1, 0.5, 2), "
 				+ "\"foodDanwi\": 단위(인분·그릇·개·봉지·컵·조각·캔·g·ml 중 하나 — 포장 식품은 개·봉지·컵·캔), "
-				+ "\"kcal\": 그 섭취량의 열량(정수 — 영양성분표가 있으면 그 값, 없으면 추정)}.\n"
+				+ "\"kcal\": 그 섭취량의 열량(정수 — 영양성분표가 있으면 그 값, 없으면 추정), \"carb\": 그 섭취량의 탄수화물 g(정수 — 영양성분표가 있으면 그 값, 없으면 추정)}.\n"
 				+ "규칙: 음식·식품이 아니면 빈 배열 []. 같은 음식은 하나로 합친다. 최대 8개. 설명문·마크다운 없이 JSON 배열만.";
-		String user = "이 사진의 음식(또는 포장 식품)을 목록으로 적어 줘. 포장 식품이면 제품명과 영양성분표를 읽어 줘.";
+		String user = "이 사진의 음식(또는 포장 식품)을 목록으로 적어 줘. 음식마다 열량(kcal)과 탄수화물(g)을 꼭 적고, 포장 식품이면 제품명과 영양성분표를 읽어 줘.";
 		String out = GeminiUtil.generate(geminiKey, geminiUrl, sys, user, mime, img, true, 2048);
 		if (out == null) { json.IsSucceed = false; json.Message = "사진 인식에 실패했습니다. 잠시 뒤 다시 시도해 주세요."; return json; }
 
@@ -278,6 +278,7 @@ public class FoodController {
 				row.put("foodAcnt", normAcnt(str(o, "foodAcnt")));
 				row.put("foodDanwi", str(o, "foodDanwi").isEmpty() ? "인분" : str(o, "foodDanwi"));
 				row.put("kcal", str(o, "kcal").replaceAll("[^0-9]", ""));
+				row.put("carb", str(o, "carb").replaceAll("[^0-9.]", ""));   // 2026-11-04 탄수화물(g) — 기록의 FOOD_CARB 로 저장
 				// T_FOOD_MST 매칭 — 이름 그대로 → 띄어쓰기 뗀 포함 일치 → 첫 후보
 				row.put("foodMseq", "");
 				row.put("mstName", "");
